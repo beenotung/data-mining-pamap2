@@ -1,4 +1,4 @@
-name := "akka-docker"
+name := "data-mining-youtube"
 version := "2.3.10"
 scalaVersion := "2.11.5"
 
