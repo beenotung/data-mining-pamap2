@@ -1,3 +1,41 @@
+# Data mining on Youtube
+
+## data mining techies
+1. Association Rule Mining
+
+### Association Rule Mining
+1. prepare data
+   1. import the raw data from file into database
+   2. rich the data
+      - get more video information
+         - title
+         - description
+         - tags
+         - comments
+      - this part can be done in parallel
+         - dispatcher
+           1. get list of unsolved video id
+           2. send to workers
+         - worker
+           1. receive video id from dispatcher
+           2. fetch extra info from Youtube API
+           3. save extra info to database
+2. learn from data
+   1. find association rule
+      - this part can be done in parallel
+3. test the learning
+   - apply the association rule to predicate
+   - calculate the correctness
+   - this part can be done in parallel
+      - dispatcher
+         1. get list of testing video id pair
+         2. send to workers
+      - workers
+         1. receive video id from dispatcher
+         2. apply the association rule
+         3. save the result to database
+4. analysis & report writing
+
 # Akka & Docker
 
 For a detailed description read [this blog entry](http://mukis.de/pages/akka-cluster-with-docker-containers/).
