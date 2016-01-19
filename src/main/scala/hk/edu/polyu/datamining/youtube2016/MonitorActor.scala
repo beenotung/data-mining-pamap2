@@ -1,4 +1,4 @@
-package com.example
+package hk.edu.polyu.datamining.youtube2016
 
 import akka.actor._
 import akka.cluster._

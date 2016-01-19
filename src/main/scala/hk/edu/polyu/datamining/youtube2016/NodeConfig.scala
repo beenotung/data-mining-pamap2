@@ -1,4 +1,4 @@
-package com.example
+package hk.edu.polyu.datamining.youtube2016
 
 import com.typesafe.config._
 import scala.collection.JavaConversions._
