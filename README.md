@@ -1,39 +1,39 @@
-# Data mining on Youtube
+# Data mining on Physical Activity
+Data source :
+http://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
 
 ## data mining techies
 1. Association Rule Mining
+2. (useful?) feature selection (generic algorithm)
 
 ### Association Rule Mining
 1. prepare data
    1. import the raw data from file into database
-   2. rich the data
-      - get more video information
-         - title
-         - description
-         - tags
-         - comments
+   2. pre-process raw data
+      - calc relative motion (whole body)
+         - average of three motion sensor
+      - calc absolute direction
+         - using the magnetometer to calibrate
+      - calc relative temperature
+         - against the three IMU sensor
       - this part can be done in parallel
          - dispatcher
-           1. get list of unsolved video id
+           1. get list of timestamps
            2. send to workers
          - worker
-           1. receive video id from dispatcher
-           2. fetch extra info from Youtube API
-           3. save extra info to database
+           1. receive timestamp (UID) from dispatcher
+           2. fetch raw from database
+           3. calc extra data
+           3. save extra data to database
 2. learn from data
    1. find association rule
+      1. find single attr asso rules
+      2. combination attrs
       - this part can be done in parallel
 3. test the learning
    - apply the association rule to predicate
    - calculate the correctness
    - this part can be done in parallel
-      - dispatcher
-         1. get list of testing video id pair
-         2. send to workers
-      - workers
-         1. receive video id from dispatcher
-         2. apply the association rule
-         3. save the result to database
 4. analysis & report writing
 
 # Akka & Docker

@@ -1,4 +1,4 @@
-package hk.edu.polyu.datamining.youtube2016
+package hk.edu.polyu.datamining.pamap2
 
 import com.typesafe.config._
 import scala.collection.JavaConversions._
