@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2
 
 import akka.actor._
+import hk.edu.polyu.datamining.pamap2.actor.MonitorActor
 
 object Main extends App {
 

@@ -1,8 +1,8 @@
-package hk.edu.polyu.datamining.pamap2
+package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor._
-import akka.cluster._
 import akka.cluster.ClusterEvent._
+import akka.cluster._
 
 class MonitorActor extends Actor with ActorLogging {
 
