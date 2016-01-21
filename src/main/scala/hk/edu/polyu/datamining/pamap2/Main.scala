@@ -1,7 +1,7 @@
 package hk.edu.polyu.datamining.pamap2
 
 import akka.actor._
-import hk.edu.polyu.datamining.pamap2.actor.MonitorActor
+import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
 
 object Main extends App {
 
@@ -12,9 +12,17 @@ object Main extends App {
     val system = ActorSystem(c.clusterName, c.config)
 
     // Register a monitor actor for demo purposes
-    system.actorOf(Props[MonitorActor], "cluster-monitor")
+    system.actorOf(Props[actor.MonitorActor], "cluster-monitor")
 
     system.log info s"ActorSystem ${system.name} started successfully"
+
+    // set DispatchActor singleton
+    system.actorOf(
+      ClusterSingletonManager.props(
+        Props[actor.DispatchActor],
+        PoisonPill.getInstance,
+        ClusterSingletonManagerSettings.create(system)
+      ), "task-dispatcher")
   }
 
 }

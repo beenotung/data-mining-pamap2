@@ -10,7 +10,8 @@ packageSummary := s"Akka ${version.value} Server"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % version.value,
   "com.typesafe.akka" %% "akka-cluster" % version.value,
-  "com.github.scopt" %% "scopt" % "3.2.0"
+  "com.github.scopt" %% "scopt" % "3.2.0",
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.1"
 )
 
 // Create custom run tasks to start a seed and a cluster node
