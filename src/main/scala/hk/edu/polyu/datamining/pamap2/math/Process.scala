@@ -25,5 +25,12 @@ object Process {
     *         -1.0..1.0
     **/
   //TODO
-  def findRelativeTemperature(arm: Float, chest: Float, ankle: Float): (Float, Float, Float) = ???
+  def findRelativeTemperature(arm: Float, chest: Float, ankle: Float): (Float, Float, Float) = {
+    // treat chest as 1
+    val arm_k = arm + 273
+    val chest_k = chest + 273
+    val ankle_k = ankle + 273
+
+    return (1 + ((arm_k - chest_k)/chest_k),1,1 + ( (ankle_k - chest_k)/chest_k))
+  }
 }
