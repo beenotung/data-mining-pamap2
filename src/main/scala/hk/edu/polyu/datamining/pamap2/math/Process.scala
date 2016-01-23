@@ -31,6 +31,6 @@ object Process {
     val chest_k = chest + 273
     val ankle_k = ankle + 273
 
-    return (1 + ((arm_k - chest_k)/chest_k),1,1 + ( (ankle_k - chest_k)/chest_k))
+    return (arm_k/chest_k,1,ankle_k/chest_k)
   }
 }
