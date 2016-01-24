@@ -21,7 +21,7 @@ object Process {
   def rotationVectorToEulerAngle(rotationVector: RotationVector): EulerAngle = ???
 
   /**
-    * treat average/chest as 0
+    * treat chest as 1
     * return relative Thermodynamic temperature of each body part
     *
     * @param arm   : arm absolute temperature
@@ -30,13 +30,10 @@ object Process {
     * @return (arm,chest,ankle) : relative temperature
     *         -1.0..1.0
     **/
-  //TODO
   def findRelativeTemperature(arm: Float, chest: Float, ankle: Float): (Float, Float, Float) = {
-    // treat chest as 1
     val arm_k = arm + 273
     val chest_k = chest + 273
     val ankle_k = ankle + 273
-
-    return (arm_k/chest_k,1,ankle_k/chest_k)
+    (arm_k / chest_k, 1, ankle_k / chest_k)
   }
 }
