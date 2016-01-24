@@ -22,7 +22,7 @@ object Database extends App {
     .connect()
 
   val result = r.dbList().run(conn)
-
+result.
 
   println("bye")
 }
