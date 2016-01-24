@@ -6,13 +6,19 @@ package hk.edu.polyu.datamining.pamap2.math
 
 object Process {
   //TODO
-  def findRelativeBodyMotion(arm16: Vector, arm6: Vector, chest16: Vector, chest6: Vector, ankle16: Vector, ankle6: Vector): Polar = ???
+  def findRelativeBodyMotion(arm: DisplacementPolar, hand: DisplacementPolar, ankle: DisplacementPolar): DisplacementPolar = ???
 
   //TODO
-  def rectReduce(rect16: Vector, rect6: Vector): Vector = ???
+  def findRelativeBodyRotation(arm: EulerAngle, hand: EulerAngle, ankle: EulerAngle): EulerAngle = ???
 
   //TODO
-  def rectToPolar(rect: Vector, magnet: Vector): Polar = ???
+  def rectReduce(rect16: DisplacementVector, rect6: DisplacementVector): DisplacementVector = ???
+
+  //TODO
+  def rectToPolar(rect: DisplacementVector, magnet: DisplacementVector): DisplacementPolar = ???
+
+  //TODO
+  def rotationVectorToEulerAngle(rotationVector: RotationVector): EulerAngle = ???
 
   /**
     * treat average/chest as 0
