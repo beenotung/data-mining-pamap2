@@ -385,3 +385,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# unused library
+lib/slf4j-1.7.13

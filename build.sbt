@@ -7,12 +7,20 @@ enablePlugins(JavaAppPackaging)
 maintainer := "https://hub.docker.com/u/aabbcc1241/"
 packageSummary := s"Akka ${version.value} Server"
 
+resolvers ++= Seq(
+  "RethinkScala Repository" at "http://kclay.github.io/releases",
+  "RethinkScala Repository" at "http://kclay.github.io/snapshots"
+)
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % version.value,
   "com.typesafe.akka" %% "akka-cluster" % version.value,
   "com.github.scopt" %% "scopt" % "3.2.0",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.1"
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.1",
+  "org.slf4j" % "slf4j-simple" % "1.6.2",
+  "com.rethinkdb" % "rethinkdb-driver" % "2.2-beta-1"
 )
+//  "com.rethinkdb" % "rethink-java-driver" % "0.3"
 
 // Create custom run tasks to start a seed and a cluster node
 // http://www.scala-sbt.org/0.13.0/docs/faq.html#how-can-i-create-a-custom-run-task-in-addition-to-run
@@ -21,8 +29,8 @@ fullRunTask(runSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed")
 fork in runSeed := true
 
 javaOptions in runSeed ++= Seq(
-    "-Dclustering.ip=127.0.0.1",
-    "-Dclustering.port=2551"
+  "-Dclustering.ip=127.0.0.1",
+  "-Dclustering.port=2551"
 )
 
 lazy val runNode = taskKey[Unit]("Start a node on 127.0.0.1:2552")
@@ -30,7 +38,7 @@ fullRunTask(runNode, Compile, "hk.edu.polyu.datamining.pamap2.Main", "127.0.0.1:
 fork in runNode := true
 
 javaOptions in runNode ++= Seq(
-    "-Dclustering.ip=127.0.0.1",
-    "-Dclustering.port=2552"
+  "-Dclustering.ip=127.0.0.1",
+  "-Dclustering.port=2552"
 )
 
