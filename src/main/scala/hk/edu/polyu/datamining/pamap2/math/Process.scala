@@ -4,12 +4,48 @@ package hk.edu.polyu.datamining.pamap2.math
   * Created by beenotung on 1/21/16.
   */
 
+import scala.math.pow
+import scala.math.sqrt
+import scala.math.tan
+import scala.math.Pi
+
 object Process {
+
+  def vectorToPolar(x: Float, y: Float, z:Float): DisplacementPolar = {
+    val radius = sqrt(pow(x,2)+pow(y,2)+pow(z,2))
+    
+    // theta
+    var theta = 0.0
+    if(x>0){
+      theta = pow(tan(y/x),-1)
+    }else if(x<0 && y>0){
+      theta = pow(tan(y/x),-1)+Pi
+    }else if(x<0 && y<0){
+      theta = pow(tan(y/x),-1)-Pi
+    }else if(x==0 && y>0){
+      theta = Pi/2
+    }else{  //x==0 && y<0
+      theta = Pi/(-2)
+    }
+
+    //phi
+    var phi = 0.0
+    if(z>0){
+      phi = pow(tan((sqrt(pow(x,2)+pow(y,2)))/z),-1)
+    }else if(z<0){
+      phi = pow(tan((sqrt(pow(x,2)+pow(y,2)))/z),-1)+Pi
+    }else{ // Z==0
+      phi = Pi/2
+    }
+
+    (radius,theta,radius)
+  }
+  
   //TODO
-  def findRelativeBodyMotion(arm: DisplacementPolar, hand: DisplacementPolar, ankle: DisplacementPolar): DisplacementPolar = ???
+  def findRelativeBodyMotion(chest: DisplacementPolar, hand: DisplacementPolar, ankle: DisplacementPolar): DisplacementPolar = ???
 
   //TODO
-  def findRelativeBodyRotation(arm: EulerAngle, hand: EulerAngle, ankle: EulerAngle): EulerAngle = ???
+  def findRelativeBodyRotation(chest: EulerAngle, hand: EulerAngle, ankle: EulerAngle): EulerAngle = ???
 
   //TODO
   def rectReduce(rect16: DisplacementVector, rect6: DisplacementVector): DisplacementVector = ???
