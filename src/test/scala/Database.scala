@@ -21,8 +21,8 @@ object Database extends App {
     //    .db(dbname)
     .connect()
 
-//  val result:util.ArrayList[String] = r.dbList().run(conn)
-  val result=r.dbList().contains
+  //  val result:util.ArrayList[String] = r.dbList().run(conn)
+  val result = r.dbList().contains
   println(s"result = $result")
 
   println("bye")

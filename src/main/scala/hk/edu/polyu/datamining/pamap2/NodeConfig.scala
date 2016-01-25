@@ -1,12 +1,11 @@
 package hk.edu.polyu.datamining.pamap2
 
 import com.typesafe.config._
-import scala.collection.JavaConversions._
 
 /**
- * This configuration is intended to run in a docker environment
- * It won't work
- */
+  * This configuration is intended to run in a docker environment
+  * It won't work
+  */
 case class NodeConfig(isSeed: Boolean = false, seedNodes: Seq[String] = Seq.empty) {
 
   import ConfigFactory._
@@ -19,8 +18,8 @@ case class NodeConfig(isSeed: Boolean = false, seedNodes: Seq[String] = Seq.empt
   lazy val clusterName = config getString CLUSTER_NAME_PATH
 
   /**
-   * @return config
-   */
+    * @return config
+    */
   private def asConfig(): Config = {
     val config = load(
       getClass.getClassLoader,
@@ -51,7 +50,7 @@ case class NodeConfig(isSeed: Boolean = false, seedNodes: Seq[String] = Seq.empt
 }
 
 object NodeConfig {
-  /** static configuration for seed nodes*/
+  /** static configuration for seed nodes */
   val SEED_NODE = "node.seed.conf"
 
   /** static configuration for normal cluster nodes */
@@ -61,9 +60,9 @@ object NodeConfig {
   private val CLUSTER_NAME_PATH = "clustering.cluster.name"
 
   /**
-   * @return NodeConfig
-   * @throw IllegalStateException - if the cli parameters could not be parsed
-   */
+    * @return NodeConfig
+    * @throw IllegalStateException - if the cli parameters could not be parsed
+    */
   def parse(args: Seq[String]): Option[NodeConfig] = {
 
     val parser = new scopt.OptionParser[NodeConfig]("akka-docker") {
@@ -71,12 +70,12 @@ object NodeConfig {
       opt[Unit]("seed") action { (_, c) =>
         c.copy(isSeed = true)
       } text ("set this flag to start this system as a seed node")
-      arg[String]("<seed-node>...") unbounded () optional () action { (n, c) =>
+      arg[String]("<seed-node>...") unbounded() optional() action { (n, c) =>
         c.copy(seedNodes = c.seedNodes :+ n)
       } text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
         case NodeConfig(false, Seq()) => failure("ClusterNodes need at least one seed node")
-        case _                        => success
+        case _ => success
       }
     }
     // parser.parse returns Option[C]

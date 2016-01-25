@@ -7,6 +7,8 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
+  val tableList = Seq(Status, RawData, TestingData, ExtractedData, ItemsetCount, AssociationRule)
+
   sealed trait Table {
     def name: String
 
@@ -14,9 +16,9 @@ object Tables {
   }
 
   object Status extends Table {
-    override def name: String = "status"
-
     val ActionStatus = "actionStatus"
+
+    override def name: String = "status"
 
     override def fields: Seq[String] = Array(ActionStatus)
   }
@@ -50,6 +52,4 @@ object Tables {
 
     override def fields: Seq[String] = Array()
   }
-
-  val tableList = Seq(Status, RawData, TestingData, ExtractedData, ItemsetCount, AssociationRule)
 }

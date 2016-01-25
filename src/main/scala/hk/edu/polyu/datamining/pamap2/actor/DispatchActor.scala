@@ -26,6 +26,17 @@ class DispatchActor extends Actor with ActorLogging {
     self ! ActionStatus.checkStatus
   }
 
+  override def receive: Receive = {
+    case ActionStatus.checkStatus => self ! getCurrentActionStatus
+    case ActionStatus.init => doInit
+    case ActionStatus.importing => doImport
+    case ActionStatus.preProcess => doPreProcess
+    case ActionStatus.learning => doLearning
+    case ActionStatus.testing => doTesting
+    case action: ActionStatus.Status => log debug s"received action request : $action"
+    case msg => log debug s"received message : $msg"
+  }
+
   def getCurrentActionStatus: DispatchActor.ActionStatus.Status = {
     if (DatabaseHelper.hasInit)
       ActionStatus.importing
@@ -33,7 +44,7 @@ class DispatchActor extends Actor with ActorLogging {
       ActionStatus.init
   }
 
-  def doInit ={
+  def doInit = {
     DatabaseHelper.init()
     r.dbList().conta
   }
@@ -45,15 +56,4 @@ class DispatchActor extends Actor with ActorLogging {
   def doLearning = ???
 
   def doTesting = ???
-
-  override def receive: Receive = {
-    case ActionStatus.checkStatus => self ! getCurrentActionStatus
-    case ActionStatus.init => doInit
-    case ActionStatus.importing => doImport
-    case ActionStatus.preProcess => doPreProcess
-    case ActionStatus.learning => doLearning
-    case ActionStatus.testing => doTesting
-    case action: ActionStatus.Status => log debug s"received action request : $action"
-    case msg => log debug s"received message : $msg"
-  }
 }

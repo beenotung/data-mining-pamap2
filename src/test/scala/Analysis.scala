@@ -12,5 +12,5 @@ object Analysis extends App {
       s"\ncat subject101.dat  | awk '{print $$$i}' | grep NaN | uniq"
   })
   val filename = "analysis.sh"
-  Files.write(Paths.get(filename), lines.fold("")(_+"\n"+_).getBytes)
+  Files.write(Paths.get(filename), lines.fold("")(_ + "\n" + _).getBytes)
 }
