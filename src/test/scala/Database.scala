@@ -11,17 +11,19 @@ object Database extends App {
 
   println("hello")
 
-//  println(s"host : $host")
-//  println(s"port : $port")
-//  println(s"dbname : $dbname")
+  //  println(s"host : $host")
+  //  println(s"port : $port")
+  //  println(s"dbname : $dbname")
 
   val conn = r.connection()
     .hostname(host)
     .port(port)
-    .db(dbname)
+    //    .db(dbname)
     .connect()
 
-  val result = r.dbList().run(conn)
+//  val result:util.ArrayList[String] = r.dbList().run(conn)
+  val result=r.dbList().contains
+  println(s"result = $result")
 
   println("bye")
 }
