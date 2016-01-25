@@ -3,7 +3,6 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor.{Actor, ActorLogging}
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.ActionStatus
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper._
 
 /**
   * Created by beenotung on 1/21/16.
@@ -45,8 +44,8 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   def doInit = {
-    DatabaseHelper.init()
-    r.dbList().conta
+    DatabaseHelper.init(ActionStatus.init.toString, ActionStatus.importing.toString)
+//    self ! ActionStatus.importing
   }
 
   def doImport = ???

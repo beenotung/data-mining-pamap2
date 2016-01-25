@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2.utils
 
 import com.rethinkdb.gen.ast._
 
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 /**
@@ -31,4 +32,6 @@ object Lang {
   implicit def reqlFunction4(fun: () => Object): ReqlFunction4 = new ReqlFunction4 {
     override def apply(arg1: ReqlExpr, arg2: ReqlExpr, arg3: ReqlExpr, arg4: ReqlExpr): AnyRef = fun
   }
+
+  implicit def seqToList[A](seq: Seq[A]): java.util.List[A] = seq.asJava
 }

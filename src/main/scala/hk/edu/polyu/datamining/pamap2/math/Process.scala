@@ -4,43 +4,42 @@ package hk.edu.polyu.datamining.pamap2.math
   * Created by beenotung on 1/21/16.
   */
 
-import scala.math.pow
-import scala.math.sqrt
-import scala.math.tan
-import scala.math.Pi
+import scala.math.{Pi, pow, sqrt, tan}
 
 object Process {
 
   def vectorToPolar(part: DisplacementVector): DisplacementPolar = {
-    val radius = sqrt(pow(part.x,2)+pow(part.y,2)+pow(part.z,2))
+    val radius = sqrt(pow(part.x, 2) + pow(part.y, 2) + pow(part.z, 2))
 
     // theta
     var theta = 0.0
-    if(part.x>0){
-      theta = pow(tan(part.y/part.x),-1)
-    }else if(part.x<0 && part.y>0){
-      theta = pow(tan(part.y/part.x),-1)+Pi
-    }else if(part.x<0 && part.y<0){
-      theta = pow(tan(part.y/part.x),-1)-Pi
-    }else if(part.x==0 && part.y>0){
-      theta = Pi/2
-    }else{  //x==0 && y<0
-      theta = Pi/(-2)
+    if (part.x > 0) {
+      theta = pow(tan(part.y / part.x), -1)
+    } else if (part.x < 0 && part.y > 0) {
+      theta = pow(tan(part.y / part.x), -1) + Pi
+    } else if (part.x < 0 && part.y < 0) {
+      theta = pow(tan(part.y / part.x), -1) - Pi
+    } else if (part.x == 0 && part.y > 0) {
+      theta = Pi / 2
+    } else {
+      //x==0 && y<0
+      theta = Pi / (-2)
     }
 
     //phi
     var phi = 0.0
-    if(part.z>0){
-      phi = pow(tan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z),-1)
-    }else if(part.z<0){
-      phi = pow(tan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z),-1)+Pi
-    }else{ // Z==0
-      phi = Pi/2
+    if (part.z > 0) {
+      phi = pow(tan((sqrt(pow(part.x, 2) + pow(part.y, 2))) / part.z), -1)
+    } else if (part.z < 0) {
+      phi = pow(tan((sqrt(pow(part.x, 2) + pow(part.y, 2))) / part.z), -1) + Pi
+    } else {
+      // Z==0
+      phi = Pi / 2
     }
 
-    (radius,theta,radius)
+    new DisplacementPolar(radius.toFloat, theta.toFloat, radius.toFloat)
   }
-  
+
   //TODO
   def findRelativeBodyMotion(chest: DisplacementPolar, hand: DisplacementPolar, ankle: DisplacementPolar): DisplacementPolar = ???
 
