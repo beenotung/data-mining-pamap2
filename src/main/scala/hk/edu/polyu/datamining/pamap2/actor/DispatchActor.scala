@@ -1,29 +1,19 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.CheckStatus
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.ActionStatus
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper._
 
 /**
   * Created by beenotung on 1/21/16.
   */
 object DispatchActor {
 
-  sealed trait ActionStatus {
-    def name: String = getClass.getSimpleName
+  object ActionStatus extends Enumeration {
+    type Status = Value
+    val checkStatus, init, importing, preProcess, learning, testing = Value
   }
-
-  case object CheckStatus extends ActionStatus
-
-  case object Init extends ActionStatus
-
-  case object Import extends ActionStatus
-
-  case object PreProcess extends ActionStatus
-
-  case object Learning extends ActionStatus
-
-  case object Testing extends ActionStatus
 
 }
 
@@ -33,23 +23,20 @@ object DispatchActor {
 class DispatchActor extends Actor with ActorLogging {
   override def preStart() = {
     log debug s"Starting ${getClass.getSimpleName}"
-    self ! CheckStatus
-    //    new Thread(() => {
-    //      //TODO
-    //      log debug "***************************************************"
-    //      log debug s"current Action Status = ${getCurrentActionStatus}"
-    //      log debug "***************************************************"
-    //    }).start()
+    self ! ActionStatus.checkStatus
   }
 
-  def getCurrentActionStatus: DispatchActor.ActionStatus = {
+  def getCurrentActionStatus: DispatchActor.ActionStatus.Status = {
     if (DatabaseHelper.hasInit)
-      DispatchActor.Import
+      ActionStatus.importing
     else
-      DispatchActor.Init
+      ActionStatus.init
   }
 
-  def doInit = ???
+  def doInit ={
+    DatabaseHelper.init()
+    r.dbList().conta
+  }
 
   def doImport = ???
 
@@ -60,7 +47,13 @@ class DispatchActor extends Actor with ActorLogging {
   def doTesting = ???
 
   override def receive: Receive = {
-    case CheckStatus => log debug s"current Action Status = $getCurrentActionStatus"
+    case ActionStatus.checkStatus => self ! getCurrentActionStatus
+    case ActionStatus.init => doInit
+    case ActionStatus.importing => doImport
+    case ActionStatus.preProcess => doPreProcess
+    case ActionStatus.learning => doLearning
+    case ActionStatus.testing => doTesting
+    case action: ActionStatus.Status => log debug s"received action request : $action"
     case msg => log debug s"received message : $msg"
   }
 }
