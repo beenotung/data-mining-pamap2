@@ -22,8 +22,8 @@ public class DatabaseHelper {
         Connection conn1;
         Config config = ConfigFactory.parseResources("database.conf");
         hostname = config.getString("rethinkdb.host");
-        port = config.getInt("rethinkdb.host");
-        dbname = config.getString("rethinkdb.host");
+        port = config.getInt("rethinkdb.port");
+        dbname = config.getString("rethinkdb.dbname");
         try {
             conn1 = r.connection()
                     .hostname(hostname)
