@@ -11,18 +11,18 @@ import scala.math.Pi
 
 object Process {
 
-  def vectorToPolar(x: Float, y: Float, z:Float): DisplacementPolar = {
-    val radius = sqrt(pow(x,2)+pow(y,2)+pow(z,2))
-    
+  def vectorToPolar(part: DisplacementVector): DisplacementPolar = {
+    val radius = sqrt(pow(part.x,2)+pow(part.y,2)+pow(part.z,2))
+
     // theta
     var theta = 0.0
-    if(x>0){
-      theta = pow(tan(y/x),-1)
-    }else if(x<0 && y>0){
-      theta = pow(tan(y/x),-1)+Pi
-    }else if(x<0 && y<0){
-      theta = pow(tan(y/x),-1)-Pi
-    }else if(x==0 && y>0){
+    if(part.x>0){
+      theta = pow(tan(part.y/part.x),-1)
+    }else if(part.x<0 && part.y>0){
+      theta = pow(tan(part.y/part.x),-1)+Pi
+    }else if(part.x<0 && part.y<0){
+      theta = pow(tan(part.y/part.x),-1)-Pi
+    }else if(part.x==0 && part.y>0){
       theta = Pi/2
     }else{  //x==0 && y<0
       theta = Pi/(-2)
@@ -30,10 +30,10 @@ object Process {
 
     //phi
     var phi = 0.0
-    if(z>0){
-      phi = pow(tan((sqrt(pow(x,2)+pow(y,2)))/z),-1)
-    }else if(z<0){
-      phi = pow(tan((sqrt(pow(x,2)+pow(y,2)))/z),-1)+Pi
+    if(part.z>0){
+      phi = pow(tan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z),-1)
+    }else if(part.z<0){
+      phi = pow(tan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z),-1)+Pi
     }else{ // Z==0
       phi = Pi/2
     }
