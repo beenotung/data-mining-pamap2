@@ -13,32 +13,52 @@ object Tables {
   sealed trait Table {
     def name: String
 
-    def fields: Seq[String]
+    def fields: Iterable[String]
   }
 
   object Status extends Table {
-    val actionStatus = "actionStatus"
-
     override def name: String = "status"
 
-    override def fields: Seq[String] = Array(actionStatus)
+    object Field extends Enumeration {
+      type Field = Value
+      val actionStatus, pendingIds, dispatchedIds = Value
+    }
+
+    override def fields: Iterable[String] = Field.values.map(_.toString)
+  }
+
+  object IMU extends Table {
+    override def name: String = "IMU"
+
+    object Field extends Enumeration {
+      type Field = Value
+      val temperature, a16x, a16y, a16z, a6x, a6y, a6z, rx, ry, rz, mx, my, mz = Value
+    }
+
+    override def fields: Iterable[String] = Field.values.map(_.toString)
   }
 
   object RawData extends Table {
     override def name: String = "raw_data"
 
-    val timestamp = "timestamp"
+    object Field extends Enumeration {
+      type Field = Value
+      val timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
+    }
 
-    override def fields: Seq[String] = Array(timestamp)
+    override def fields = Field.values.map(_.toString)
   }
 
   /* same as RawData, will has extra flag to indicate test result? */
   object TestingData extends Table {
     override def name: String = "testing_data"
 
-    val timestamp = "timestamp"
+    object Field extends Enumeration {
+      type Field = Value
+      val timestamp, activityId, heartRate, hand, chest, ankle = Value
+    }
 
-    override def fields: Seq[String] = Array(timestamp)
+    override def fields = Field.values.map(_.toString)
   }
 
   object ExtractedData extends Table {

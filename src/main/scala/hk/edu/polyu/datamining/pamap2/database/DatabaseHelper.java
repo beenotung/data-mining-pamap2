@@ -4,7 +4,6 @@ import com.rethinkdb.RethinkDB;
 import com.rethinkdb.net.Connection;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import hk.edu.polyu.datamining.pamap2.utils.Lang;
 
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
@@ -57,40 +56,10 @@ public class DatabaseHelper {
   }
 
   public static boolean hasInit() {
-    return (boolean) r.dbList().contains(dbname).do_(dbExist -> {
-      String tableName = Tables.Status$.MODULE$.name();
-      return r.branch(
-          dbExist,
-          r.db(dbname).tableList().contains(tableName).do_(tableExist -> r.branch(
-              tableExist,
-              r.db(dbname).table(tableName).withFields(Tables.Status$.MODULE$.actionStatus()).count().ge(1),
-              false
-              )
-          ),
-          false
-      );
-    }).run(conn);
+    return DatabaseHelper_.hasInit();
   }
 
   public static void init(String currentStatus, String nextStatus) {
-    String statusTableName = Tables.Status$.MODULE$.name();
-    String statusFieldName = Tables.Status$.MODULE$.actionStatus();
-    /* drop and create database */
-    r.dbList().contains(dbname).do_(dbExist -> r.branch(
-        dbExist,
-        r.dbDrop(dbname),
-        r.hashMap("dbs_droppped", 0)
-    )).run(conn);
-    r.dbCreate(dbname).run(conn);
-    conn.use(dbname);
-    /* create status table */
-    r.tableCreate(statusTableName).run(conn);
-    r.table(statusTableName).insert(r.hashMap(statusFieldName, currentStatus));
-    /* create other tables */
-    Lang.seqToList(Tables.tableNames()).stream()
-        .filter(t -> !statusTableName.equals(t))
-        .forEach(t -> r.tableCreate(t).run(conn));
-    /* update status table */
-    r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus));
+    DatabaseHelper_.init(currentStatus, nextStatus);
   }
 }
