@@ -7,7 +7,7 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(Status, RawData, TestingData, ExtractedData, ItemsetCount, AssociationRule)
+  val tableList = Seq(Status, RawData, TestingData, TestingResult, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
@@ -32,8 +32,17 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val temperature, a16x, a16y, a16z, a6x, a6y, a6z, rx, ry, rz, mx, my, mz = Value
+      val temperature,
+      a16x, a16y, a16z,
+      a6x, a6y, a6z,
+      rx, ry, rz,
+      mx, my, mz,
+      /* extracted fields */
+      relativeTemperature,
+      polarRadius, polarTheta, polarPhi = Value
     }
+
+    val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
 
     override def fields: Iterable[String] = Field.values.map(_.toString)
   }
@@ -49,7 +58,6 @@ object Tables {
     override def fields = Field.values.map(_.toString)
   }
 
-  /* same as RawData, will has extra flag to indicate test result? */
   object TestingData extends Table {
     override def name: String = "testing_data"
 
@@ -61,28 +69,41 @@ object Tables {
     override def fields = Field.values.map(_.toString)
   }
 
-  object ExtractedData extends Table {
-    override def name: String = "extracted_data"
+  object TestingResult extends Table {
+    override def name: String = "testing_result"
 
-    val timestamp = "timestamp"
+    object Field extends Enumeration {
+      type Field = Value
+      val minimum_support, sampling_size = Value
+      /* Array[ testingDataId : correct<Boolean> ] */
+      val results = Value
+    }
 
-    override def fields: Seq[String] = Array(timestamp)
+    override def fields = Field.values.map(_.toString)
   }
 
   object ItemsetCount extends Table {
     override def name: String = "itemset_count"
 
-    val itemset = "itemset"
+    object Field extends Enumeration {
+      type Field = Value
+      /* array[String] */
+      val itemset = Value
+      val count = Value
+    }
 
-    override def fields: Seq[String] = Array(itemset)
+    override def fields = Field.values.map(_.toString)
   }
 
   object AssociationRule extends Table {
     override def name: String = "association_rule"
 
-    val predicateSet = "predicateSet"
+    object Field extends Enumeration {
+      type Field = Value
+      val itemset, support, confidence, interest, useful = Value
+    }
 
-    override def fields: Seq[String] = Array(predicateSet)
+    override def fields = Field.values.map(_.toString)
   }
 
 }

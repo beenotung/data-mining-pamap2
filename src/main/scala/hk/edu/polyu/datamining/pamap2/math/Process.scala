@@ -29,15 +29,15 @@ object Process {
     //phi
     var phi = 0.0
     if (part.z > 0) {
-      phi = pow(tan((sqrt(pow(part.x, 2) + pow(part.y, 2))) / part.z), -1)
+      phi = pow(tan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z), -1)
     } else if (part.z < 0) {
-      phi = pow(tan((sqrt(pow(part.x, 2) + pow(part.y, 2))) / part.z), -1) + Pi
+      phi = pow(tan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z), -1) + Pi
     } else {
       // Z==0
       phi = Pi / 2
     }
 
-    new DisplacementPolar(radius.toFloat, theta.toFloat, radius.toFloat)
+    new DisplacementPolar(radius.toFloat, theta.toFloat, phi.toFloat)
   }
 
   //TODO

@@ -43,16 +43,16 @@ class DispatchActor extends Actor with ActorLogging {
       ActionStatus.init
   }
 
-  def doInit = {
+  def doInit() = {
     DatabaseHelper.init(ActionStatus.init.toString, ActionStatus.importing.toString)
-//    self ! ActionStatus.importing
+    self ! ActionStatus.importing
   }
 
-  def doImport = ???
+  def doImport() = ???
 
-  def doPreProcess = ???
+  def doPreProcess() = ???
 
-  def doLearning = ???
+  def doLearning() = ???
 
-  def doTesting = ???
+  def doTesting() = ???
 }
