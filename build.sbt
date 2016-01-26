@@ -1,6 +1,6 @@
 name := "data-mining-PAMAP2"
-version := "2.3.10"
-scalaVersion := "2.11.5"
+lazy val akkaVersion = "2.4.0"
+scalaVersion := "2.11.7"
 
 enablePlugins(JavaAppPackaging)
 
@@ -13,10 +13,11 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % version.value,
-  "com.typesafe.akka" %% "akka-cluster" % version.value,
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.github.scopt" %% "scopt" % "3.2.0",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.1",
   "org.slf4j" % "slf4j-simple" % "1.6.2",
   "com.rethinkdb" % "rethinkdb-driver" % "2.2-beta-1"
 )

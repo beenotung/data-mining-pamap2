@@ -27,11 +27,11 @@ class DispatchActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case ActionStatus.checkStatus => self ! getCurrentActionStatus
-    case ActionStatus.init => doInit
-    case ActionStatus.importing => doImport
-    case ActionStatus.preProcess => doPreProcess
-    case ActionStatus.learning => doLearning
-    case ActionStatus.testing => doTesting
+    case ActionStatus.init => doInit()
+    case ActionStatus.importing => doImport()
+    case ActionStatus.preProcess => doPreProcess()
+    case ActionStatus.learning => doLearning()
+    case ActionStatus.testing => doTesting()
     case action: ActionStatus.Status => log debug s"received action request : $action"
     case msg => log debug s"received message : $msg"
   }
@@ -48,7 +48,11 @@ class DispatchActor extends Actor with ActorLogging {
     self ! ActionStatus.importing
   }
 
-  def doImport() = ???
+  def doImport() = {
+//    Moni
+//    context.system.actorSelection(MonitorActor.)
+//    hk.edu.polyu.datamining.pamap2.actor.
+  }
 
   def doPreProcess() = ???
 
