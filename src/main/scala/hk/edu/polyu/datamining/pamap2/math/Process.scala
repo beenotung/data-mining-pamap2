@@ -71,4 +71,6 @@ object Process {
     val ankle_k = ankle + 273
     (arm_k / chest_k, 1, ankle_k / chest_k)
   }
+
+  def categoryMotion(motion: DisplacementPolar): MotionCategory = ???
 }
