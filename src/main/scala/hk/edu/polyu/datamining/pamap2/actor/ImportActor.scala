@@ -1,8 +1,11 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
+import com.rethinkdb.RethinkDB.r
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
+import hk.edu.polyu.datamining.pamap2.database.Tables
 
+import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.language.postfixOps
 
@@ -11,25 +14,46 @@ import scala.language.postfixOps
   */
 object ImportActor {
 
-  final case class ImportFile(filename: String)
-
-  final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
-
-  def processIMU(cols: Array[String], offset: Int) = ???
+  lazy val IMUField = Tables.IMU.Field
+  lazy val RawField = Tables.RawData.Field
 
   def processLine(line: String) = {
     val cols = line.split(" ")
-    val timestamp = cols(0) toFloat
-    val activityId = cols(1) toByte
-    val heartRate = cols(2) toFloat
-    val hand = processIMU(cols, 3)
+    r.hashMap(RawField.timestamp.toString, cols(0).toFloat)
+      .`with`(RawField.activityId.toString, cols(1).toByte)
+      .`with`(RawField.heartRate.toString, cols(2).toShort)
+      .`with`(RawField.hand.toString, processIMU(cols, 3))
+      .`with`(RawField.chest.toString, processIMU(cols, 20))
+      .`with`(RawField.ankle.toString, processIMU(cols, 37))
   }
+
+  def processIMU(cols: Array[String], offset: Int) = {
+    r.hashMap(IMUField.temperature.toString, cols(offset).toFloat)
+      .`with`(IMUField.a16x.toString, cols(offset + 1).toFloat)
+      .`with`(IMUField.a16y.toString, cols(offset + 2).toFloat)
+      .`with`(IMUField.a16z.toString, cols(offset + 3).toFloat)
+      .`with`(IMUField.a6x.toString, cols(offset + 4).toFloat)
+      .`with`(IMUField.a6y.toString, cols(offset + 5).toFloat)
+      .`with`(IMUField.a6z.toString, cols(offset + 6).toFloat)
+      .`with`(IMUField.rx.toString, cols(offset + 7).toFloat)
+      .`with`(IMUField.ry.toString, cols(offset + 8).toFloat)
+      .`with`(IMUField.rz.toString, cols(offset + 9).toFloat)
+      .`with`(IMUField.mx.toString, cols(offset + 10).toFloat)
+      .`with`(IMUField.my.toString, cols(offset + 11).toFloat)
+      .`with`(IMUField.mz.toString, cols(offset + 12).toFloat)
+  }
+
+  final case class ImportFile(filename: String)
+
+  final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
 }
 
 class ImportActor extends Actor with ActorLogging {
   override def receive: Receive = {
     case ImportFile(filename) =>
-      Source fromFile filename getLines() map ImportActor.processLine
-      Source.fromFile(filename).getLines().map(ImportActor.processLine)
+      val records = Source.fromFile(filename).getLines()
+        .map(ImportActor.processLine)
+        .map(_.`with`(Tables.RawData.Field.subject.toString, filename))
+      r.table(Tables.RawData.name).insert(records.asJava)
   }
 }

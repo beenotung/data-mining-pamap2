@@ -19,16 +19,20 @@ object Tables {
   object Status extends Table {
     override def name: String = "status"
 
+    override def fields: Iterable[String] = Field.values.map(_.toString)
+
     object Field extends Enumeration {
       type Field = Value
       val actionStatus, pendingIds, dispatchedIds = Value
     }
-
-    override def fields: Iterable[String] = Field.values.map(_.toString)
   }
 
   object IMU extends Table {
+    val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
+
     override def name: String = "IMU"
+
+    override def fields: Iterable[String] = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -41,36 +45,34 @@ object Tables {
       relativeTemperature,
       polarRadius, polarTheta, polarPhi = Value
     }
-
-    val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
-
-    override def fields: Iterable[String] = Field.values.map(_.toString)
   }
 
   object RawData extends Table {
     override def name: String = "raw_data"
 
+    override def fields = Field.values.map(_.toString)
+
     object Field extends Enumeration {
       type Field = Value
-      val timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
+      val subject, timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
     }
-
-    override def fields = Field.values.map(_.toString)
   }
 
   object TestingData extends Table {
     override def name: String = "testing_data"
 
+    override def fields = Field.values.map(_.toString)
+
     object Field extends Enumeration {
       type Field = Value
       val timestamp, activityId, heartRate, hand, chest, ankle = Value
     }
-
-    override def fields = Field.values.map(_.toString)
   }
 
   object TestingResult extends Table {
     override def name: String = "testing_result"
+
+    override def fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -78,12 +80,12 @@ object Tables {
       /* Array[ testingDataId : correct<Boolean> ] */
       val results = Value
     }
-
-    override def fields = Field.values.map(_.toString)
   }
 
   object ItemsetCount extends Table {
     override def name: String = "itemset_count"
+
+    override def fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -91,19 +93,17 @@ object Tables {
       val itemset = Value
       val count = Value
     }
-
-    override def fields = Field.values.map(_.toString)
   }
 
   object AssociationRule extends Table {
     override def name: String = "association_rule"
 
+    override def fields = Field.values.map(_.toString)
+
     object Field extends Enumeration {
       type Field = Value
       val itemset, support, confidence, interest, useful = Value
     }
-
-    override def fields = Field.values.map(_.toString)
   }
 
 }

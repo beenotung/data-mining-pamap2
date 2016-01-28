@@ -1,19 +1,12 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.ActionStatus
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
   * Created by beenotung on 1/21/16.
   */
 object DispatchActor {
-
-  object ActionStatus extends Enumeration {
-    type Status = Value
-    val checkStatus, init, importing, preProcess, learning, testing = Value
-  }
-
 }
 
 /**
@@ -36,7 +29,7 @@ class DispatchActor extends Actor with ActorLogging {
     case msg => log debug s"received message : $msg"
   }
 
-  def getCurrentActionStatus: DispatchActor.ActionStatus.Status = {
+  def getCurrentActionStatus: ActionStatus.Status = {
     if (DatabaseHelper.hasInit)
       ActionStatus.importing
     else
@@ -49,9 +42,6 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   def doImport() = {
-//    Moni
-//    context.system.actorSelection(MonitorActor.)
-//    hk.edu.polyu.datamining.pamap2.actor.
   }
 
   def doPreProcess() = ???

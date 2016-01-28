@@ -13,7 +13,7 @@ object Main extends App {
     val system = ActorSystem(c.clusterName, c.config)
 
     // Register a monitor actor for demo purposes
-    system.actorOf(Props[actor.MonitorActor], "cluster-monitor")
+    system.actorOf(Props[actor.MonitorActor])
 
     system.log info s"ActorSystem ${system.name} started successfully"
 
@@ -27,7 +27,7 @@ object Main extends App {
         ), "task-dispatcher")
     else
     // register a ComputeActor
-      system.actorOf(Props[actor.ComputeActor], "compute-manager")
+      system.actorOf(Props[actor.ComputeActor])
   }
 
 }
