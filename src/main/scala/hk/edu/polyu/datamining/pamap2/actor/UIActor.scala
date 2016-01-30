@@ -24,8 +24,8 @@ class UIActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case msg: ImportFile => context.actorOf(Props[ImportActor]) ! msg
-    case ProcessingImport(filename)=>MonitorController.instance.importingFile(filename)
-    case FinishedImport(filename) => MonitorController.instance.importedFile(filename)
+    case ProcessingImport(filename)=>MonitorController.importingFile(filename)
+    case FinishedImport(filename) => MonitorController.importedFile(filename)
     case msg =>
       log info s"received message : $msg"
       ???

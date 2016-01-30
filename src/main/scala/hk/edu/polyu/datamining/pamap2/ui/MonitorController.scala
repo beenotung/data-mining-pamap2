@@ -2,12 +2,14 @@ package hk.edu.polyu.datamining.pamap2.ui
 
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
+import javafx.application.Platform
 import javafx.event.ActionEvent
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.actor.UIActor
+import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.io.Source
 
@@ -15,7 +17,20 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
-  var instance: MonitorController = null
+  private var instance: MonitorController = null
+
+  def importingFile(filename: String) = {
+    Platform runLater (() => {
+      instance.status_left.setText(s"importing $filename")
+    })
+  }
+
+  def importedFile(filename: String) = {
+    Platform runLater (() => {
+      instance.status_left.setText(s"imported $filename")
+      instance.handleNextFile()
+    })
+  }
 }
 
 class MonitorController extends MonitorControllerSkeleton {
@@ -23,14 +38,6 @@ class MonitorController extends MonitorControllerSkeleton {
   var pendingFiles = new ConcurrentLinkedQueue[File]
   var handlingFile = false
 
-  def importingFile(filename: String) = {
-    status_left.setText(s"importing $filename")
-  }
-
-  def importedFile(filename: String) = {
-    status_left.setText(s"imported $filename")
-    handleNextFile()
-  }
 
   def handleNextFile() = {
     val file = pendingFiles.poll()
