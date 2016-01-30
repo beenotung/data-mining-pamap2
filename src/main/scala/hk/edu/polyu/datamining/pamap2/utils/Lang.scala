@@ -4,7 +4,9 @@ import java.util.function.Consumer
 
 import com.rethinkdb.gen.ast._
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.collection.{immutable, mutable}
 import scala.language.implicitConversions
 
 /**
@@ -44,6 +46,42 @@ object Lang {
   }
 
 
-  /*  Others    */
+  /*    Others    */
   implicit def unit(x: Any): Unit = Unit
+
+  implicit def not[A](f: A => Boolean)(a: A): Boolean = !f(a)
+
+  /*  range  */
+  def isWrapped(outer: immutable.Range, inner: immutable.Range): Boolean = {
+    outer.contains(inner.start) && outer.contains(inner.last)
+  }
+
+  def hasIntersect(r1: immutable.Range, r2: immutable.Range): Boolean =
+    r1.contains(r2.start) || r1.contains(r2.last) ||
+      r2.contains(r1.start) || r2.contains(r1.last)
+
+  def hasIntersect(r: immutable.Range) = hasIntersect(r, _)
+
+  @tailrec
+  def nonIntersectRanges(r1: immutable.Range, r2: immutable.Range): Set[immutable.Range] = {
+    if (hasIntersect(r1, r2)) {
+      if (isWrapped(r1, r2))
+        Set(Range(r1.start, r2.start - r1.step, r1.step), Range(r2.last + r1.step, r2.last))
+      else
+        nonIntersectRanges(r2, r1)
+    } else Set(r1, r2)
+  }
+
+  def nonIntersectRanges(r: immutable.Range) = nonIntersectRanges(r, _)
+
+  def remove(range: immutable.Range)(implicit ranges: mutable.Set[immutable.Range]) = {
+    if (ranges.contains(range))
+      ranges -= range
+    else {
+      val intersectedRanges = ranges.filter(hasIntersect(range))
+      ranges.retain(not(intersectedRanges.contains))
+      val remainedRanges = intersectedRanges.flatMap(nonIntersectRanges(range))
+      ranges ++= remainedRanges
+    }
+  }
 }
