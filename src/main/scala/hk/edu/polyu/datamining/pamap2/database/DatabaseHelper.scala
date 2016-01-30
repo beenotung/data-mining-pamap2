@@ -12,14 +12,28 @@ import hk.edu.polyu.datamining.pamap2.utils.Lang._
 object DatabaseHelper {
   val r = com.rethinkdb.RethinkDB.r
   private val config = ConfigFactory parseResources "database.conf"
-  private val hostname = config getString "rethinkdb.host"
+  //  private val hostname = config getString "rethinkdb.host"
   private val port = config getInt "rethinkdb.port"
   private val dbname = config getString "rethinkdb.dbname"
-  private val conn = r.connection()
-    .hostname(hostname)
-    .port(port)
-    .db(dbname)
-    .connect()
+  private val conn = {
+    try {
+      val hostname = config getString "rethinkdb.host"
+      r.connection()
+          .hostname(hostname)
+          .port(port)
+          .db(dbname)
+          .connect()
+    }
+    catch {
+      case e: Exception =>
+        val hostname = config getString "rethinkdb.backup_host"
+        r.connection()
+            .hostname(hostname)
+            .port(port)
+            .db(dbname)
+            .connect()
+    }
+  }
 
   def createDatabaseIfNotExist(dbname: String): util.HashMap[String, AnyRef] = {
     r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
@@ -70,8 +84,8 @@ object DatabaseHelper {
     r.table(statusTableName).insert(r.hashMap(statusFieldName, currentStatus)).run(conn)
     /* create other tables */
     Tables.tableNames
-      .filterNot(statusTableName.equals)
-      .foreach(t => unit(r.tableCreate(t).run(conn)))
+        .filterNot(statusTableName.equals)
+        .foreach(t => unit(r.tableCreate(t).run(conn)))
     /* update status */
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }

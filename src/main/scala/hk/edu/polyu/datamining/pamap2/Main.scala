@@ -25,6 +25,9 @@ object Main extends App {
           PoisonPill.getInstance,
           ClusterSingletonManagerSettings.create(system)
         ), "task-dispatcher")
+    else if (Cluster(system).selfRoles.contains("ui"))
+    // register a UIActor
+      system.actorOf(Props[actor.UIActor])
     else
     // register a ComputeActor
       system.actorOf(Props[actor.ComputeActor])
