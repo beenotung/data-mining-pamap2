@@ -7,6 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   * Created by beenotung on 1/21/16.
   */
 object DispatchActor {
+  val Name = "task-dispatcher"
 }
 
 /**
@@ -14,7 +15,8 @@ object DispatchActor {
   */
 class DispatchActor extends Actor with ActorLogging {
   override def preStart() = {
-    log debug s"Starting ${getClass.getSimpleName}"
+    log info s"Starting ${getClass.getSimpleName}"
+    log info s"The path of this ${getClass.getSimpleName} is ${self.path}"
     self ! ActionStatus.checkStatus
   }
 

@@ -3,6 +3,7 @@ package hk.edu.polyu.datamining.pamap2
 import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor
 
 object Main extends App {
 
@@ -24,7 +25,7 @@ object Main extends App {
           Props[actor.DispatchActor],
           PoisonPill.getInstance,
           ClusterSingletonManagerSettings.create(system)
-        ), "task-dispatcher")
+        ), DispatchActor.Name)
     else if (Cluster(system).selfRoles.contains("ui"))
     // register a UIActor
       system.actorOf(Props[actor.UIActor])

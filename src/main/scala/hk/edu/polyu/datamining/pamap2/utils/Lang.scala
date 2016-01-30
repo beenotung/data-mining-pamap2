@@ -1,5 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
+import java.util.function.Consumer
+
 import com.rethinkdb.gen.ast._
 
 import scala.collection.JavaConverters._
@@ -9,10 +11,18 @@ import scala.language.implicitConversions
   * Created by beenotung on 1/25/16.
   */
 object Lang {
+  /*    Java Support    */
   implicit def runnable(fun: () => Unit): Runnable = new Runnable {
-    override def run() = fun
+    override def run() = fun()
   }
 
+  implicit def seqToList[A](seq: Seq[A]): java.util.List[A] = seq.asJava
+
+  implicit def consumer[A](fun: A => Unit): Consumer[A] = new Consumer[A] {
+    override def accept(t: A): Unit = fun(t)
+  }
+
+  /*    RethinkDB support    */
   implicit def reqlFunction0(fun: () => Object): ReqlFunction0 = new ReqlFunction0 {
     override def apply(): Object = fun()
   }
@@ -33,7 +43,7 @@ object Lang {
     override def apply(arg1: ReqlExpr, arg2: ReqlExpr, arg3: ReqlExpr, arg4: ReqlExpr): Object = fun(arg1, arg2, arg3, arg4)
   }
 
-  implicit def seqToList[A](seq: Seq[A]): java.util.List[A] = seq.asJava
 
+  /*  Others    */
   implicit def unit(x: Any): Unit = Unit
 }

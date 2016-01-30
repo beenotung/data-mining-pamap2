@@ -13,6 +13,11 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class MonitorApplication extends Application {
+  public static Stage stage = null;
+
+  public static Stage getStage() {
+    return stage;
+  }
 
   public static void main(String[] args) {
     launch(args);
@@ -20,6 +25,7 @@ public class MonitorApplication extends Application {
 
   @Override
   public void start(Stage stage) throws IOException {
+    MonitorApplication.stage = stage;
     Parent root = FXMLLoader.load(getClass().getResource("MonitorApplication.fxml"));
     Scene scene = new Scene(root);
     Config config = ConfigFactory.parseResources("node.ui.conf");
