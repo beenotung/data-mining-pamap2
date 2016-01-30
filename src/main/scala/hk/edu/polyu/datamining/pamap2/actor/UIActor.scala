@@ -1,17 +1,14 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor.{Actor, ActorLogging, Props}
-import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
-import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
-import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
+import java.io.File
+
+import akka.actor.{ActorPath, Actor, ActorLogging}
 
 /**
   * Created by beenotung on 1/30/16.
   */
 object UIActor {
   var instance: UIActor = null
-
-
 }
 
 class UIActor extends Actor with ActorLogging {

@@ -1,34 +1,38 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
+import akka.actor.SupervisorStrategy.{Escalate, Stop}
 import akka.actor._
-import akka.routing.{RoundRobinRoutingLogic, Routee, Router}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.Register
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import akka.routing.{ActorRefRoutee, Broadcast, RoundRobinRoutingLogic, Router}
+import hk.edu.polyu.datamining.pamap2.actor.LocalDispatchActor.Work
 
 /**
-  * Created by beenotung on 1/21/16.
+  * Created by beenotung on 1/26/16.
   */
-object DispatchActor {
-  val Name = "task-dispatcher"
+object GlobalDispatchActor {
 
-  def getActorSelection(context: ActorContext): ActorSelection =
-    context.actorSelection(context.self.path.root / "user" / Name / "singleton")
+  sealed trait Work
 
-  sealed trait Command
-
-  object Register extends Command
 
 }
 
-/**
-  * this is design to be singleton
-  */
-class DispatchActor extends Actor with ActorLogging {
+object LocalDispatchActor {
 
-  import scala.concurrent.duration._
-  import scala.language.postfixOps
+  sealed trait Work
 
+  case class Import(filename: String) extends Work
+
+}
+
+class GlobalDispatchActor extends Actor with ActorLogging {
+  override def receive: Actor.Receive = ???
+}
+
+import akka.actor.SupervisorStrategy.{Restart, Resume}
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+class LocalDispatchActor extends Actor with ActorLogging {
   override val supervisorStrategy =
     OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
       case e: ArithmeticException => Resume
@@ -36,63 +40,45 @@ class DispatchActor extends Actor with ActorLogging {
       case e: IllegalArgumentException => Stop
       case e: Exception => Escalate
     }
-  var routeeActorRefs = Set.empty[ActorRef]
   var router = {
-    Router(RoundRobinRoutingLogic(), Vector.empty[Routee])
+    val routees = Vector.fill(Runtime.getRuntime.availableProcessors()) {
+      val actorRef = context actorOf Props[WorkerActor]
+      context watch actorRef
+      ActorRefRoutee(actorRef)
+    }
+    Router(RoundRobinRoutingLogic(), routees)
   }
 
-  override def preStart() = {
-    log info s"Starting ${getClass.getSimpleName}"
-    log info s"The path of this ${getClass.getSimpleName} is ${self.path}"
-    self ! ActionStatus.checkStatus
-  }
-
-  var idealRoutees=Set.empty[ActorRef]
-
-  def dispatch(msg: Any) = {
-    router route(msg, sender)
-  }
-
-  override def receive: Receive = {
-    case ActionStatus.checkStatus => self ! getCurrentActionStatus
-    case ActionStatus.init => doInit()
-    case ActionStatus.importing => doImport()
-    case ActionStatus.preProcess => doPreProcess()
-    case ActionStatus.learning => doLearning()
-    case ActionStatus.testing => doTesting()
-    case Register =>
-      context watch sender
-      router addRoutee sender
-      routeeActorRefs += sender
+  override def receive = {
+    case status: ActionState.ActionStatusType => router.route(Broadcast(status), self)
+    case w: Work => router.route(w, sender())
     case Terminated(actorRef) =>
-      context unwatch actorRef
-      router removeRoutee actorRef
-      routeeActorRefs -= actorRef
-    case work: ComputeActor.Work => dispatch(work)
-    case action: ActionStatus.Status => log debug s"received action request : $action"
-    case msg =>
-      log info s"received unsuported message : $msg"
-      ???
+      router = router removeRoutee actorRef
+      val newActorRef = context actorOf Props[WorkerActor]
+      context watch newActorRef
+      router = router addRoutee actorRef
+    case msg => log info s"Unsupported message : $msg"
   }
+}
 
-  def getCurrentActionStatus: ActionStatus.Status = {
-    if (DatabaseHelper.hasInit)
-      ActionStatus.importing
-    else
-      ActionStatus.init
+class WorkerActor extends Actor with ActorLogging {
+  var concreteActor: ActorRef = null
+
+  override def receive: Actor.Receive = {
+    case status: ActionState.ActionStatusType =>
+      if (concreteActor != null)
+        concreteActor ! PoisonPill
+      status match {
+        case ActionState.importing => concreteActor = context.actorOf(Props[ImportActor])
+        case ActionState.preProcess => concreteActor = context.actorOf(Props[PreProcessDataActor])
+        case ActionState.learning => ???
+        case ActionState.testing => ???
+        case _ => log info s"Unsupported ActionStatus : $status"
+      }
+    case w: Work =>
+      if (concreteActor == null)
+        throw new IllegalStateException("no concreteActor (has not received ActionStatus)")
+      concreteActor forward w
+    case msg => log info s"received message : $msg"
   }
-
-  def doInit() = {
-    DatabaseHelper.init(ActionStatus.init.toString, ActionStatus.importing.toString)
-    self ! ActionStatus.importing
-  }
-
-  def doImport() = {
-  }
-
-  def doPreProcess() = ???
-
-  def doLearning() = ???
-
-  def doTesting() = ???
 }
