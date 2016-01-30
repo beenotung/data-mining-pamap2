@@ -3,7 +3,7 @@ package hk.edu.polyu.datamining.pamap2
 import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor
+import hk.edu.polyu.datamining.pamap2.actor.{StateActor, StateActor$}
 
 object Main extends App {
 
@@ -19,19 +19,19 @@ object Main extends App {
     system.log info s"ActorSystem ${system.name} started successfully"
 
     if (Cluster(system).selfRoles.contains("seed"))
-    // set DispatchActor singleton
+    // set StateActor singleton
       system.actorOf(
         ClusterSingletonManager.props(
-          Props[actor.DispatchActor],
+          Props[actor.StateActor],
           PoisonPill.getInstance,
           ClusterSingletonManagerSettings.create(system)
-        ), DispatchActor.Name)
+        ), StateActor.Name)
     else if (Cluster(system).selfRoles.contains("ui"))
     // register a UIActor
       system.actorOf(Props[actor.UIActor])
     else
     // register a ComputeActor
-      system.actorOf(Props[actor.ComputeActor])
+      system.actorOf(Props[actor.LocalDispatchActor])
   }
 
 }
