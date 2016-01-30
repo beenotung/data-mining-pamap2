@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2.ui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -11,19 +12,22 @@ import java.util.ResourceBundle;
  */
 public class MonitorControllerSkeleton {
   @FXML // ResourceBundle that was given to the FXMLLoader
-  private ResourceBundle resources;
+  protected ResourceBundle resources;
 
   @FXML // URL location of the FXML file that was given to the FXMLLoader
-  private URL location;
+  protected URL location;
+
+  @FXML // fx:id="status_left"
+  protected Label status_left; // Value injected by FXMLLoader
 
   @FXML
   void select_import_file(ActionEvent event) {
 
   }
 
-  @FXML
-    // This method is called by the FXMLLoader when initialization is complete
+  @FXML // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
+    assert status_left != null : "fx:id=\"status_left\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
 
   }
 }

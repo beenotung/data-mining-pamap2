@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import java.lang.*?>
 <?import java.util.*?>
 <?import javafx.scene.control.*?>
@@ -7,7 +8,7 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorControllerSkeleton">
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
@@ -61,7 +62,7 @@
                   <content>
                     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
-                              <Button layoutX="277.0" layoutY="14.0" mnemonicParsing="false" text="Select File" />
+                              <Button layoutX="277.0" layoutY="14.0" mnemonicParsing="false" onAction="#select_import_file" text="Select File" />
                            </children>
                         </AnchorPane>
                   </content>
@@ -80,5 +81,14 @@
             </Accordion>
       </children>
     </AnchorPane>
+      <BorderPane>
+         <left>
+            <Label fx:id="status_left" text="Label" BorderPane.alignment="CENTER">
+               <BorderPane.margin>
+                  <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
+               </BorderPane.margin>
+            </Label>
+         </left>
+      </BorderPane>
   </children>
 </VBox>

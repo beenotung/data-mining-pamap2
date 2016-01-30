@@ -46,3 +46,8 @@ javaOptions in runNode ++= Seq(
 lazy val runUI = taskKey[Unit]("Start a UI node on 127.0.0.1:2553")
 fullRunTask(runUI, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--ui", "127.0.0.1:2551")
 fork in runUI := true
+
+javaOptions in runUI ++= Seq(
+  "-Dclustering.ip=127.0.0.1",
+  "-Dclustering.port=2552"
+)

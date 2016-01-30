@@ -6,7 +6,6 @@ import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.database.Tables
 
 import scala.collection.JavaConverters._
-import scala.io.Source
 import scala.language.postfixOps
 
 /**
@@ -43,17 +42,23 @@ object ImportActor {
       .`with`(IMUField.mz.toString, cols(offset + 12).toFloat)
   }
 
-  final case class ImportFile(filename: String)
+  case class ImportFile(filename: String, lines: Seq[String])
 
   final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
+
 }
 
 class ImportActor extends Actor with ActorLogging {
   override def receive: Receive = {
-    case ImportFile(filename) =>
-      val records = Source.fromFile(filename).getLines()
+    case ImportFile(filename, lines) =>
+      sender ! ProcessingImport(filename)
+      val records = lines
         .map(ImportActor.processLine)
         .map(_.`with`(Tables.RawData.Field.subject.toString, filename))
       r.table(Tables.RawData.name).insert(records.asJava)
+      sender ! FinishedImport(filename)
+    case msg =>
+      log info s"received unsupported message $msg"
+      ???
   }
 }

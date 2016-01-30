@@ -14,12 +14,15 @@ import java.io.IOException;
 
 public class MonitorApplication extends Application {
   public static Stage stage = null;
+  public static boolean ready = false;
 
   public static Stage getStage() {
     return stage;
   }
 
   public static void main(String[] args) {
+    if (!ready)
+      throw new AssertionError("The application is not ready, make sure this application is started by akka actor (UIActor)");
     launch(args);
   }
 
