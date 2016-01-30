@@ -9,6 +9,8 @@ import scala.collection.JavaConverters._
 import scala.collection.{immutable, mutable}
 import scala.language.implicitConversions
 
+//import scala.collection.immutable.Range does not import for rethinkdb better support
+
 /**
   * Created by beenotung on 1/25/16.
   */
@@ -60,19 +62,19 @@ object Lang {
     r1.contains(r2.start) || r1.contains(r2.last) ||
       r2.contains(r1.start) || r2.contains(r1.last)
 
-  def hasIntersect(r: immutable.Range) = hasIntersect(r, _)
+  def hasIntersect(r: immutable.Range): (immutable.Range) => Boolean = hasIntersect(r, _)
 
   @tailrec
   def nonIntersectRanges(r1: immutable.Range, r2: immutable.Range): Set[immutable.Range] = {
     if (hasIntersect(r1, r2)) {
       if (isWrapped(r1, r2))
-        Set(Range(r1.start, r2.start - r1.step, r1.step), Range(r2.last + r1.step, r2.last))
+        Set[immutable.Range](immutable.Range(r1.start, r2.start - r1.step, r1.step), immutable.Range(r2.last + r1.step, r2.last))
       else
         nonIntersectRanges(r2, r1)
     } else Set(r1, r2)
   }
 
-  def nonIntersectRanges(r: immutable.Range) = nonIntersectRanges(r, _)
+  def nonIntersectRanges(r: immutable.Range): (immutable.Range) => Set[immutable.Range] = nonIntersectRanges(r, _)
 
   def remove(range: immutable.Range)(implicit ranges: mutable.Set[immutable.Range]) = {
     if (ranges.contains(range))

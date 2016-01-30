@@ -3,28 +3,91 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor.SupervisorStrategy.{Escalate, Stop}
 import akka.actor._
 import akka.routing.{ActorRefRoutee, Broadcast, RoundRobinRoutingLogic, Router}
-import hk.edu.polyu.datamining.pamap2.actor.LocalDispatchActor.Work
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.Task.TaskType
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.{DispatchTask, FinishRangedTask, FinishTask, Task}
+import hk.edu.polyu.datamining.pamap2.utils.Lang
+
+import scala.collection.mutable
 
 /**
   * Created by beenotung on 1/26/16.
   */
-object GlobalDispatchActor {
+object DispatchActor {
 
-  sealed trait Work
+  object Task extends Enumeration {
+    type TaskType = Value
+    val `import` = Value
+  }
 
+  sealed trait Task {
+    val taskType: TaskType
+  }
 
-}
+  sealed trait LocalTask extends Task
 
-object LocalDispatchActor {
+  sealed trait RemoteTask extends Task
 
-  sealed trait Work
+  case class Import(filename: String) extends LocalTask {
+    override val taskType: TaskType = Task.`import`
+  }
 
-  case class Import(filename: String) extends Work
+  case class RangedTask[TaskType >: Task](task: TaskType, range: Range)
+
+  case class DispatchTask(task: TaskType)
+
+  case class FinishTask(task: TaskType)
+
+  case class DispatchRangedTask(task: TaskType, range: Range)
+
+  case class FinishRangedTask(task: TaskType, range: Range)
 
 }
 
 class GlobalDispatchActor extends Actor with ActorLogging {
-  override def receive: Actor.Receive = ???
+  /* dispatched */
+  val pendingTasks = mutable.HashMap.empty[TaskType, mutable.Set[Range]]
+  /* not dispatched yet */
+  val queuedTasks = mutable.HashMap.empty[TaskType, mutable.Set[Range]]
+
+  val taskOwners = mutable.HashMap.empty[TaskType, mutable.Set[ActorRef]]
+
+  def dispatch = ???
+
+  override def receive: Actor.Receive = {
+    case DispatchTask(task) =>
+      if (!taskOwners.keySet.contains(task)) {
+        /* new task */
+        val start: Int = 0
+        val end: Int = ??? //TODO get count from database
+        queuedTasks.getOrElseUpdate(task, mutable.Set.empty) += Range(start, end)
+        dispatch
+      }
+      taskOwners.getOrElseUpdate(task, mutable.Set.empty[ActorRef]) += sender
+    case FinishTask(task) =>
+
+    case FinishRangedTask(task, range) =>
+      pendingTasks.get(task) match {
+        case Some(ranges) =>
+          if (ranges.contains(range))
+            ranges -= range
+          else
+            Lang.remove(range)(ranges)
+          if (ranges.isEmpty) {
+            pendingTasks -= task
+            taskOwners.remove(task) match {
+              case Some(actors) =>
+                val msg: FinishTask = FinishTask(task)
+                actors.foreach(_ ! msg)
+              case None => log error "finished task, but no task owners to report to"
+            }
+          }
+          else
+            dispatch
+        case None =>
+      }
+    case msg => log error s"Unsupported message : $msg"
+      ???
+  }
 }
 
 import akka.actor.SupervisorStrategy.{Restart, Resume}
@@ -51,13 +114,13 @@ class LocalDispatchActor extends Actor with ActorLogging {
 
   override def receive = {
     case status: ActionState.ActionStatusType => router.route(Broadcast(status), self)
-    case w: Work => router.route(w, sender())
+    case w: Task => router.route(w, sender())
     case Terminated(actorRef) =>
       router = router removeRoutee actorRef
       val newActorRef = context actorOf Props[WorkerActor]
       context watch newActorRef
       router = router addRoutee actorRef
-    case msg => log info s"Unsupported message : $msg"
+    case msg => log error s"Unsupported message : $msg"
   }
 }
 
@@ -73,12 +136,12 @@ class WorkerActor extends Actor with ActorLogging {
         case ActionState.preProcess => concreteActor = context.actorOf(Props[PreProcessDataActor])
         case ActionState.learning => ???
         case ActionState.testing => ???
-        case _ => log info s"Unsupported ActionStatus : $status"
+        case _ => log error s"Unsupported ActionStatus : $status"
       }
-    case w: Work =>
+    case w: Task =>
       if (concreteActor == null)
         throw new IllegalStateException("no concreteActor (has not received ActionStatus)")
       concreteActor forward w
-    case msg => log info s"received message : $msg"
+    case msg => log error s"Unsupported message : $msg"
   }
 }
