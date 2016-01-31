@@ -40,7 +40,8 @@ fork in runNode := true
 
 javaOptions in runNode ++= Seq(
   "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2552"
+  "-Dclustering.port=2552",
+  "-XX:+AggressiveHeap"
 )
 
 lazy val runUI = taskKey[Unit]("Start a UI node on 127.0.0.1:2553")
@@ -49,5 +50,10 @@ fork in runUI := true
 
 javaOptions in runUI ++= Seq(
   "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2552"
+  "-Dclustering.port=2552",
+  "-XX:+AggressiveHeap"
 )
+
+//javaOptions ++= Seq(
+//  "-XX:+AggressiveHeap"
+//)

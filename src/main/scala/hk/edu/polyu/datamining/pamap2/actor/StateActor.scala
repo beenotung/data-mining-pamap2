@@ -14,15 +14,14 @@ object ActionState extends Enumeration {
 
   def next(actionStatusType: ActionStatusType): ActionStatusType = actionStatusType match {
     case null => checkStatus
-    //case `checkStatus` => init
-    //case `init` => importing
-    //case `importing` => imported
-    //case `imported` => preProcess
-    //case `preProcess` => learning
-    //case `learning` => testing
-    //case `testing` => finished
+    case `checkStatus` => init
+    case `init` => importing
+    case `importing` => imported
+    case `imported` => preProcess
+    case `preProcess` => learning
+    case `learning` => testing
+    case `testing` => finished
     case `finished` => finished
-    case _ => Value(actionStatusType.id + 1)
   }
 }
 

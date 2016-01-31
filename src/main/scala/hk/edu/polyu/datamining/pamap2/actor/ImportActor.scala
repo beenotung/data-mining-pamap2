@@ -14,9 +14,11 @@ object ImportActor {
   lazy val IMUField = Tables.IMU.Field
   lazy val RawField = Tables.RawData.Field
 
+  var lineOffset = 0
 
   def processLine(line: String) = {
-    println(s"processing line : $line")
+    lineOffset += 1
+    println(s"processing line : ${lineOffset}")
     val cols = line.split(" ")
     r.hashMap(RawField.timestamp.toString, toFloat(cols(0)))
       .`with`(RawField.activityId.toString, toByte(cols(1)))

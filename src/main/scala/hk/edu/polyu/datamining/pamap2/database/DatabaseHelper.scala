@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 object DatabaseHelper {
+  val BestInsertCount = 200
   val r = com.rethinkdb.RethinkDB.r
   private val config = ConfigFactory parseResources "database.conf"
   //  private val hostname = config getString "rethinkdb.host"
@@ -92,5 +93,9 @@ object DatabaseHelper {
       .foreach(t => unit(r.tableCreate(t).run(conn)))
     /* update status */
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
+  }
+
+  def insert[A](table: String, rows: java.util.List[A]): util.HashMap[String,AnyRef] = {
+    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
   }
 }

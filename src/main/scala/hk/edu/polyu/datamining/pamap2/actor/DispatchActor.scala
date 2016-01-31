@@ -5,6 +5,7 @@ import akka.actor._
 import akka.routing.{ActorRefRoutee, Broadcast, RoundRobinRoutingLogic, Router}
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.Task.TaskType
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.{DispatchTask, FinishRangedTask, FinishTask, Task}
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang
 
 import scala.collection.mutable
@@ -13,6 +14,7 @@ import scala.collection.mutable
   * Created by beenotung on 1/26/16.
   */
 object DispatchActor {
+  val PreferedTaskSize = DatabaseHelper.BestInsertCount
 
   sealed trait Task {
     val taskType: TaskType

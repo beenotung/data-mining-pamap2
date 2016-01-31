@@ -86,4 +86,10 @@ object Lang {
       ranges ++= remainedRanges
     }
   }
+
+  implicit def fork(runnable: Runnable): Thread = {
+    val thread = new Thread(runnable)
+    thread.start()
+    thread
+  }
 }

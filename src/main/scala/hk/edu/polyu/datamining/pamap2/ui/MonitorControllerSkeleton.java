@@ -25,7 +25,8 @@ public class MonitorControllerSkeleton {
 
   }
 
-  @FXML // This method is called by the FXMLLoader when initialization is complete
+  @FXML
+    // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
     assert status_left != null : "fx:id=\"status_left\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
 

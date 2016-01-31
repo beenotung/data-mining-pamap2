@@ -15,7 +15,7 @@ object SingletonActor {
     def actorSelection(context: ActorContext): ActorSelection =
       context.actorSelection(context.self.path.root / "user" / name / SINGLETON)
 
-    def actorProps: Props
+    protected def actorProps: Props
 
     def init(system: ActorSystem) =
       system.actorOf(
