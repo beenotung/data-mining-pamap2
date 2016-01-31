@@ -27,13 +27,14 @@ object ActionState extends Enumeration {
 }
 
 object StateActor {
-  sealed trait Message
 
-  case object GetStatus extends Message
+  sealed trait Message
 
   case class GetStatus(actionState: ActionStatusType) extends Message
 
   case class SetStatus(actionState: ActionStatusType) extends Message
+
+  case object GetStatus extends Message
 
   /** @deprecated */
   case object NextStatus extends Message
@@ -60,13 +61,6 @@ class StateActor extends Actor with ActorLogging {
       ???
   }
 
-  def findCurrentActionStatus: ActionStatusType = {
-    if (DatabaseHelper.hasInit)
-      ActionState.importing
-    else
-      ActionState.init
-  }
-
   def onStatusChanged(oldStatus: ActionStatusType, newStatus: ActionStatusType) = {
     status = newStatus
     val nextMessage: Option[StateActor.Message] = newStatus match {
@@ -89,11 +83,15 @@ class StateActor extends Actor with ActorLogging {
     }
   }
 
-  def doInit() = {
-    DatabaseHelper.init(ActionState.init.toString, ActionState.importing.toString)
+  def findCurrentActionStatus: ActionStatusType = {
+    if (DatabaseHelper.hasInit)
+      ActionState.importing
+    else
+      ActionState.init
   }
 
-  def doImport() = {
+  def doInit() = {
+    DatabaseHelper.init(ActionState.init.toString, ActionState.importing.toString)
   }
 
   def doPreProcess() = ???
@@ -101,4 +99,7 @@ class StateActor extends Actor with ActorLogging {
   def doLearning() = ???
 
   def doTesting() = ???
+
+  def doImport() = {
+  }
 }

@@ -51,13 +51,6 @@ class MonitorController extends MonitorControllerSkeleton {
     status_left.setText("")
   }
 
-  def handleNextFile() = {
-    val file = pendingFiles.poll()
-    if (file != null) {
-      UIActor ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
-    }
-  }
-
   override def select_import_file(event: ActionEvent) = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
@@ -68,5 +61,12 @@ class MonitorController extends MonitorControllerSkeleton {
     pendingFiles.addAll(files)
     if (!handlingFile)
       handleNextFile()
+  }
+
+  def handleNextFile() = {
+    val file = pendingFiles.poll()
+    if (file != null) {
+      UIActor ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
+    }
   }
 }

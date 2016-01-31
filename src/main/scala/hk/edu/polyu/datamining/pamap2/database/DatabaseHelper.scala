@@ -16,23 +16,27 @@ object DatabaseHelper {
   private val port = config getInt "rethinkdb.port"
   private val dbname = config getString "rethinkdb.dbname"
   private val conn = {
-    try {
+    val conn = try {
       val hostname = config getString "rethinkdb.host"
+      println(s"Database : try to connect to $hostname")
       r.connection()
+        .hostname(hostname)
+        .port(port)
+        .db(dbname)
+        .connect()
+    }
+    catch {
+      case e: Exception =>
+        val hostname = config getString "rethinkdb.backup_host"
+        println(s"Database : try to connect to $hostname")
+        r.connection()
           .hostname(hostname)
           .port(port)
           .db(dbname)
           .connect()
     }
-    catch {
-      case e: Exception =>
-        val hostname = config getString "rethinkdb.backup_host"
-        r.connection()
-            .hostname(hostname)
-            .port(port)
-            .db(dbname)
-            .connect()
-    }
+    println(s"Database : connected to ${conn.hostname}")
+    conn
   }
 
   def createDatabaseIfNotExist(dbname: String): util.HashMap[String, AnyRef] = {
@@ -84,8 +88,8 @@ object DatabaseHelper {
     r.table(statusTableName).insert(r.hashMap(statusFieldName, currentStatus)).run(conn)
     /* create other tables */
     Tables.tableNames
-        .filterNot(statusTableName.equals)
-        .foreach(t => unit(r.tableCreate(t).run(conn)))
+      .filterNot(statusTableName.equals)
+      .foreach(t => unit(r.tableCreate(t).run(conn)))
     /* update status */
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }

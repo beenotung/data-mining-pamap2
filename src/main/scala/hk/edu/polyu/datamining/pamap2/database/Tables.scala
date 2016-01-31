@@ -25,6 +25,7 @@ object Tables {
       type Field = Value
       val actionStatus, pendingIds, dispatchedIds = Value
     }
+
   }
 
   object IMU extends Table {
@@ -45,6 +46,7 @@ object Tables {
       relativeTemperature,
       polarRadius, polarTheta, polarPhi = Value
     }
+
   }
 
   object RawData extends Table {
@@ -56,6 +58,7 @@ object Tables {
       type Field = Value
       val subject, timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
     }
+
   }
 
   object TestingData extends Table {
@@ -67,6 +70,7 @@ object Tables {
       type Field = Value
       val timestamp, activityId, heartRate, hand, chest, ankle = Value
     }
+
   }
 
   object TestingResult extends Table {
@@ -80,6 +84,7 @@ object Tables {
       /* Array[ testingDataId : correct<Boolean> ] */
       val results = Value
     }
+
   }
 
   object ItemsetCount extends Table {
@@ -93,6 +98,7 @@ object Tables {
       val itemset = Value
       val count = Value
     }
+
   }
 
   object AssociationRule extends Table {
@@ -104,6 +110,7 @@ object Tables {
       type Field = Value
       val itemset, support, confidence, interest, useful = Value
     }
+
   }
 
 }

@@ -18,10 +18,13 @@ class MonitorActor extends Actor with ActorLogging {
   // clean up on shutdown
   override def postStop(): Unit = cluster unsubscribe self
 
+
   // handle the member events
   def receive = {
     case MemberUp(member) => log info s"Member up ${member.address} with roles ${member.roles}"
     case UnreachableMember(member) => log warning s"Member unreachable ${member.address} with roles ${member.roles}"
+    case MemberRemoved(member, _) if member.address.equals(cluster.selfAddress) => log info "shutdown local JVM"
+      System.exit(0)
     case MemberRemoved(member, previousStatus) => log info s"Member removed ${member.address} with roles ${member.roles}"
     case MemberExited(member) => log info s"Member exited ${member.address} with roles ${member.roles}"
     case _: MemberEvent => // ignore

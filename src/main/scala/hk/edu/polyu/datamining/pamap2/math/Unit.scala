@@ -30,16 +30,6 @@ object MotionCategory extends Enumeration {
       .filter(_._2)
       .keys.toList.asJava
 
-  def fromList(flags: java.util.List[String]): MotionCategory =
-    new MotionCategory(
-      up = flags.contains(up.toString),
-      down = flags.contains(down.toString),
-      left = flags.contains(left.toString),
-      right = flags.contains(right.toString),
-      front = flags.contains(front.toString),
-      back = flags.contains(back.toString)
-    )
-
   def toMap(motion: MotionCategory): Map[String, Boolean] =
     Map(
       (up.toString, motion.up),
@@ -48,6 +38,16 @@ object MotionCategory extends Enumeration {
       (right.toString, motion.right),
       (front.toString, motion.front),
       (back.toString, motion.back)
+    )
+
+  def fromList(flags: java.util.List[String]): MotionCategory =
+    new MotionCategory(
+      up = flags.contains(up.toString),
+      down = flags.contains(down.toString),
+      left = flags.contains(left.toString),
+      right = flags.contains(right.toString),
+      front = flags.contains(front.toString),
+      back = flags.contains(back.toString)
     )
 
   def fromMap(map: Map[String, Boolean]): MotionCategory =

@@ -41,10 +41,10 @@ case class NodeConfig(isSeed: Boolean = false, isUI: Boolean = false, seedNodes:
 
     // build the final config and resolve it
     (ConfigFactory parseString seedNodesString)
-        .withValue("clustering.ip", ipValue)
-        .withFallback(ConfigFactory parseResources configPath)
-        .withFallback(config)
-        .resolve
+      .withValue("clustering.ip", ipValue)
+      .withFallback(ConfigFactory parseResources configPath)
+      .withFallback(config)
+      .resolve
   }
 
 }

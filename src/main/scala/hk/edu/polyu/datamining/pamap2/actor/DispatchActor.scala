@@ -13,10 +13,6 @@ import scala.collection.mutable
   * Created by beenotung on 1/26/16.
   */
 object DispatchActor {
-  object Task extends Enumeration {
-    type TaskType = Value
-    val `import` = Value
-  }
 
   sealed trait Task {
     val taskType: TaskType
@@ -39,6 +35,11 @@ object DispatchActor {
   case class DispatchRangedTask(task: TaskType, range: Range)
 
   case class FinishRangedTask(task: TaskType, range: Range)
+
+  object Task extends Enumeration {
+    type TaskType = Value
+    val `import` = Value
+  }
 
 }
 

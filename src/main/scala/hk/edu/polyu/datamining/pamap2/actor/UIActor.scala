@@ -1,11 +1,12 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
+import akka.cluster.Cluster
 import com.rethinkdb.RethinkDB.r
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
-import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.collection.JavaConverters._
 
@@ -24,16 +25,17 @@ class UIActor extends Actor with ActorLogging {
   override def preStart = {
     UIActor.instance = this
     MonitorApplication.ready = true
-    new Thread(() => {
+    new Thread(runnable(() => {
       try {
         MonitorApplication.main(Array.empty)
+        val cluster = Cluster(context.system)
+        cluster.leave(cluster.selfAddress)
       }
       catch {
         case e: IllegalStateException => log warning "restarting UIActor with existing JavaFX Application"
           MonitorController.restarted("UIActor is restarted")
       }
-    }
-    ).start()
+    })).start()
   }
 
   override def receive: Receive = {
