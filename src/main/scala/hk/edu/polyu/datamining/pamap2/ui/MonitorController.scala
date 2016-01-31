@@ -4,6 +4,8 @@ import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import javafx.application.Platform
 import javafx.event.ActionEvent
+import javafx.scene.control.Alert
+import javafx.scene.control.Alert.AlertType
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
@@ -19,18 +21,20 @@ import scala.io.Source
 object MonitorController {
   private var instance: MonitorController = null
 
-  def importingFile(filename: String) = {
-    Platform runLater (() => {
-      instance.status_left.setText(s"importing $filename")
-    })
-  }
+  def importingFile(filename: String) = Platform runLater (() => {
+    instance.status_left.setText(s"importing $filename")
+  })
 
-  def importedFile(filename: String) = {
-    Platform runLater (() => {
-      instance.status_left.setText(s"imported $filename")
-      instance.handleNextFile()
-    })
-  }
+
+  def importedFile(filename: String) = Platform runLater (() => {
+    instance.status_left.setText(s"imported $filename")
+    instance.handleNextFile()
+  })
+
+
+  def restarted(reason: String) = Platform runLater (() => {
+    instance.promptRestarted(reason)
+  })
 }
 
 class MonitorController extends MonitorControllerSkeleton {
@@ -38,11 +42,19 @@ class MonitorController extends MonitorControllerSkeleton {
   var pendingFiles = new ConcurrentLinkedQueue[File]
   var handlingFile = false
 
+  def promptRestarted(reason: String): Unit = {
+    val alert = new Alert(AlertType.WARNING)
+    alert.setTitle("Warning")
+    alert.setHeaderText("Service Restarted")
+    alert.setContentText(reason)
+    alert.showAndWait()
+    status_left.setText("")
+  }
 
   def handleNextFile() = {
     val file = pendingFiles.poll()
     if (file != null) {
-      UIActor.instance.self ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
+      UIActor ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
     }
   }
 

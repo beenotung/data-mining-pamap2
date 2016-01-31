@@ -14,7 +14,10 @@ import scala.collection.JavaConverters._
   * Created by beenotung on 1/30/16.
   */
 object UIActor {
-  var instance: UIActor = null
+  /* only reference to local instance */
+  private var instance: UIActor = null
+
+  def !(msg: Any) = instance.self ! msg
 }
 
 class UIActor extends Actor with ActorLogging {
@@ -22,7 +25,13 @@ class UIActor extends Actor with ActorLogging {
     UIActor.instance = this
     MonitorApplication.ready = true
     new Thread(() => {
-      MonitorApplication.main(Array.empty)
+      try {
+        MonitorApplication.main(Array.empty)
+      }
+      catch {
+        case e: IllegalStateException => log warning "restarting UIActor with existing JavaFX Application"
+          MonitorController.restarted("UIActor is restarted")
+      }
     }
     ).start()
   }
