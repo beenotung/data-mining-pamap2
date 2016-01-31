@@ -4,61 +4,64 @@ package hk.edu.polyu.datamining.pamap2.math
   * Created by beenotung on 1/21/16.
   */
 
-import scala.math.{Pi, pow, sqrt, tan}
+import scala.math.{Pi, atan, pow, sqrt, toDegrees}
 
 object Process {
 
   def vectorToPolar(part: DisplacementVector): DisplacementPolar = {
-    val radius = sqrt(pow(part.x,2)+pow(part.y,2)+pow(part.z,2))
+    val radius: Double = sqrt(pow(part.x, 2) + pow(part.y, 2) + pow(part.z, 2))
 
     // theta
-    var theta = 0.0
-    if(part.x>0){
-      theta = toDegrees(atan(part.y/part.x))
-    }else if(part.x<0 && part.y>0){
-      theta = toDegrees(atan(part.y/part.x))+Pi
-    }else if(part.x<0 && part.y<0){
-      theta = toDegrees(atan(part.y/part.x))-Pi
-    }else if(part.x==0 && part.y>0){
-      theta = Pi/2
-    }else{  //x==0 && y<0
-      theta = Pi/(-2)
-    }
+    val theta: Double =
+      if (part.x > 0) {
+        toDegrees(atan(part.y / part.x))
+      } else if (part.x < 0 && part.y > 0) {
+        toDegrees(atan(part.y / part.x)) + Pi
+      } else if (part.x < 0 && part.y < 0) {
+        toDegrees(atan(part.y / part.x)) - Pi
+      } else if (part.x == 0 && part.y > 0) {
+        Pi / 2
+      } else {
+        //x==0 && y<0
+        Pi / (-2)
+      }
+
 
     //phi
-    var phi = 0.0
-    if(part.z>0){
-      phi = toDegrees(atan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z))
-    }else if(part.z<0){
-      phi = toDegrees(atan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z))+Pi
-    }else{ // Z==0
-      phi = Pi/2
-    }
+    val phi: Double =
+      if (part.z > 0) {
+        toDegrees(atan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z))
+      } else if (part.z < 0) {
+        toDegrees(atan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z)) + Pi
+      } else {
+        // Z==0
+        Pi / 2
+      }
 
-    (radius,theta,radius)
+    new DisplacementPolar(radius.toFloat, theta.toFloat, phi.toFloat)
   }
 
   def motionToBoolean(part: DisplacementVector): (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) = {
     var front = false
-    var  back = false
+    var back = false
     var left = false
     var right = false
     var up = false
     var down = false
 
-    if(part.x>0){
+    if (part.x > 0) {
       front = true
-    }else if(part.x<0){
+    } else if (part.x < 0) {
       back = true
     }
-    if(part.y>0){
+    if (part.y > 0) {
       left = true
-    }else if(part.y>0){
+    } else if (part.y > 0) {
       right = true
     }
-    if(part.z>0){
+    if (part.z > 0) {
       up = true
-    }else if(part.z<0){
+    } else if (part.z < 0) {
       down = false
     }
     (front, back, left, right, up, down)
