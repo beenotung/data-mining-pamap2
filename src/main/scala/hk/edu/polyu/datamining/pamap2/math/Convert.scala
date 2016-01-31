@@ -6,7 +6,7 @@ package hk.edu.polyu.datamining.pamap2.math
 
 import scala.math.{Pi, atan, pow, sqrt, toDegrees}
 
-object Process {
+object Convert {
 
   def vectorToPolar(part: DisplacementVector): DisplacementPolar = {
     val radius: Double = sqrt(pow(part.x, 2) + pow(part.y, 2) + pow(part.z, 2))
@@ -41,32 +41,6 @@ object Process {
     new DisplacementPolar(radius.toFloat, theta.toFloat, phi.toFloat)
   }
 
-  def motionToBoolean(part: DisplacementVector): (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) = {
-    var front = false
-    var back = false
-    var left = false
-    var right = false
-    var up = false
-    var down = false
-
-    if (part.x > 0) {
-      front = true
-    } else if (part.x < 0) {
-      back = true
-    }
-    if (part.y > 0) {
-      left = true
-    } else if (part.y > 0) {
-      right = true
-    }
-    if (part.z > 0) {
-      up = true
-    } else if (part.z < 0) {
-      down = false
-    }
-    (front, back, left, right, up, down)
-  }
-
   //TODO
   def findRelativeBodyMotion(chest: DisplacementPolar, hand: DisplacementPolar, ankle: DisplacementPolar): DisplacementPolar = ???
 
@@ -99,5 +73,4 @@ object Process {
     (arm_k / chest_k, 1, ankle_k / chest_k)
   }
 
-  def categoryMotion(motion: DisplacementPolar): MotionCategory = ???
 }
