@@ -3,6 +3,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang.{fork, runnable}
 
@@ -46,7 +47,7 @@ class UIActor extends Actor with ActorLogging {
     MonitorController.importingFile(filename)
     //TODO send to workers ?
     val router = SingletonActor.GlobalDispatcher.actorSelection(context)
-    lines.grouped(DispatchActor.PreferedTaskSize)
+    lines.grouped(DatabaseHelper.BestInsertCount)
       .foreach(lines => router ! ImportFile(filename, lines))
     //val subjectField: String = Tables.RawData.Field.subject.toString
     //val tableName: String = Tables.RawData.name

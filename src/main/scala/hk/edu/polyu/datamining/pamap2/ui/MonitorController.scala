@@ -57,10 +57,11 @@ class MonitorController extends MonitorControllerSkeleton {
     fileChooser.getExtensionFilters.addAll(
       new ExtensionFilter("Data Files", "*.dat")
     )
-    val files = fileChooser.showOpenMultipleDialog(MonitorApplication.getStage)
-    pendingFiles.addAll(files)
-    if (!handlingFile)
-      handleNextFile()
+    fileChooser.showOpenMultipleDialog(MonitorApplication.getStage) match {
+      case files: List[File] if files != null => pendingFiles.addAll(files)
+        if (!handlingFile) handleNextFile()
+      case _ =>
+    }
   }
 
   def handleNextFile() = {
