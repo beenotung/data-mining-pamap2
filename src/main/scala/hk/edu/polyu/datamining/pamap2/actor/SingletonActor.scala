@@ -9,16 +9,18 @@ import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerS
 object SingletonActor {
   val SINGLETON = "singleton"
 
-  sealed trait SingletonActorType[A >: Actor] {
+  sealed trait SingletonActorType {
     val name: String
 
     def actorSelection(context: ActorContext): ActorSelection =
       context.actorSelection(context.self.path.root / "user" / name / SINGLETON)
 
+    def actorProps: Props
+
     def init(system: ActorSystem) =
       system.actorOf(
         ClusterSingletonManager.props(
-          Props[A],
+          actorProps,
           PoisonPill.getInstance,
           ClusterSingletonManagerSettings.create(system)
         ), name)
@@ -26,10 +28,14 @@ object SingletonActor {
 
   case object StateHolder extends SingletonActorType {
     override val name: String = "state-holder"
+
+    override def actorProps: Props = Props[StateActor]
   }
 
   case object GlobalDispatcher extends SingletonActorType {
     override val name: String = "global-dispatcher"
+
+    override def actorProps: Props = Props[GlobalDispatchActor]
   }
 
 }
