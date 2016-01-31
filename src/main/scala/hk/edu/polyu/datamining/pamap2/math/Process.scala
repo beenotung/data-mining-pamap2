@@ -9,35 +9,59 @@ import scala.math.{Pi, pow, sqrt, tan}
 object Process {
 
   def vectorToPolar(part: DisplacementVector): DisplacementPolar = {
-    val radius = sqrt(pow(part.x, 2) + pow(part.y, 2) + pow(part.z, 2))
+    val radius = sqrt(pow(part.x,2)+pow(part.y,2)+pow(part.z,2))
 
     // theta
     var theta = 0.0
-    if (part.x > 0) {
-      theta = pow(tan(part.y / part.x), -1)
-    } else if (part.x < 0 && part.y > 0) {
-      theta = pow(tan(part.y / part.x), -1) + Pi
-    } else if (part.x < 0 && part.y < 0) {
-      theta = pow(tan(part.y / part.x), -1) - Pi
-    } else if (part.x == 0 && part.y > 0) {
-      theta = Pi / 2
-    } else {
-      //x==0 && y<0
-      theta = Pi / (-2)
+    if(part.x>0){
+      theta = toDegrees(atan(part.y/part.x))
+    }else if(part.x<0 && part.y>0){
+      theta = toDegrees(atan(part.y/part.x))+Pi
+    }else if(part.x<0 && part.y<0){
+      theta = toDegrees(atan(part.y/part.x))-Pi
+    }else if(part.x==0 && part.y>0){
+      theta = Pi/2
+    }else{  //x==0 && y<0
+      theta = Pi/(-2)
     }
 
     //phi
     var phi = 0.0
-    if (part.z > 0) {
-      phi = pow(tan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z), -1)
-    } else if (part.z < 0) {
-      phi = pow(tan(sqrt(pow(part.x, 2) + pow(part.y, 2)) / part.z), -1) + Pi
-    } else {
-      // Z==0
-      phi = Pi / 2
+    if(part.z>0){
+      phi = toDegrees(atan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z))
+    }else if(part.z<0){
+      phi = toDegrees(atan((sqrt(pow(part.x,2)+pow(part.y,2)))/part.z))+Pi
+    }else{ // Z==0
+      phi = Pi/2
     }
 
-    new DisplacementPolar(radius.toFloat, theta.toFloat, phi.toFloat)
+    (radius,theta,radius)
+  }
+
+  def motionToBoolean(part: DisplacementVector): (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) = {
+    var front = false
+    var  back = false
+    var left = false
+    var right = false
+    var up = false
+    var down = false
+
+    if(part.x>0){
+      front = true
+    }else if(part.x<0){
+      back = true
+    }
+    if(part.y>0){
+      left = true
+    }else if(part.y>0){
+      right = true
+    }
+    if(part.z>0){
+      up = true
+    }else if(part.z<0){
+      down = false
+    }
+    (front, back, left, right, up, down)
   }
 
   //TODO
