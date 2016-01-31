@@ -13,7 +13,6 @@ import scala.collection.mutable
   * Created by beenotung on 1/26/16.
   */
 object DispatchActor {
-
   object Task extends Enumeration {
     type TaskType = Value
     val `import` = Value
@@ -51,7 +50,10 @@ class GlobalDispatchActor extends Actor with ActorLogging {
 
   val taskOwners = mutable.HashMap.empty[TaskType, mutable.Set[ActorRef]]
 
-  def dispatch = ???
+  override def preStart = {
+    log info s"Starting ${getClass.getSimpleName}"
+    log info s"The path of this ${getClass.getSimpleName} is ${self.path}"
+  }
 
   override def receive: Actor.Receive = {
     case DispatchTask(task) =>
@@ -88,6 +90,8 @@ class GlobalDispatchActor extends Actor with ActorLogging {
     case msg => log error s"Unsupported message : $msg"
       ???
   }
+
+  def dispatch = ???
 }
 
 import akka.actor.SupervisorStrategy.{Restart, Resume}
@@ -132,7 +136,7 @@ class WorkerActor extends Actor with ActorLogging {
       if (concreteActor != null)
         concreteActor ! PoisonPill
       status match {
-        case ActionState.importing => concreteActor = context.actorOf(Props[ImportActor])
+        //        case ActionState.importing => concreteActor = context.actorOf(Props[ImportActor])
         case ActionState.preProcess => concreteActor = context.actorOf(Props[PreProcessDataActor])
         case ActionState.learning => ???
         case ActionState.testing => ???

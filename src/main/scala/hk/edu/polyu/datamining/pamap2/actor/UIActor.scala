@@ -1,9 +1,14 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging}
+import com.rethinkdb.RethinkDB.r
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
+import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
-import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
+import hk.edu.polyu.datamining.pamap2.utils.Lang._
+
+import scala.collection.JavaConverters._
+
 
 /**
   * Created by beenotung on 1/30/16.
@@ -23,9 +28,14 @@ class UIActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case msg: ImportFile => context.actorOf(Props[ImportActor]) ! msg
-    case ProcessingImport(filename)=>MonitorController.importingFile(filename)
-    case FinishedImport(filename) => MonitorController.importedFile(filename)
+    case ImportFile(filename, lines) =>
+      MonitorController.importingFile(filename)
+      val records = lines
+        .map(ImportActor.processLine)
+        .map(_.`with`(Tables.RawData.Field.subject.toString, filename))
+      r.table(Tables.RawData.name).insert(records.asJava)
+      MonitorController.importedFile(filename)
+      DispatchActor
     case msg =>
       log info s"received message : $msg"
       ???

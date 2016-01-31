@@ -2,15 +2,14 @@ package hk.edu.polyu.datamining.pamap2
 
 import akka.actor._
 import akka.cluster.Cluster
-import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
-import hk.edu.polyu.datamining.pamap2.actor.{StateActor, StateActor$}
+import hk.edu.polyu.datamining.pamap2.actor.SingletonActor
 
 object Main extends App {
 
   val nodeConfig = NodeConfig parse args
 
   // If a config could be parsed - start the system
-  nodeConfig map { c =>
+  nodeConfig foreach { c =>
     val system = ActorSystem(c.clusterName, c.config)
 
     // Register a monitor actor for demo purposes
@@ -18,14 +17,13 @@ object Main extends App {
 
     system.log info s"ActorSystem ${system.name} started successfully"
 
-    if (Cluster(system).selfRoles.contains("seed"))
-    // set StateActor singleton
-      system.actorOf(
-        ClusterSingletonManager.props(
-          Props[actor.StateActor],
-          PoisonPill.getInstance,
-          ClusterSingletonManagerSettings.create(system)
-        ), StateActor.Name)
+    /* set singletons */
+    SingletonActor.StateHolder.init(system)
+    SingletonActor.GlobalDispatcher.init(system)
+
+    if (Cluster(system).selfRoles.contains("seed")) {
+      // TODO save IP to database?
+    }
     else if (Cluster(system).selfRoles.contains("ui"))
     // register a UIActor
       system.actorOf(Props[actor.UIActor])

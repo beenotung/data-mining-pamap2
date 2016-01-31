@@ -1,11 +1,8 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor.{Actor, ActorLogging}
 import com.rethinkdb.RethinkDB.r
-import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.database.Tables
 
-import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 /**
@@ -46,19 +43,4 @@ object ImportActor {
 
   final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
 
-}
-
-class ImportActor extends Actor with ActorLogging {
-  override def receive: Receive = {
-    case ImportFile(filename, lines) =>
-      sender ! ProcessingImport(filename)
-      val records = lines
-        .map(ImportActor.processLine)
-        .map(_.`with`(Tables.RawData.Field.subject.toString, filename))
-      r.table(Tables.RawData.name).insert(records.asJava)
-      sender ! FinishedImport(filename)
-    case msg =>
-      log info s"received unsupported message $msg"
-      ???
-  }
 }

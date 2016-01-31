@@ -27,8 +27,6 @@ object ActionState extends Enumeration {
 }
 
 object StateActor {
-  val Name = "task-dispatcher"
-
   sealed trait Message
 
   case object GetStatus extends Message
