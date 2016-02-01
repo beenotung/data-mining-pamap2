@@ -25,6 +25,7 @@ class UIActor extends Actor with ActorLogging {
     new Thread(runnable(() => {
       try {
         MonitorApplication.main(Array.empty)
+        /* leave cluster when GUI window is closed by user */
         val cluster = Cluster(context.system)
         cluster.leave(cluster.selfAddress)
         System.exit(0)
@@ -38,8 +39,12 @@ class UIActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case ImportFile(filename, lines) => fork(() => importFile(filename, lines))
+    case StateActor.ResponseStatus(status) => MonitorController.updateStatus(status)
+      log info "received status"
+    case StateActor.AskStatus => SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
+      log info "asking for status"
     case msg =>
-      log info s"received message : $msg"
+      log error s"unsupported message : $msg"
       ???
   }
 

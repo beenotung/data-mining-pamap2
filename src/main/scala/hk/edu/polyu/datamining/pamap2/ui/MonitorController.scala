@@ -9,8 +9,9 @@ import javafx.scene.control.Alert.AlertType
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
+import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
-import hk.edu.polyu.datamining.pamap2.actor.UIActor
+import hk.edu.polyu.datamining.pamap2.actor.{StateActor, UIActor}
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.io.Source
@@ -19,21 +20,38 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
+  def onActorSystemTerminated() = instance match {
+    case controller: MonitorController if controller != null =>
+      Platform runLater runnable(() => {
+        val alert = new Alert(AlertType.ERROR)
+        alert.setTitle("Error")
+        alert.setHeaderText("Actor System is shutdown")
+        alert.setContentText("check the console for more detail\ne.g. not implemented error (???)")
+        alert.showAndWait()
+        Platform.exit()
+      })
+    case _ =>
+  }
+
+
   private var instance: MonitorController = null
 
   def importingFile(filename: String) = Platform runLater (() => {
-    instance.status_left.setText(s"importing $filename")
+    instance.left_status.setText(s"importing $filename")
   })
 
 
   def importedFile(filename: String) = Platform runLater (() => {
-    instance.status_left.setText(s"imported $filename")
+    instance.left_status.setText(s"imported $filename")
     instance.handleNextFile()
   })
 
-
   def restarted(reason: String) = Platform runLater (() => {
     instance.promptRestarted(reason)
+  })
+
+  def updateStatus(status: ActionStatusType): Unit = Platform runLater (() => {
+    instance.updated_right_status(status)
   })
 }
 
@@ -42,13 +60,17 @@ class MonitorController extends MonitorControllerSkeleton {
   var pendingFiles = new ConcurrentLinkedQueue[File]
   var handlingFile = false
 
+  override def customInit() = {
+    update_right_status(new ActionEvent())
+  }
+
   def promptRestarted(reason: String): Unit = {
     val alert = new Alert(AlertType.WARNING)
     alert.setTitle("Warning")
     alert.setHeaderText("Service Restarted")
     alert.setContentText(reason)
     alert.showAndWait()
-    status_left.setText("")
+    left_status.setText("")
   }
 
   override def select_import_file(event: ActionEvent) = {
@@ -62,6 +84,15 @@ class MonitorController extends MonitorControllerSkeleton {
         if (!handlingFile) handleNextFile()
       case _ =>
     }
+  }
+
+  override def update_right_status(event: ActionEvent) = {
+    right_status.setText("getting cluster status")
+    UIActor ! StateActor.AskStatus
+  }
+
+  def updated_right_status(statusType: ActionStatusType) = {
+    right_status.setText(statusType.toString)
   }
 
   def handleNextFile() = {

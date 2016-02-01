@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.StateActor.{GetStatus, NextStatus, SetStatus}
+import hk.edu.polyu.datamining.pamap2.actor.StateActor.{ResponseStatus, AskStatus, NextStatus, SetStatus}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
@@ -29,11 +29,11 @@ object StateActor {
 
   sealed trait Message
 
-  case class GetStatus(actionState: ActionStatusType) extends Message
+  case class ResponseStatus(actionState: ActionStatusType) extends Message
 
   case class SetStatus(actionState: ActionStatusType) extends Message
 
-  case object GetStatus extends Message
+  case object AskStatus extends Message
 
   /** @deprecated */
   case object NextStatus extends Message
@@ -53,7 +53,8 @@ class StateActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case GetStatus => sender ! status
+    case AskStatus => sender ! ResponseStatus(status)
+      log info "responded status"
     case NextStatus => self forward SetStatus(ActionState.next(status))
     case SetStatus(newStatus) => if (status == null || !status.equals(newStatus)) onStatusChanged(status, newStatus)
     case msg => log info s"received message : $msg"
