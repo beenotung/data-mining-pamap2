@@ -5,7 +5,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   */
 object DatabaseHelperTest extends App {
   //    val result: Object = DatabaseHelper.createDatabaseIfNotExist("testingNewDatabase")
-    val result = DatabaseHelper.init("a", "b")
+    val result = DatabaseHelper.resetTables("a", "b")
 //  val result = DatabaseHelper.hasInit
   println(s"result = $result")
   println(s"class = ${result.getClass}")

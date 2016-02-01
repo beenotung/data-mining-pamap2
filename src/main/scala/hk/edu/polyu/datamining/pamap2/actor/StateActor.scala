@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.StateActor.{ResponseStatus, AskStatus, NextStatus, SetStatus}
+import hk.edu.polyu.datamining.pamap2.actor.StateActor.{AskStatus, NextStatus, ResponseStatus, SetStatus}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
@@ -10,7 +10,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   */
 object ActionState extends Enumeration {
   type ActionStatusType = Value
-  val checkStatus, init, importing, imported, preProcess, learning, testing, finished = Value
+  val checkStatus, reset, init, importing, imported, preProcess, learning, testing, finished = Value
 
   def next(actionStatusType: ActionStatusType): ActionStatusType = actionStatusType match {
     case null => checkStatus
@@ -65,6 +65,8 @@ class StateActor extends Actor with ActorLogging {
     status = newStatus
     val nextMessage: Option[StateActor.Message] = newStatus match {
       case ActionState.checkStatus => Some(SetStatus(findCurrentActionStatus))
+      case ActionState.reset => doReset()
+        Some(ResponseStatus(ActionState.init))
       case ActionState.init => doInit()
         Some(NextStatus)
       case ActionState.importing => None
@@ -90,8 +92,12 @@ class StateActor extends Actor with ActorLogging {
       ActionState.init
   }
 
+  def doReset() = {
+    DatabaseHelper.resetTables(ActionState.init.toString, ActionState.importing.toString)
+  }
+
   def doInit() = {
-    DatabaseHelper.init(ActionState.init.toString, ActionState.importing.toString)
+    DatabaseHelper.initTables()
   }
 
   def doPreProcess() = ???

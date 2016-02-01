@@ -3,7 +3,6 @@ package hk.edu.polyu.datamining.pamap2
 import java.net.NetworkInterface
 
 import scala.collection.JavaConversions._
-
 object HostIP {
 
   /**
@@ -18,4 +17,11 @@ object HostIP {
       inet.getInetAddresses find (_ isSiteLocalAddress) map (_ getHostAddress)
     }
   }
+
+  def all(): java.util.List[String] =
+    NetworkInterface.getNetworkInterfaces
+      .flatMap {
+        _.getInetAddresses.map(_.getHostAddress)
+      }
+    .toList
 }

@@ -7,19 +7,28 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(Status, RawData, TestingData, TestingResult, ItemsetCount, AssociationRule)
+  val tableList = Seq(ClusterSeed, Status, RawData, TestingData, TestingResult, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
-    def name: String
+    val name: String
+    val fields: Iterable[String]
+  }
 
-    def fields: Iterable[String]
+  object ClusterSeed extends Table {
+    override val name = "cluster_seed"
+    override val fields = Field.values.map(_.toString)
+
+    object Field extends Enumeration {
+      type Field = Value
+      val host, port, config = Value
+    }
+
   }
 
   object Status extends Table {
-    override def name: String = "status"
-
-    override def fields: Iterable[String] = Field.values.map(_.toString)
+    override val name: String = "status"
+    override val fields: Iterable[String] = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -31,9 +40,8 @@ object Tables {
   object IMU extends Table {
     val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
 
-    override def name: String = "IMU"
-
-    override def fields: Iterable[String] = Field.values.map(_.toString)
+    override val name: String = "IMU"
+    override val fields: Iterable[String] = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -50,9 +58,8 @@ object Tables {
   }
 
   object RawData extends Table {
-    override def name: String = "raw_data"
-
-    override def fields = Field.values.map(_.toString)
+    override val name: String = "raw_data"
+    override val fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -62,9 +69,8 @@ object Tables {
   }
 
   object TestingData extends Table {
-    override def name: String = "testing_data"
-
-    override def fields = Field.values.map(_.toString)
+    override val name: String = "testing_data"
+    override val fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -74,9 +80,8 @@ object Tables {
   }
 
   object TestingResult extends Table {
-    override def name: String = "testing_result"
-
-    override def fields = Field.values.map(_.toString)
+    override val name: String = "testing_result"
+    override val fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -88,9 +93,8 @@ object Tables {
   }
 
   object ItemsetCount extends Table {
-    override def name: String = "itemset_count"
-
-    override def fields = Field.values.map(_.toString)
+    override val name: String = "itemset_count"
+    override val fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
@@ -102,9 +106,8 @@ object Tables {
   }
 
   object AssociationRule extends Table {
-    override def name: String = "association_rule"
-
-    override def fields = Field.values.map(_.toString)
+    override val name: String = "association_rule"
+    override val fields = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value
