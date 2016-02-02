@@ -20,6 +20,8 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
+  private var instance: MonitorController = null
+
   def onActorSystemTerminated() = instance match {
     case controller: MonitorController if controller != null =>
       Platform runLater runnable(() => {
@@ -32,9 +34,6 @@ object MonitorController {
       })
     case _ =>
   }
-
-
-  private var instance: MonitorController = null
 
   def importingFile(filename: String) = Platform runLater (() => {
     instance.left_status.setText(s"importing $filename")
@@ -64,6 +63,11 @@ class MonitorController extends MonitorControllerSkeleton {
     update_right_status(new ActionEvent())
   }
 
+  override def update_right_status(event: ActionEvent) = {
+    right_status.setText("getting cluster status")
+    UIActor ! StateActor.AskStatus
+  }
+
   def promptRestarted(reason: String): Unit = {
     val alert = new Alert(AlertType.WARNING)
     alert.setTitle("Warning")
@@ -86,19 +90,14 @@ class MonitorController extends MonitorControllerSkeleton {
     }
   }
 
-  override def update_right_status(event: ActionEvent) = {
-    right_status.setText("getting cluster status")
-    UIActor ! StateActor.AskStatus
-  }
-
-  def updated_right_status(statusType: ActionStatusType) = {
-    right_status.setText(statusType.toString)
-  }
-
   def handleNextFile() = {
     val file = pendingFiles.poll()
     if (file != null) {
       UIActor ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
     }
+  }
+
+  def updated_right_status(statusType: ActionStatusType) = {
+    right_status.setText(statusType.toString)
   }
 }

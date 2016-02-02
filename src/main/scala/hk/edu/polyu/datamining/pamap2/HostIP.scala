@@ -3,6 +3,7 @@ package hk.edu.polyu.datamining.pamap2
 import java.net.NetworkInterface
 
 import scala.collection.JavaConversions._
+
 object HostIP {
 
   /**
@@ -23,5 +24,5 @@ object HostIP {
       .flatMap {
         _.getInetAddresses.map(_.getHostAddress)
       }
-    .toList
+      .toList
 }

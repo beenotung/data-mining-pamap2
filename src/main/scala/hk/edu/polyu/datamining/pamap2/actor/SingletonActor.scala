@@ -16,8 +16,6 @@ object SingletonActor {
     def actorSelection(context: ActorContext): ActorSelection =
       context.actorSelection(context.self.path.root / "user" / name / SINGLETON)
 
-    protected def actorProps: Props
-
     def init(system: ActorSystem) =
       system.actorOf(
         ClusterSingletonManager.props(
@@ -31,6 +29,8 @@ object SingletonActor {
         singletonManagerPath = s"/user/$name",
         settings = ClusterSingletonProxySettings.create(system)
       ))
+
+    protected def actorProps: Props
   }
 
   case object StateHolder extends SingletonActorType {

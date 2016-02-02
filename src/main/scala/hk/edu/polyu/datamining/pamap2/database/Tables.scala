@@ -38,10 +38,9 @@ object Tables {
   }
 
   object IMU extends Table {
-    val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
-
     override val name: String = "IMU"
     override val fields: Iterable[String] = Field.values.map(_.toString)
+    val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
 
     object Field extends Enumeration {
       type Field = Value

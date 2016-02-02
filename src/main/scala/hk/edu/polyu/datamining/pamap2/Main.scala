@@ -6,6 +6,7 @@ import com.rethinkdb.RethinkDB
 import hk.edu.polyu.datamining.pamap2.actor.SingletonActor
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController
+import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 object Main extends App {
 
@@ -23,10 +24,12 @@ object Main extends App {
       s.substring(26, s.length - 2)
     })).get("generated_keys").asInstanceOf[java.util.List[String]].get(0)
 
-    system.registerOnTermination({
+    Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => {
       /* unregister self to database */
       DatabaseHelper.removeSeed(clusterSeedKey)
-      /* notify UI */
+    })))
+    system.registerOnTermination({
+      /* notify UI, will shutdown JVM */
       MonitorController.onActorSystemTerminated()
     })
 

@@ -41,16 +41,12 @@ object DatabaseHelper {
     conn
   }
 
-  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
-      dbExist,
-      r.hashMap("created", 0),
-      r.dbCreate(dbname)
-    )))
-  }
-
   def createDatabaseIfNotExistResult(dbname: String): util.HashMap[String, AnyRef] = {
     createDatabaseIfNotExist(dbname).run(conn)
+  }
+
+  def createTableDropIfExistResult(tableName: String): util.HashMap[String, AnyRef] = {
+    r.do_(createTableDropIfExist(tableName)).run(conn)
   }
 
   def createTableDropIfExist(tableName: String): java.util.List[_] = {
@@ -59,18 +55,6 @@ object DatabaseHelper {
       r.db(dbname).tableCreate(tableName)
     )
   }
-
-  def createTableDropIfExistResult(tableName: String): util.HashMap[String, AnyRef] = {
-    r.do_(createTableDropIfExist(tableName)).run(conn)
-  }
-
-  def createTableIfNotExist(tableName: String): ReqlExpr =
-    r.tableList().contains(tableName)
-      .do_(reqlFunction1(tableExist => r.branch(
-        tableExist,
-        r.hashMap("created", 0),
-        r.tableCreate(tableName)
-      )))
 
   def hasInit: Boolean = {
     val tableName: String = Tables.Status.name
@@ -91,17 +75,6 @@ object DatabaseHelper {
     ).run(conn)
   }
 
-  /**
-    * create database if not exist
-    * create tables if not exist
-    **/
-  def initTables(): Unit = {
-    val queries = new util.Vector[ReqlExpr]
-    queries add createDatabaseIfNotExist(dbname)
-    Tables.tableNames.foreach(tableName => queries add createTableIfNotExist(tableName))
-    r.expr(queries).run(conn)
-  }
-
   def addSeed(host: java.util.List[String], port: Int, config: Json): util.HashMap[String, AnyVal] = {
     initTables()
     val tableName = Tables.ClusterSeed.name
@@ -114,6 +87,33 @@ object DatabaseHelper {
         .`with`(configField, config)
     ).run(conn)
   }
+
+  /**
+    * create database if not exist
+    * create tables if not exist
+    **/
+  def initTables(): Unit = {
+    val queries = new util.Vector[ReqlExpr]
+    queries add createDatabaseIfNotExist(dbname)
+    Tables.tableNames.foreach(tableName => queries add createTableIfNotExist(tableName))
+    r.expr(queries).run(conn)
+  }
+
+  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
+    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
+      dbExist,
+      r.hashMap("created", 0),
+      r.dbCreate(dbname)
+    )))
+  }
+
+  def createTableIfNotExist(tableName: String): ReqlExpr =
+    r.tableList().contains(tableName)
+      .do_(reqlFunction1(tableExist => r.branch(
+        tableExist,
+        r.hashMap("created", 0),
+        r.tableCreate(tableName)
+      )))
 
   def removeSeed(host: String, port: Int): util.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
