@@ -1,6 +1,8 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
 import java.util.function.Consumer
+import javafx.event.EventHandler
+import javafx.util.Callback
 
 import com.rethinkdb.gen.ast._
 
@@ -24,6 +26,15 @@ object Lang {
 
   implicit def consumer[A](fun: A => Unit): Consumer[A] = new Consumer[A] {
     override def accept(t: A): Unit = fun(t)
+  }
+
+  /*    JavaFX Support    */
+  implicit def callback[X, Y](fun: X => Y): Callback[X, Y] = new Callback[X, Y] {
+    override def call(p: X): Y = fun(p)
+  }
+
+  implicit def eventHandler[A <: javafx.event.Event](fun: A => Unit): EventHandler[A] = new EventHandler[A] {
+    override def handle(t: A): Unit = fun(t)
   }
 
   /*    RethinkDB support    */

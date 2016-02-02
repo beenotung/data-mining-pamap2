@@ -1,82 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-<VBox xmlns:fx="http://javafx.com/fxml/1" prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.65"
-      fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
+
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="New"/>
-                        <MenuItem mnemonicParsing="false" text="Open…"/>
-                        <Menu mnemonicParsing="false" text="Open Recent"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" text="Close"/>
-                        <MenuItem mnemonicParsing="false" text="Save"/>
-                        <MenuItem mnemonicParsing="false" text="Save As…"/>
-                        <MenuItem mnemonicParsing="false" text="Revert"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" text="Preferences…"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" text="Quit"/>
+                        <MenuItem mnemonicParsing="false" text="New" />
+                        <MenuItem mnemonicParsing="false" text="Open…" />
+                        <Menu mnemonicParsing="false" text="Open Recent" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Close" />
+                        <MenuItem mnemonicParsing="false" text="Save" />
+                        <MenuItem mnemonicParsing="false" text="Save As…" />
+                        <MenuItem mnemonicParsing="false" text="Revert" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Preferences…" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Quit" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Undo"/>
-                        <MenuItem mnemonicParsing="false" text="Redo"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" text="Cut"/>
-                        <MenuItem mnemonicParsing="false" text="Copy"/>
-                        <MenuItem mnemonicParsing="false" text="Paste"/>
-                        <MenuItem mnemonicParsing="false" text="Delete"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" text="Select All"/>
-                        <MenuItem mnemonicParsing="false" text="Unselect All"/>
+                        <MenuItem mnemonicParsing="false" text="Undo" />
+                        <MenuItem mnemonicParsing="false" text="Redo" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Cut" />
+                        <MenuItem mnemonicParsing="false" text="Copy" />
+                        <MenuItem mnemonicParsing="false" text="Paste" />
+                        <MenuItem mnemonicParsing="false" text="Delete" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Select All" />
+                        <MenuItem mnemonicParsing="false" text="Unselect All" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="About MyHelloApp"/>
+                        <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
                     </items>
                 </Menu>
             </menus>
         </MenuBar>
         <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
             <children>
-                <Label alignment="CENTER" layoutX="155.0" layoutY="177.0" style="&#10;"
-                       text="Drag components from Library here…" textAlignment="CENTER" textFill="#9f9f9f"
-                       wrapText="false">
+                <Label alignment="CENTER" layoutX="155.0" layoutY="177.0" style="&#10;" text="Drag components from Library here…" textAlignment="CENTER" textFill="#9f9f9f" wrapText="false">
                     <font>
-                        <Font size="18.0"/>
+                        <Font size="18.0" />
                     </font>
                 </Label>
-                <Accordion layoutX="14.0" layoutY="14.0" prefHeight="344.0" prefWidth="609.0"
-                           AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                           AnchorPane.topAnchor="0.0">
+                <Accordion layoutX="14.0" layoutY="14.0" prefHeight="344.0" prefWidth="609.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                     <panes>
                         <TitledPane animated="false" text="import file">
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <Button layoutX="277.0" layoutY="14.0" mnemonicParsing="false"
-                                                onAction="#select_import_file" text="Select File"/>
+                                        <Button layoutX="277.0" layoutY="14.0" mnemonicParsing="false" onAction="#select_import_file" text="Select File" />
                                     </children>
                                 </AnchorPane>
                             </content>
                         </TitledPane>
-                        <TitledPane animated="false" text="untitled 2">
+                        <TitledPane animated="false" text="Association Rule Mining">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"/>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <ToggleButton layoutX="190.0" layoutY="14.0" mnemonicParsing="false" text="auto" />
+                              <Button layoutX="14.0" layoutY="14.0" mnemonicParsing="false" text="extract from raw data" />
+                              <Label layoutX="265.0" layoutY="19.0" text="Current Status : " />
+                              <TableView fx:id="association_rule_mining_process_table" layoutX="14.0" layoutY="40.0" prefHeight="200.0" prefWidth="604.0">
+                                <columns>
+                                  <TableColumn fx:id="association_rule_mining_process_table_process" prefWidth="130.0" text="Process" />
+                                  <TableColumn fx:id="association_rule_mining_process_table_auto" prefWidth="102.0" text="Auto" />
+                                </columns>
+                              </TableView>
+                              <ButtonBar layoutX="400.0" layoutY="7.0" prefHeight="40.0" prefWidth="200.0">
+                                <buttons>
+                                    <RadioButton mnemonicParsing="false" text="on" />
+                                    <RadioButton mnemonicParsing="false" text="off" />
+                                </buttons>
+                              </ButtonBar>
+                           </children></AnchorPane>
                             </content>
                         </TitledPane>
                         <TitledPane animated="false" text="untitled 3">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"/>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
                             </content>
                         </TitledPane>
                     </panes>
@@ -87,15 +102,14 @@
             <left>
                 <Label fx:id="left_status" text="ready" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
-                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
+                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
                     </BorderPane.margin>
                 </Label>
             </left>
             <right>
-                <Button fx:id="right_status" mnemonicParsing="false" onAction="#update_right_status"
-                        text="Cluster Status" BorderPane.alignment="CENTER">
+                <Button fx:id="right_status" mnemonicParsing="false" onAction="#update_right_status" text="Cluster Status" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
-                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
+                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
                     </BorderPane.margin>
                 </Button>
             </right>

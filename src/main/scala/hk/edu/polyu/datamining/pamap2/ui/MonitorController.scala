@@ -3,15 +3,19 @@ package hk.edu.polyu.datamining.pamap2.ui
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import javafx.application.Platform
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.ActionEvent
-import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.cell.PropertyValueFactory
+import javafx.scene.control.{Alert, TableView}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.actor.{StateActor, UIActor}
+import hk.edu.polyu.datamining.pamap2.ui.association_rule.ProcessCell
+import hk.edu.polyu.datamining.pamap2.utils.Lang
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.io.Source
@@ -60,6 +64,27 @@ class MonitorController extends MonitorControllerSkeleton {
   var handlingFile = false
 
   override def customInit() = {
+    val stage = MonitorApplication.getStage()
+
+    /*   init table   */
+    /* define table coluns */
+    association_rule_mining_process_table_process.setCellValueFactory(new PropertyValueFactory("name"))
+    association_rule_mining_process_table_auto.setSortable(false)
+    /* make column only show non-empty rows */
+    association_rule_mining_process_table_auto.setCellValueFactory(Lang.callback(
+      (feature: javafx.scene.control.TableColumn.CellDataFeatures[hk.edu.polyu.datamining.pamap2.association_rule.Process, hk.edu.polyu.datamining.pamap2.association_rule.Process]) => {
+        feature.getValue
+      }))
+    /* create button for each row */
+    association_rule_mining_process_table_auto.setCellFactory(Lang.callback(
+      (column) => {
+        new ProcessCell(stage, association_rule_mining_process_table)
+      }
+    ))
+    /* init rows */
+    association_rule_mining_process_table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY)
+    association_rule_mining_process_table.getItems.addAll(hk.edu.polyu.datamining.pamap2.association_rule.Process.all)
+    /*   get cluster status   */
     update_right_status(new ActionEvent())
   }
 
