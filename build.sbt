@@ -19,7 +19,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.github.scopt" %% "scopt" % "3.2.0",
   "org.slf4j" % "slf4j-simple" % "1.6.2",
-  "com.rethinkdb" % "rethinkdb-driver" % "2.2-beta-1"
+  "com.rethinkdb" % "rethinkdb-driver" % "2.2-beta-1",
+  "org.openjdk.jmh" % "jmh-core" % "0.1"
 )
 //  "com.rethinkdb" % "rethink-java-driver" % "0.3"
 
