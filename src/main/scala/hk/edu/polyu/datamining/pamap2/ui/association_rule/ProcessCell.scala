@@ -11,7 +11,7 @@ import hk.edu.polyu.datamining.pamap2.utils.Lang._
   * Created by beenotung on 2/2/16.
   */
 class ProcessCell(val stage: Stage, val table: TableView[hk.edu.polyu.datamining.pamap2.association_rule.Process])
-  extends TableCell[hk.edu.polyu.datamining.pamap2.association_rule.Process, hk.edu.polyu.datamining.pamap2.association_rule.Process] {
+  extends TableCell[hk.edu.polyu.datamining.pamap2.association_rule.Process, java.lang.Boolean] {
   val onButton = new RadioButton("On")
   val offButton = new RadioButton("Off")
   val toggleGroup = new ToggleGroup()
@@ -41,11 +41,11 @@ class ProcessCell(val stage: Stage, val table: TableView[hk.edu.polyu.datamining
 
   //  override def updateItem(item:Boolean,empty:Boolean)={}
   /** places an add button in the row only if the row is not empty. */
-  override protected def updateItem(item: hk.edu.polyu.datamining.pamap2.association_rule.Process, empty: Boolean) {
+  override protected def updateItem(item: java.lang.Boolean, empty: Boolean) {
     super.updateItem(item, empty)
     /* add to ui */
     if (!empty) {
-      onValueChanged(item.isAutoProperty.get())
+      onValueChanged(!item)
       setContentDisplay(ContentDisplay.GRAPHIC_ONLY)
       setGraphic(pane)
     }

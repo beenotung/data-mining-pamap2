@@ -3,7 +3,9 @@ package hk.edu.polyu.datamining.pamap2.ui
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import javafx.application.Platform
+import javafx.beans.InvalidationListener
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.event.ActionEvent
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.cell.PropertyValueFactory
@@ -72,13 +74,13 @@ class MonitorController extends MonitorControllerSkeleton {
     association_rule_mining_process_table_auto.setSortable(false)
     /* make column only show non-empty rows */
     association_rule_mining_process_table_auto.setCellValueFactory(Lang.callback(
-      (feature: javafx.scene.control.TableColumn.CellDataFeatures[hk.edu.polyu.datamining.pamap2.association_rule.Process, hk.edu.polyu.datamining.pamap2.association_rule.Process]) => {
-        feature.getValue
+      (feature: javafx.scene.control.TableColumn.CellDataFeatures[hk.edu.polyu.datamining.pamap2.association_rule.Process, java.lang.Boolean]) => {
+        feature.getValue.isAutoProperty
       }))
     /* create button for each row */
     association_rule_mining_process_table_auto.setCellFactory(Lang.callback(
       (column) => {
-        new ProcessCell(stage, association_rule_mining_process_table)
+        new ProcessCell(stage,association_rule_mining_process_table)
       }
     ))
     /* init rows */

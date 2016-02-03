@@ -30,7 +30,7 @@ public class MonitorControllerSkeleton {
   protected TableColumn<Process, String> association_rule_mining_process_table_process; // Value injected by FXMLLoader
 
   @FXML // fx:id="association_rule_mining_process_table_auto"
-  protected TableColumn<Process,Process > association_rule_mining_process_table_auto; // Value injected by FXMLLoader
+  protected TableColumn<Process,Boolean > association_rule_mining_process_table_auto; // Value injected by FXMLLoader
 
   @FXML // fx:id="left_status"
   protected Label left_status; // Value injected by FXMLLoader

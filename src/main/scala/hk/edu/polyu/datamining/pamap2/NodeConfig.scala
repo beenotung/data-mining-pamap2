@@ -1,12 +1,13 @@
 package hk.edu.polyu.datamining.pamap2
 
 import com.typesafe.config._
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isUI: Boolean = false, seedNodes: Seq[String] = Seq.empty) {
+case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -28,7 +29,11 @@ case class NodeConfig(isSeed: Boolean = false, isUI: Boolean = false, seedNodes:
     val name = config getString CLUSTER_NAME_PATH
 
     // which config should be used
-    val configPath = if (isSeed) SEED_NODE else if (isUI) UI_NODE else CLUSTER_NODE
+    val configPath =
+      if (isSeed) SEED_NODE
+      else if (isCompute) CLUSTER_NODE
+      else if (isUI) UI_NODE
+      else DEFAULT_NODE
 
     // use configured ip or get host ip if available
     val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
@@ -59,8 +64,13 @@ object NodeConfig {
   /** static configuration for ui nodes */
   val UI_NODE = "node.ui.conf"
 
+  val DEFAULT_NODE = CLUSTER_NODE
+
   /** where to find the name of the ActorSystem */
   private val CLUSTER_NAME_PATH = "clustering.cluster.name"
+
+  // IP:port of the seed nodes in the ActorSystem (from database)
+  val seedNodes = DatabaseHelper.findSeeds.map(seed => s"${seed._1}:${seed._2}")
 
   /**
     * @return NodeConfig
@@ -72,15 +82,18 @@ object NodeConfig {
       head("akka-docker", "2.3.4")
       opt[Unit]("seed") action { (_, c) =>
         c.copy(isSeed = true)
-      } text ("set this flag to start this system as a seed node")
+      } text "set this flag to start this system as a seed node"
+      opt[Unit]("compute") action { (_, c) =>
+        c.copy(isCompute = true)
+      } text "set this flag to start this system as a compute node"
       opt[Unit]("ui") action { (_, c) =>
         c.copy(isUI = true)
-      } text ("set this flag to start this system as a ui node")
-      arg[String]("<seed-node>...") unbounded() optional() action { (n, c) =>
-        c.copy(seedNodes = c.seedNodes :+ n)
-      } text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
+      } text "set this flag to start this system as a ui node"
+      //arg[String]("<seed-node>...") unbounded() optional() action { (n, c) =>
+      //  c.copy(seedNodes = c.seedNodes :+ n)
+      //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
-        case NodeConfig(false, any, Seq()) => failure("ClusterNodes need at least one seed node")
+        case NodeConfig(false, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
         case _ => success
       }
     }

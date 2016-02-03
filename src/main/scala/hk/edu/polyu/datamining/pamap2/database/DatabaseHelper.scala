@@ -4,11 +4,14 @@ package hk.edu.polyu.datamining.pamap2.database
   * Created by beenotung on 1/26/16.
   */
 
-import java.util
+import java.{lang => jl, util => ju}
 
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
+import com.rethinkdb.net.Cursor
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
+
+import scala.collection.JavaConverters._
 
 object DatabaseHelper {
   val BestInsertCount = 200
@@ -41,11 +44,11 @@ object DatabaseHelper {
     conn
   }
 
-  def createDatabaseIfNotExistResult(dbname: String): util.HashMap[String, AnyRef] = {
+  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
     createDatabaseIfNotExist(dbname).run(conn)
   }
 
-  def createTableDropIfExistResult(tableName: String): util.HashMap[String, AnyRef] = {
+  def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
   }
 
@@ -75,7 +78,7 @@ object DatabaseHelper {
     ).run(conn)
   }
 
-  def addSeed(host: java.util.List[String], port: Int, config: Json): util.HashMap[String, AnyVal] = {
+  def addSeed(host: java.util.List[String], port: Int, config: Json): ju.HashMap[String, AnyVal] = {
     initTables()
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
@@ -88,12 +91,33 @@ object DatabaseHelper {
     ).run(conn)
   }
 
+  def findSeeds: Seq[(String, Int)] = {
+    initTables()
+    val tableName = Tables.ClusterSeed.name
+    val hostField = Tables.ClusterSeed.Field.host.toString
+    val portField = Tables.ClusterSeed.Field.port.toString
+    val configField = Tables.ClusterSeed.Field.config.toString
+    val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
+      .withFields(hostField, portField)
+      .run(conn)
+    val seeds: scala.collection.mutable.MutableList[(String, Int)] = scala.collection.mutable.MutableList.empty[(String, Int)]
+    result.toList.asScala.foreach(seed => {
+      val ips = seed.get(hostField).asInstanceOf[ju.List[String]]
+      val port = seed.get(portField).asInstanceOf[Long].toInt
+      ips.asScala.foreach(ip => {
+        seeds.+=((ip, port))
+      })
+    })
+    println(s"seeds : $seeds")
+    seeds.toSeq
+  }
+
   /**
     * create database if not exist
     * create tables if not exist
     **/
   def initTables(): Unit = {
-    val queries = new util.Vector[ReqlExpr]
+    val queries = new ju.Vector[ReqlExpr]
     queries add createDatabaseIfNotExist(dbname)
     Tables.tableNames.foreach(tableName => queries add createTableIfNotExist(tableName))
     r.expr(queries).run(conn)
@@ -115,7 +139,7 @@ object DatabaseHelper {
         r.tableCreate(tableName)
       )))
 
-  def removeSeed(host: String, port: Int): util.HashMap[String, AnyVal] = {
+  def removeSeed(host: String, port: Int): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
     val portField = Tables.ClusterSeed.Field.port.toString
@@ -128,7 +152,7 @@ object DatabaseHelper {
       .run(conn)
   }
 
-  def removeSeed(id: String): util.HashMap[String, AnyVal] = {
+  def removeSeed(id: String): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
     r.table(tableName)
       .get(id)
@@ -162,7 +186,7 @@ object DatabaseHelper {
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }
 
-  def insert[A](table: String, rows: java.util.List[A]): util.HashMap[String, AnyRef] = {
+  def insert[A](table: String, rows: java.util.List[A]): ju.HashMap[String, AnyRef] = {
     r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
   }
 }

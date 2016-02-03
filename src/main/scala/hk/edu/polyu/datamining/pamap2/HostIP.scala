@@ -24,5 +24,6 @@ object HostIP {
       .flatMap {
         _.getInetAddresses.map(_.getHostAddress)
       }
+      .filterNot(ip => ip.contains("%"))
       .toList
 }

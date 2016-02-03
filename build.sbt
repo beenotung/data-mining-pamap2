@@ -35,18 +35,18 @@ javaOptions in runSeed ++= Seq(
   "-Dclustering.port=2551"
 )
 
-lazy val runNode = taskKey[Unit]("Start a node on 127.0.0.1:2552")
-fullRunTask(runNode, Compile, "hk.edu.polyu.datamining.pamap2.Main", "127.0.0.1:2551")
-fork in runNode := true
+lazy val runCompute = taskKey[Unit]("Start a node on 127.0.0.1:2552")
+fullRunTask(runCompute, Compile, "hk.edu.polyu.datamining.pamap2.Main" ,"--compute")
+fork in runCompute := true
 
-javaOptions in runNode ++= Seq(
+javaOptions in runCompute ++= Seq(
   "-Dclustering.ip=127.0.0.1",
   "-Dclustering.port=2552",
   "-XX:+AggressiveHeap"
 )
 
 lazy val runUI = taskKey[Unit]("Start a UI node on 127.0.0.1:2553")
-fullRunTask(runUI, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--ui", "127.0.0.1:2551")
+fullRunTask(runUI, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--ui")
 fork in runUI := true
 
 javaOptions in runUI ++= Seq(
