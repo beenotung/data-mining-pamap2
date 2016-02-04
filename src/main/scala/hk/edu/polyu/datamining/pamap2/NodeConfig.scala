@@ -70,7 +70,12 @@ object NodeConfig {
   private val CLUSTER_NAME_PATH = "clustering.cluster.name"
 
   // IP:port of the seed nodes in the ActorSystem (from database)
-  val seedNodes = DatabaseHelper.findSeeds.map(seed => s"${seed._1}:${seed._2}")
+  val seedNodes = {
+    println("finding seed hosts...")
+    val seedHosts = DatabaseHelper.findSeeds
+    println(s"found seed hosts : $seedHosts")
+    seedHosts.map(seed => s"${seed._1}:${seed._2}")
+  }
 
   /**
     * @return NodeConfig

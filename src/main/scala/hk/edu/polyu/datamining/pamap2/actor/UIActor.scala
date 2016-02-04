@@ -2,11 +2,9 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
-import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
-import hk.edu.polyu.datamining.pamap2.utils.Lang.{fork, runnable}
+import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 
 /**
@@ -39,7 +37,7 @@ class UIActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case ImportFile(filetype, filename, lines) => fork(() => importFile(filetype, filename, lines))
+    case command: DispatchTask => SingletonActor.GlobalDispatcher.proxy(context.system) ! command
     case StateActor.ResponseStatus(status) => MonitorController.updateStatus(status)
       log info "received status"
     case StateActor.AskStatus => SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
@@ -47,38 +45,5 @@ class UIActor extends Actor with ActorLogging {
     case msg =>
       log error s"unsupported message : $msg"
       ???
-  }
-
-  private def importFile(fileType: FileType, filename: String, lines: Seq[String]): Unit = {
-    /**
-      * 1. tell UI doing
-      * 2. save to database
-      * 3. tell global dispatcher
-      * 4. tell UI done
-      * */
-    /* 1. tell UI doing */
-    MonitorController.importingFile(filename)
-    /* 2. save to database */
-    DatabaseHelper.add
-    /* 3. tell global dispatcher */
-    /* 4. tell UI done */
-    MonitorController.importedFile(filename)
-
-
-    //TODO send to workers ?
-    val router = SingletonActor.GlobalDispatcher.actorSelection(context)
-    lines.grouped(DatabaseHelper.BestInsertCount)
-      .foreach(lines => router ! ImportFile(fileType, filename, lines))
-    //val subjectField: String = Tables.RawData.Field.subject.toString
-    //val tableName: String = Tables.RawData.name
-    //lines.grouped(DatabaseHelper.BestInsertCount)
-    //  .toParArray
-    //  .foreach(lines => {
-    //    val records = lines.map(ImportActor.processLine)
-    //      .map(_.`with`(subjectField, filename))
-    //    DatabaseHelper.insert(tableName, records.asJava)
-    //  }
-    //  )
-    //log info "finished sending to database, result : $result"
   }
 }

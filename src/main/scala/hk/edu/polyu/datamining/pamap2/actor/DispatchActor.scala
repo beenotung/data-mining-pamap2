@@ -55,7 +55,7 @@ class GlobalDispatchActor extends Actor with ActorLogging {
       if (!taskOwners.keySet.contains(task)) {
         /* new task */
         val start: Int = 0
-        val end: Int = ??? //TODO get count from database
+        val end: Int = 1 //TODO get count from database
         queuedTasks.getOrElseUpdate(task, mutable.Set.empty) += Range(start, end)
         dispatch
       }
@@ -86,7 +86,7 @@ class GlobalDispatchActor extends Actor with ActorLogging {
       ???
   }
 
-  def dispatch = ???
+  def dispatch = {}
 }
 
 import akka.actor.SupervisorStrategy.{Restart, Resume}

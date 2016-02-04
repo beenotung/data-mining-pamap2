@@ -9,6 +9,9 @@ import java.{lang => jl, util => ju}
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.net.Cursor
 import com.typesafe.config.ConfigFactory
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
+import hk.edu.polyu.datamining.pamap2.database.Tables.RawDataFile
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
@@ -184,13 +187,22 @@ object DatabaseHelper {
     val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
       .withFields(hostField, portField)
       .run(conn)
-    val seeds = result.toList.asScala
+    result.toList.asScala
       .flatMap(seed => {
         val port = seed.get(portField)
         seed.get(hostField).asInstanceOf[ju.List[String]].asScala
           .map(ip => (ip, port.asInstanceOf[jl.Long].toInt))
       }).toIndexedSeq
-    println(s"seeds : ${seeds.toSeq}")
-    seeds
+  }
+
+  def addRawDataFile(filename: String, lines: Iterable[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
+    val field = Tables.RawDataFile.Field
+    val row = r.hashMap(field.filename.toString, filename)
+      .`with`(field.lines.toString, lines)
+    fileType match {
+      case FileType.training => row.`with`(field.isTraining.toString, true)
+      case FileType.testing => row.`with`(field.isTesting.toString, true)
+    }
+    r.table(RawDataFile.name).insert(row).run(conn)
   }
 }

@@ -4,6 +4,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 
 import java.net.URL;
@@ -18,6 +19,12 @@ public class MonitorControllerSkeleton {
 
   @FXML // URL location of the FXML file that was given to the FXMLLoader
   protected URL location;
+
+  @FXML // fx:id="import_file_progress"
+  protected ProgressBar import_file_progress; // Value injected by FXMLLoader
+
+  @FXML // fx:id="number_of_file"
+  protected Label number_of_file; // Value injected by FXMLLoader
 
   @FXML // fx:id="min_support_start"
   protected TextField min_support_start; // Value injected by FXMLLoader
@@ -54,15 +61,16 @@ public class MonitorControllerSkeleton {
 
   }
 
-  @FXML
-    // This method is called by the FXMLLoader when initialization is complete
+  @FXML // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
+    assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert number_of_file != null : "fx:id=\"number_of_file\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start != null : "fx:id=\"min_support_start\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_end != null : "fx:id=\"min_support_end\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start_step != null : "fx:id=\"min_support_start_step\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert left_status != null : "fx:id=\"left_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert right_status != null : "fx:id=\"right_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    customInit();
+customInit();
   }
 
   protected void customInit() {

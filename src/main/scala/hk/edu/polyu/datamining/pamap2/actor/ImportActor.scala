@@ -3,7 +3,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 import com.rethinkdb.RethinkDB.r
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.database.Tables
-import hk.edu.polyu.datamining.pamap2.utils.Format._
+import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
 
 import scala.language.postfixOps
 

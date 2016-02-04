@@ -69,10 +69,14 @@
                                 <rowConstraints>
                                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                 </rowConstraints>
                                  <children>
                                     <Button mnemonicParsing="false" onAction="#select_testing_datafile" text="Testing Data" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
                                     <Button mnemonicParsing="false" onAction="#select_training_datafile" text="Training Data" GridPane.halignment="CENTER" />
+                                    <ProgressBar fx:id="import_file_progress" prefWidth="600.0" progress="0.0" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.valignment="CENTER" />
+                                    <Label fx:id="number_of_file" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
                                  </children>
                               </GridPane>
                            </children>

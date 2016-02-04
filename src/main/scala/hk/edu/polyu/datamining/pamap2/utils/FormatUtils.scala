@@ -3,7 +3,7 @@ package hk.edu.polyu.datamining.pamap2.utils
 /**
   * Created by beenotung on 1/31/16.
   */
-object Format {
+object FormatUtils {
   def toFloat(string: String): Float = try {
     string.toFloat
   } catch {

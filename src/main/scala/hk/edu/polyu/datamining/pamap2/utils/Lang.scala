@@ -4,6 +4,7 @@ import java.util.function.Consumer
 import javafx.event.EventHandler
 import javafx.util.Callback
 
+import akka.actor.{ActorContext, ActorSystem}
 import com.rethinkdb.gen.ast._
 
 import scala.annotation.tailrec
@@ -57,6 +58,9 @@ object Lang {
   implicit def reqlFunction4(fun: (ReqlExpr, ReqlExpr, ReqlExpr, ReqlExpr) => Object): ReqlFunction4 = new ReqlFunction4 {
     override def apply(arg1: ReqlExpr, arg2: ReqlExpr, arg3: ReqlExpr, arg4: ReqlExpr): Object = fun(arg1, arg2, arg3, arg4)
   }
+
+  /*    Akka    */
+  implicit def actorSystem(context: ActorContext): ActorSystem = context.system
 
 
   /*    Others    */
