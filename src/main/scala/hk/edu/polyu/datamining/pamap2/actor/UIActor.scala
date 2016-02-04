@@ -50,7 +50,21 @@ class UIActor extends Actor with ActorLogging {
   }
 
   private def importFile(fileType: FileType, filename: String, lines: Seq[String]): Unit = {
+    /**
+      * 1. tell UI doing
+      * 2. save to database
+      * 3. tell global dispatcher
+      * 4. tell UI done
+      * */
+    /* 1. tell UI doing */
     MonitorController.importingFile(filename)
+    /* 2. save to database */
+    DatabaseHelper.add
+    /* 3. tell global dispatcher */
+    /* 4. tell UI done */
+    MonitorController.importedFile(filename)
+
+
     //TODO send to workers ?
     val router = SingletonActor.GlobalDispatcher.actorSelection(context)
     lines.grouped(DatabaseHelper.BestInsertCount)
@@ -66,6 +80,5 @@ class UIActor extends Actor with ActorLogging {
     //  }
     //  )
     //log info "finished sending to database, result : $result"
-    MonitorController.importedFile(filename)
   }
 }

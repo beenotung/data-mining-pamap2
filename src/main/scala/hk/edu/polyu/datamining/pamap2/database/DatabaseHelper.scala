@@ -17,7 +17,6 @@ object DatabaseHelper {
   val BestInsertCount = 200
   val r = com.rethinkdb.RethinkDB.r
   private val config = ConfigFactory parseResources "database.conf"
-  //  private val hostname = config getString "rethinkdb.host"
   private val port = config getInt "rethinkdb.port"
   private val dbname = config getString "rethinkdb.dbname"
   private val conn = {
@@ -44,9 +43,8 @@ object DatabaseHelper {
     conn
   }
 
-  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
-    createDatabaseIfNotExist(dbname).run(conn)
-  }
+
+  /*    util functions    */
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -58,6 +56,92 @@ object DatabaseHelper {
       r.db(dbname).tableCreate(tableName)
     )
   }
+
+
+  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
+    createDatabaseIfNotExist(dbname).run(conn)
+  }
+
+  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
+    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
+      dbExist,
+      r.hashMap("created", 0),
+      r.dbCreate(dbname)
+    )))
+  }
+
+  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
+
+  def createTableIfNotExist(tableName: String): ReqlExpr =
+    r.tableList().contains(tableName)
+      .do_(reqlFunction1(tableExist => r.branch(
+        tableExist,
+        r.hashMap("created", 0),
+        r.tableCreate(tableName)
+      )))
+
+  def tableInsertRows[A](table: String, rows: java.util.List[A]): ju.HashMap[String, AnyRef] = {
+    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
+  }
+
+  /*    application functions    */
+
+  /**
+    * create database if not exist
+    * create tables if not exist
+    **/
+  def initTables(): Unit = {
+    createDatabaseIfNotExistResult(dbname)
+    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
+  }
+
+  def removeSeed(host: String, port: Int): ju.HashMap[String, AnyVal] = {
+    val tableName = Tables.ClusterSeed.name
+    val hostField = Tables.ClusterSeed.Field.host.toString
+    val portField = Tables.ClusterSeed.Field.port.toString
+    r.table(tableName)
+      .filter(
+        r.hashMap(hostField, host)
+          .`with`(portField, port)
+      )
+      .delete()
+      .run(conn)
+  }
+
+  def removeSeed(id: String): ju.HashMap[String, AnyVal] = {
+    val tableName = Tables.ClusterSeed.name
+    r.table(tableName)
+      .get(id)
+      .delete()
+      .run(conn)
+  }
+
+  /**
+    * REMOVE then create database
+    **/
+  def resetTables(currentStatus: String, nextStatus: String): Unit = {
+    val statusTableName: String = Tables.Status.name
+    val statusFieldName: String = Tables.Status.Field.actionStatus.toString
+    /* drop and create database */
+    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
+      dbExist,
+      r.dbDrop(dbname),
+      r.hashMap("dbs_dropped", 0)
+    ))).run(conn)
+    r.dbCreate(dbname).run(conn)
+    conn.use(dbname)
+    /* create status table */
+    r.tableCreate(statusTableName).run(conn)
+    /* save current status */
+    r.table(statusTableName).insert(r.hashMap(statusFieldName, currentStatus)).run(conn)
+    /* create other tables */
+    Tables.tableNames
+      .filterNot(statusTableName.equals)
+      .foreach(t => unit(r.tableCreate(t).run(conn)))
+    /* update status */
+    r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
+  }
+
 
   def hasInit: Boolean = {
     val tableName: String = Tables.Status.name
@@ -108,83 +192,5 @@ object DatabaseHelper {
       }).toIndexedSeq
     println(s"seeds : ${seeds.toSeq}")
     seeds
-  }
-
-  /**
-    * create database if not exist
-    * create tables if not exist
-    **/
-  def initTables(): Unit = {
-    createDatabaseIfNotExistResult(dbname)
-    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
-  }
-
-  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
-      dbExist,
-      r.hashMap("created", 0),
-      r.dbCreate(dbname)
-    )))
-  }
-
-  def createTableIfNotExist(tableName: String): ReqlExpr =
-    r.tableList().contains(tableName)
-      .do_(reqlFunction1(tableExist => r.branch(
-        tableExist,
-        r.hashMap("created", 0),
-        r.tableCreate(tableName)
-      )))
-
-  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
-
-  def removeSeed(host: String, port: Int): ju.HashMap[String, AnyVal] = {
-    val tableName = Tables.ClusterSeed.name
-    val hostField = Tables.ClusterSeed.Field.host.toString
-    val portField = Tables.ClusterSeed.Field.port.toString
-    r.table(tableName)
-      .filter(
-        r.hashMap(hostField, host)
-          .`with`(portField, port)
-      )
-      .delete()
-      .run(conn)
-  }
-
-  def removeSeed(id: String): ju.HashMap[String, AnyVal] = {
-    val tableName = Tables.ClusterSeed.name
-    r.table(tableName)
-      .get(id)
-      .delete()
-      .run(conn)
-  }
-
-  /**
-    * REMOVE then create database
-    **/
-  def resetTables(currentStatus: String, nextStatus: String): Unit = {
-    val statusTableName: String = Tables.Status.name
-    val statusFieldName: String = Tables.Status.Field.actionStatus.toString
-    /* drop and create database */
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
-      dbExist,
-      r.dbDrop(dbname),
-      r.hashMap("dbs_dropped", 0)
-    ))).run(conn)
-    r.dbCreate(dbname).run(conn)
-    conn.use(dbname)
-    /* create status table */
-    r.tableCreate(statusTableName).run(conn)
-    /* save current status */
-    r.table(statusTableName).insert(r.hashMap(statusFieldName, currentStatus)).run(conn)
-    /* create other tables */
-    Tables.tableNames
-      .filterNot(statusTableName.equals)
-      .foreach(t => unit(r.tableCreate(t).run(conn)))
-    /* update status */
-    r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
-  }
-
-  def insert[A](table: String, rows: java.util.List[A]): ju.HashMap[String, AnyRef] = {
-    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
   }
 }

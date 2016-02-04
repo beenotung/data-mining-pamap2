@@ -20,14 +20,6 @@ object DispatchActor {
     val taskType: TaskType
   }
 
-  sealed trait LocalTask extends Task
-
-  sealed trait RemoteTask extends Task
-
-  case class Import(filename: String) extends LocalTask {
-    override val taskType: TaskType = Task.`import`
-  }
-
   case class RangedTask[TaskType >: Task](task: TaskType, range: Range)
 
   case class DispatchTask(task: TaskType)
@@ -40,7 +32,7 @@ object DispatchActor {
 
   object Task extends Enumeration {
     type TaskType = Value
-    val `import` = Value
+    val extractFromRawLine, itemCount = Value
   }
 
 }
