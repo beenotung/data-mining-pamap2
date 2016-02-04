@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import com.rethinkdb.RethinkDB.r
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.utils.Format._
 
@@ -11,6 +12,11 @@ import scala.language.postfixOps
   */
 object ImportActor {
 
+  object FileType extends Enumeration {
+    type FileType = Value
+    val training, testing = Value
+  }
+
   lazy val IMUField = Tables.IMU.Field
   lazy val RawField = Tables.RawData.Field
 
@@ -18,7 +24,7 @@ object ImportActor {
 
   def processLine(line: String) = {
     lineOffset += 1
-    println(s"processing line : ${lineOffset}")
+    println(s"processing line : $lineOffset")
     val cols = line.split(" ")
     r.hashMap(RawField.timestamp.toString, toFloat(cols(0)))
       .`with`(RawField.activityId.toString, toByte(cols(1)))
@@ -44,7 +50,7 @@ object ImportActor {
       .`with`(IMUField.mz.toString, toFloat(cols(offset + 12)))
   }
 
-  case class ImportFile(filename: String, lines: Seq[String])
+  case class ImportFile(fileType: FileType,filename: String, lines: Seq[String])
 
   final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
 

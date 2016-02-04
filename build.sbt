@@ -51,7 +51,7 @@ fork in runUI := true
 
 javaOptions in runUI ++= Seq(
   "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2552",
+  "-Dclustering.port=2553",
   "-XX:+AggressiveHeap"
 )
 

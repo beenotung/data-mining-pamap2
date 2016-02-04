@@ -389,4 +389,4 @@ Temporary Items
 lib/slf4j-1.7.13
 
 ### RethinkDB cache
-/rethinkdb_data
+/**/rethinkdb_data

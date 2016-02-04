@@ -3,21 +3,17 @@ package hk.edu.polyu.datamining.pamap2.ui
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import javafx.application.Platform
-import javafx.beans.InvalidationListener
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.event.ActionEvent
+import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.cell.PropertyValueFactory
-import javafx.scene.control.{Alert, TableView}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
+import scala.collection.JavaConverters._
 
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.{FileType, ImportFile}
 import hk.edu.polyu.datamining.pamap2.actor.{StateActor, UIActor}
-import hk.edu.polyu.datamining.pamap2.ui.association_rule.ProcessCell
-import hk.edu.polyu.datamining.pamap2.utils.Lang
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.io.Source
@@ -62,31 +58,11 @@ object MonitorController {
 
 class MonitorController extends MonitorControllerSkeleton {
   MonitorController.instance = this
-  var pendingFiles = new ConcurrentLinkedQueue[File]
+  var pendingFileItems = new ConcurrentLinkedQueue[(File,FileType)]
   var handlingFile = false
 
   override def customInit() = {
-    val stage = MonitorApplication.getStage()
-
-    /*   init table   */
-    /* define table coluns */
-    association_rule_mining_process_table_process.setCellValueFactory(new PropertyValueFactory("name"))
-    association_rule_mining_process_table_auto.setSortable(false)
-    /* make column only show non-empty rows */
-    association_rule_mining_process_table_auto.setCellValueFactory(Lang.callback(
-      (feature: javafx.scene.control.TableColumn.CellDataFeatures[hk.edu.polyu.datamining.pamap2.association_rule.Process, java.lang.Boolean]) => {
-        feature.getValue.isAutoProperty
-      }))
-    /* create button for each row */
-    association_rule_mining_process_table_auto.setCellFactory(Lang.callback(
-      (column) => {
-        new ProcessCell(stage,association_rule_mining_process_table)
-      }
-    ))
-    /* init rows */
-    association_rule_mining_process_table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY)
-    association_rule_mining_process_table.getItems.addAll(hk.edu.polyu.datamining.pamap2.association_rule.Process.all)
-    /*   get cluster status   */
+    /* get cluster status */
     update_right_status(new ActionEvent())
   }
 
@@ -104,23 +80,33 @@ class MonitorController extends MonitorControllerSkeleton {
     left_status.setText("")
   }
 
-  override def select_import_file(event: ActionEvent) = {
+  override def select_training_datafile(event: ActionEvent) = {
+    select_datafile(FileType.training)
+  }
+
+  override def select_testing_datafile(event: ActionEvent) = {
+    select_datafile(FileType.testing)
+  }
+
+  def select_datafile(fileType: FileType) = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
     fileChooser.getExtensionFilters.addAll(
       new ExtensionFilter("Data Files", "*.dat")
     )
     fileChooser.showOpenMultipleDialog(MonitorApplication.getStage) match {
-      case files: List[File] if files != null => pendingFiles.addAll(files)
+      case files: List[File] if files != null => pendingFileItems.addAll(files.map(file=>(file,fileType)).asJava)
         if (!handlingFile) handleNextFile()
       case _ =>
     }
   }
 
   def handleNextFile() = {
-    val file = pendingFiles.poll()
-    if (file != null) {
-      UIActor ! new ImportFile(file.getName, Source.fromFile(file).getLines().toSeq)
+    val fileItem = pendingFileItems.poll()
+    if (fileItem != null) {
+      val file=fileItem._1
+      val fileType=fileItem._2
+      UIActor ! new ImportFile(fileType,file.getName, Source.fromFile(file).getLines().toSeq)
     }
   }
 

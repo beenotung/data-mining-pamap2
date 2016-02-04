@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
+import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.ImportFile
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
@@ -38,7 +39,7 @@ class UIActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case ImportFile(filename, lines) => fork(() => importFile(filename, lines))
+    case ImportFile(filetype, filename, lines) => fork(() => importFile(filetype, filename, lines))
     case StateActor.ResponseStatus(status) => MonitorController.updateStatus(status)
       log info "received status"
     case StateActor.AskStatus => SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
@@ -48,12 +49,12 @@ class UIActor extends Actor with ActorLogging {
       ???
   }
 
-  private def importFile(filename: String, lines: Seq[String]): Unit = {
+  private def importFile(fileType: FileType, filename: String, lines: Seq[String]): Unit = {
     MonitorController.importingFile(filename)
     //TODO send to workers ?
     val router = SingletonActor.GlobalDispatcher.actorSelection(context)
     lines.grouped(DatabaseHelper.BestInsertCount)
-      .foreach(lines => router ! ImportFile(filename, lines))
+      .foreach(lines => router ! ImportFile(fileType, filename, lines))
     //val subjectField: String = Tables.RawData.Field.subject.toString
     //val tableName: String = Tables.RawData.name
     //lines.grouped(DatabaseHelper.BestInsertCount)

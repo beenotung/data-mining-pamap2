@@ -96,20 +96,18 @@ object DatabaseHelper {
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
     val portField = Tables.ClusterSeed.Field.port.toString
-    val configField = Tables.ClusterSeed.Field.config.toString
+    //val configField = Tables.ClusterSeed.Field.config.toString
     val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
       .withFields(hostField, portField)
       .run(conn)
-    val seeds: scala.collection.mutable.MutableList[(String, Int)] = scala.collection.mutable.MutableList.empty[(String, Int)]
-    result.toList.asScala.foreach(seed => {
-      val ips = seed.get(hostField).asInstanceOf[ju.List[String]]
-      val port = seed.get(portField).asInstanceOf[Long].toInt
-      ips.asScala.foreach(ip => {
-        seeds.+=((ip, port))
-      })
-    })
-    println(s"seeds : $seeds")
-    seeds.toSeq
+    val seeds = result.toList.asScala
+      .flatMap(seed => {
+        val port = seed.get(portField)
+        seed.get(hostField).asInstanceOf[ju.List[String]].asScala
+          .map(ip => (ip, port.asInstanceOf[jl.Long].toInt))
+      }).toIndexedSeq
+    println(s"seeds : ${seeds.toSeq}")
+    seeds
   }
 
   /**
@@ -117,10 +115,8 @@ object DatabaseHelper {
     * create tables if not exist
     **/
   def initTables(): Unit = {
-    val queries = new ju.Vector[ReqlExpr]
-    queries add createDatabaseIfNotExist(dbname)
-    Tables.tableNames.foreach(tableName => queries add createTableIfNotExist(tableName))
-    r.expr(queries).run(conn)
+    createDatabaseIfNotExistResult(dbname)
+    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
   }
 
   def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
@@ -138,6 +134,8 @@ object DatabaseHelper {
         r.hashMap("created", 0),
         r.tableCreate(tableName)
       )))
+
+  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
 
   def removeSeed(host: String, port: Int): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
