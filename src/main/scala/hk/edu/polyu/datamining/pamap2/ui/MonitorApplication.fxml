@@ -71,8 +71,8 @@
                                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                 </rowConstraints>
                                  <children>
-                                    <Button mnemonicParsing="false" onAction="#select_testing_datafile" text="Testing Data" GridPane.halignment="CENTER" />
-                                    <Button mnemonicParsing="false" onAction="#select_training_datafile" text="Training Data" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+                                    <Button mnemonicParsing="false" onAction="#select_testing_datafile" text="Testing Data" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+                                    <Button mnemonicParsing="false" onAction="#select_training_datafile" text="Training Data" GridPane.halignment="CENTER" />
                                  </children>
                               </GridPane>
                            </children>
