@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
-import java.util.function.Consumer
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.function.{Consumer, Predicate}
 import javafx.event.EventHandler
 import javafx.util.Callback
 
@@ -27,6 +28,17 @@ object Lang {
 
   implicit def consumer[A](fun: A => Unit): Consumer[A] = new Consumer[A] {
     override def accept(t: A): Unit = fun(t)
+  }
+
+  implicit def predicate[A](fun: A => Boolean): Predicate[A] = new Predicate[A] {
+    override def test(t: A): Boolean = fun(t)
+  }
+
+  implicit def removeAll(implicit  concurrentLinkedQueue: ConcurrentLinkedQueue[_]):Unit={
+//    concurrentLinkedQueue.removeIf(predicate(_=>true))
+    concurrentLinkedQueue.removeIf(new Predicate[Any] {
+      override def test(t: Any): Boolean = true
+    })
   }
 
   /*    JavaFX Support    */

@@ -19,7 +19,7 @@ import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, StateActor, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
-import hk.edu.polyu.datamining.pamap2.utils.Lang.{fork, runnable}
+import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -111,7 +111,7 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def abort_import_datafile(event: ActionEvent) = {
-
+    MonitorController.aborted.set(true)
   }
 
   def select_datafile(fileType: FileType) = {
@@ -132,7 +132,7 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   def handleNextFile(): Unit = {
-    fork(() => {
+    fork(runnable = () => {
       val hasNext = pendingFileItems.synchronized[Boolean]({
         val numberOfFile = pendingFileItems.size()
         if (numberOfFile > 0) {
@@ -174,8 +174,15 @@ class MonitorController extends MonitorControllerSkeleton {
           false
         }
       })
-      if (hasNext)
-        handleNextFile()
+      /* check if abort is fired */
+      if (aborted.get()) {
+        /* user has abort the uploading, remove all files from pending queue */
+        removeAll(pendingFileItems)
+      } else {
+        /* user has not abort the uploading, continue next file if exist */
+        if (hasNext)
+          handleNextFile()
+      }
     })
   }
 
