@@ -98,20 +98,9 @@ object DatabaseHelper {
     Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
   }
 
-  def removeSeed(host: String, port: Int): ju.HashMap[String, AnyVal] = {
-    val tableName = Tables.ClusterSeed.name
-    val hostField = Tables.ClusterSeed.Field.host.toString
-    val portField = Tables.ClusterSeed.Field.port.toString
-    r.table(tableName)
-      .filter(
-        r.hashMap(hostField, host)
-          .`with`(portField, port)
-      )
-      .delete()
-      .run(conn)
-  }
+var clusterSeedKey:String=null
 
-  def removeSeed(id: String): ju.HashMap[String, AnyVal] = {
+  def removeSeed(id: String=clusterSeedKey): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
     r.table(tableName)
       .get(id)

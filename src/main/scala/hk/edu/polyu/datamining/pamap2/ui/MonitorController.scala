@@ -18,8 +18,8 @@ import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, StateActor, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
-import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
-import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Lang}
+import hk.edu.polyu.datamining.pamap2.utils.FileUtils
+import hk.edu.polyu.datamining.pamap2.utils.Lang.{fork, runnable}
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -50,7 +50,6 @@ object MonitorController {
 
   def importedFile(filename: String): Unit = Platform runLater (() => {
     instance.left_status.setText(s"imported $filename")
-    instance.handleNextFile()
   })
 
   def restarted(reason: String) = Platform runLater (() => {
@@ -63,13 +62,21 @@ object MonitorController {
 
   def runOnUIThread(fun: () => Unit) = Platform runLater fun
 
-  def setProgress(value:Double)= runOnUIThread(()=>{instance.import_file_progress.setProgress(value)})
+  def setFileProgressText(value: String) = Platform runLater (() => {
+    instance.file_progress_text.setText(value)
+  })
+
+  def setProgress(value: Double) = runOnUIThread(() => {
+    instance.import_file_progress.setProgress(value)
+  })
+
+  val aborted = new AtomicBoolean(false)
 }
 
 class MonitorController extends MonitorControllerSkeleton {
   instance = this
   var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType)]
-  var handlingFile = new AtomicBoolean(false)
+  //  var handlingFile = new AtomicBoolean(false)
 
   def setUIStatus(msg: String) = {
     println(msg)
@@ -103,6 +110,10 @@ class MonitorController extends MonitorControllerSkeleton {
     select_datafile(FileType.testing)
   }
 
+  override def abort_import_datafile(event: ActionEvent) = {
+
+  }
+
   def select_datafile(fileType: FileType) = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
@@ -114,54 +125,57 @@ class MonitorController extends MonitorControllerSkeleton {
         val files = list.asScala
         setUIStatus(s"selected ${files.length} file(s)")
         pendingFileItems.addAll(files.map(file => (file, fileType)).asJava)
-        if (handlingFile.compareAndSet(false, true))
-          handleNextFile()
+        handleNextFile()
       case _ =>
         setUIStatus("selected no files")
     }
   }
-  def handleNextFile(): Unit = {
-    Lang.fork(() => {
-      handlingFile.set(true)
-      val numberOfFile = pendingFileItems.size()
-      if (numberOfFile <= 0)
-        runOnUIThread(() => {
-          number_of_file.setText("all imported")
-        })
-      else
-        runOnUIThread(() => {
-          number_of_file.setText(s"$numberOfFile file(s) pending")
-        })
-      val fileItem = pendingFileItems.poll()
-      if (fileItem != null) {
-        /**
-          * 1. tell UI doing
-          * 2. save to database
-          * 3. tell global dispatcher
-          * 4. tell UI done
-          **/
-        val file = fileItem._1
-        val fileType = fileItem._2
 
-        /* 1. tell UI doing */
-        val filename: String = file.getName
-        importingFile(filename)
-        /* 2. save to database */
-        val N = FileUtils.lineCount(file) / DatabaseHelper.BestInsertCount
-        var i = 0f
-        Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
-          .foreach(lines => {
-            setProgress(i/N)
-            DatabaseHelper.addRawDataFile(filename, lines, fileType)
-            i += 1
-          })
-        setProgress(0)
-        /* 3. tell global dispatcher */
-        UIActor ! new DispatchTask(DispatchActor.Task.extractFromRawLine)
-        /* 4. tell UI done */
-        importedFile(filename)
-      }
-      handlingFile.set(false)
+  def handleNextFile(): Unit = {
+    fork(() => {
+      val hasNext = pendingFileItems.synchronized[Boolean]({
+        val numberOfFile = pendingFileItems.size()
+        if (numberOfFile > 0) {
+          setFileProgressText(s"$numberOfFile file(s) pending")
+          val fileItem = pendingFileItems.poll()
+          if (fileItem != null) {
+            /**
+              * 1. tell UI doing
+              * 2. save to database
+              * 3. tell global dispatcher
+              * 4. tell UI done
+              **/
+            val file = fileItem._1
+            val fileType = fileItem._2
+
+            /* 1. tell UI doing */
+            val filename: String = file.getName
+            importingFile(filename)
+            /* 2. save to database */
+            val N = FileUtils.lineCount(file) / DatabaseHelper.BestInsertCount
+            var i = 0f
+            Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
+              .foreach(lines => {
+                setProgress(i / N)
+                DatabaseHelper.addRawDataFile(filename, lines, fileType)
+                i += 1
+              })
+            setProgress(0)
+            /* 3. tell global dispatcher */
+            UIActor ! new DispatchTask(DispatchActor.Task.extractFromRawLine)
+            /* 4. tell UI done */
+            importedFile(filename)
+            true
+          }
+          else
+            false
+        } else {
+          setFileProgressText("all imported")
+          false
+        }
+      })
+      if (hasNext)
+        handleNextFile()
     })
   }
 

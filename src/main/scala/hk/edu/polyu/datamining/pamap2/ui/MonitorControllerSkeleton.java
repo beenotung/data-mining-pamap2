@@ -23,8 +23,8 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="import_file_progress"
   protected ProgressBar import_file_progress; // Value injected by FXMLLoader
 
-  @FXML // fx:id="number_of_file"
-  protected Label number_of_file; // Value injected by FXMLLoader
+  @FXML // fx:id="file_progress_text"
+  protected Label file_progress_text; // Value injected by FXMLLoader
 
   @FXML // fx:id="min_support_start"
   protected TextField min_support_start; // Value injected by FXMLLoader
@@ -51,6 +51,11 @@ public class MonitorControllerSkeleton {
 
   }
 
+ @FXML
+  void abort_import_datafile(ActionEvent event) {
+
+  }
+
   @FXML
   void start_association_rule_mining(ActionEvent event) {
 
@@ -64,7 +69,7 @@ public class MonitorControllerSkeleton {
   @FXML // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert number_of_file != null : "fx:id=\"number_of_file\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert file_progress_text != null : "fx:id=\"file_progress_text\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start != null : "fx:id=\"min_support_start\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_end != null : "fx:id=\"min_support_end\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start_step != null : "fx:id=\"min_support_start_step\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
