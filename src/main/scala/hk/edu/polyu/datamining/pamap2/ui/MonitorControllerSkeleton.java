@@ -20,6 +20,21 @@ public class MonitorControllerSkeleton {
   @FXML // URL location of the FXML file that was given to the FXMLLoader
   protected URL location;
 
+  @FXML // fx:id="text_cluster_processor"
+  protected Label text_cluster_processor; // Value injected by FXMLLoader
+
+  @FXML // fx:id="text_number_of_pending_task"
+  protected Label text_number_of_pending_task; // Value injected by FXMLLoader
+
+  @FXML // fx:id="text_number_of_completed_tasl"
+  protected Label text_number_of_completed_tasl; // Value injected by FXMLLoader
+
+  @FXML // fx:id="text_cluster_memory"
+  protected Label text_cluster_memory; // Value injected by FXMLLoader
+
+  @FXML // fx:id="btn_nodes"
+  protected Button btn_nodes; // Value injected by FXMLLoader
+
   @FXML // fx:id="import_file_progress"
   protected ProgressBar import_file_progress; // Value injected by FXMLLoader
 
@@ -38,8 +53,13 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="left_status"
   protected Label left_status; // Value injected by FXMLLoader
 
-  @FXML // fx:id="right_status"
-  protected Button right_status; // Value injected by FXMLLoader
+  @FXML // fx:id="cluster_status"
+  protected Button cluster_status; // Value injected by FXMLLoader
+
+  @FXML
+  void abort_import_datafile(ActionEvent event) {
+
+  }
 
   @FXML
   void select_testing_datafile(ActionEvent event) {
@@ -51,31 +71,37 @@ public class MonitorControllerSkeleton {
 
   }
 
- @FXML
-  void abort_import_datafile(ActionEvent event) {
-
-  }
-
   @FXML
   void start_association_rule_mining(ActionEvent event) {
 
   }
 
   @FXML
-  void update_right_status(ActionEvent event) {
+  void show_nodes_detail(ActionEvent event) {
 
   }
 
-  @FXML // This method is called by the FXMLLoader when initialization is complete
+  @FXML
+  void update_cluster_info(ActionEvent event) {
+
+  }
+
+  @FXML
+    // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
+    assert text_cluster_processor != null : "fx:id=\"text_cluster_processor\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_number_of_pending_task != null : "fx:id=\"text_number_of_pending_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_number_of_completed_tasl != null : "fx:id=\"text_number_of_completed_tasl\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_cluster_memory != null : "fx:id=\"text_cluster_memory\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert file_progress_text != null : "fx:id=\"file_progress_text\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start != null : "fx:id=\"min_support_start\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_end != null : "fx:id=\"min_support_end\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start_step != null : "fx:id=\"min_support_start_step\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert left_status != null : "fx:id=\"left_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert right_status != null : "fx:id=\"right_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-customInit();
+    assert cluster_status != null : "fx:id=\"cluster_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    customInit();
   }
 
   protected void customInit() {

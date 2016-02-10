@@ -3,7 +3,7 @@ package hk.edu.polyu.datamining.pamap2
 import akka.actor._
 import akka.cluster.Cluster
 import com.rethinkdb.RethinkDB
-import hk.edu.polyu.datamining.pamap2.actor.SingletonActor
+import hk.edu.polyu.datamining.pamap2.actor.{MonitorActor, SingletonActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
@@ -34,8 +34,8 @@ object Main extends App {
     })
 
     // Register a monitor actor for demo purposes
-    system.actorOf(Props[actor.MonitorActor])
-
+    MonitorActor.subName(clusterSeedKey)
+    system.actorOf(Props[actor.MonitorActor], MonitorActor.fullName)
     system.log info s"ActorSystem ${system.name} started successfully"
 
     /* set singletons */

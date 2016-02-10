@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import java.util.function.{Consumer, Predicate}
 import javafx.event.EventHandler
 import javafx.util.Callback
@@ -35,11 +35,13 @@ object Lang {
   }
 
   implicit def removeAll(implicit  concurrentLinkedQueue: ConcurrentLinkedQueue[_]):Unit={
-//    concurrentLinkedQueue.removeIf(predicate(_=>true))
     concurrentLinkedQueue.removeIf(new Predicate[Any] {
       override def test(t: Any): Boolean = true
     })
   }
+//  implicit def hasNull(implicit map:ConcurrentHashMap):Boolean={
+//    map.valu
+//  }
 
   /*    JavaFX Support    */
   implicit def callback[X, Y](fun: X => Y): Callback[X, Y] = new Callback[X, Y] {

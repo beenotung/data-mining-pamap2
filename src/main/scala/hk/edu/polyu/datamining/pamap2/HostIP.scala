@@ -26,4 +26,17 @@ object HostIP {
       }
       .filterNot(ip => ip.contains("%"))
       .toList
+
+  def hexToString(byte: Byte): String =
+    byte match {
+      case 10 => "A"
+      case 11 => "B"
+      case 12 => "C"
+      case 13 => "D"
+      case 14 => "E"
+      case 15 => "F"
+      case x: Byte => ("0".toByte + x).toChar + ""
+    }
+
+  def +(a: String, b: String) = a + b
 }

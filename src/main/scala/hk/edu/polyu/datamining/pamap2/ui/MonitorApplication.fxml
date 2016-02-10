@@ -58,6 +58,39 @@
                 </Label>
                 <Accordion layoutX="14.0" layoutY="14.0" prefHeight="344.0" prefWidth="609.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                     <panes>
+                  <TitledPane animated="false" text="Cluster Info">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <GridPane layoutX="313.0" layoutY="42.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <columnConstraints>
+                                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                </columnConstraints>
+                                <rowConstraints>
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                </rowConstraints>
+                                 <children>
+                                    <Label text="Nodes" />
+                                    <Label text="Cluster Processor" GridPane.rowIndex="1" />
+                                    <Label text="Number of pending task" GridPane.rowIndex="3" />
+                                    <Label text="Number of completed task" GridPane.rowIndex="4" />
+                                    <Label fx:id="text_cluster_processor" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label fx:id="text_number_of_pending_task" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label fx:id="text_number_of_completed_tasl" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                    <Label text="Cluster Memory" GridPane.rowIndex="2" />
+                                    <Label fx:id="text_cluster_memory" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Button fx:id="btn_nodes" mnemonicParsing="false" text="loading" GridPane.columnIndex="1" />
+                                 </children>
+                              </GridPane>
+                           </children>
+                        </AnchorPane>
+                    </content>
+                  </TitledPane>
                         <TitledPane animated="false" text="import file">
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
@@ -133,7 +166,7 @@
                 </Label>
             </left>
             <right>
-                <Button fx:id="right_status" mnemonicParsing="false" onAction="#update_right_status" text="Cluster Status" BorderPane.alignment="CENTER">
+                <Button fx:id="cluster_status" mnemonicParsing="false" onAction="#update_cluster_info" text="Cluster Status" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
                         <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
                     </BorderPane.margin>

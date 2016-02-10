@@ -3,6 +3,20 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.{AskNodeInfo, ResponseNodeInfo}
+
+object MonitorActor {
+  val baseName = "Monitor-"
+  private var subName: String = null
+
+  def fullName: String =
+    if (subName == null)
+      throw new IllegalStateException("subName has not set")
+    else
+      baseName + subName
+
+  def subName(value: String): Unit = subName = value
+}
 
 class MonitorActor extends Actor with ActorLogging {
 
@@ -10,7 +24,8 @@ class MonitorActor extends Actor with ActorLogging {
 
   // subscribe to cluster changes, re-subscribe when restart 
   override def preStart(): Unit = {
-    log debug "Starting ClusterMonitorActor"
+    log info "Starting ClusterMonitorActor"
+    log info s"monitor path : ${self.path}"
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
   }
@@ -27,6 +42,16 @@ class MonitorActor extends Actor with ActorLogging {
     //  System.exit(0)
     case MemberRemoved(member, previousStatus) => log info s"Member removed ${member.address} with roles ${member.roles}"
     case MemberExited(member) => log info s"Member exited ${member.address} with roles ${member.roles}"
+    case AskNodeInfo =>
+      val runtime: Runtime = Runtime.getRuntime
+      sender ! ResponseNodeInfo(new Node(
+        processor = runtime.availableProcessors(),
+        freeMemory = runtime.freeMemory(),
+        totalMemory = runtime.totalMemory(),
+        maxMemory = runtime.maxMemory(),
+        upTime = context.system.uptime,
+        startTime = context.system.startTime
+      ))
     case _: MemberEvent => // ignore
   }
 

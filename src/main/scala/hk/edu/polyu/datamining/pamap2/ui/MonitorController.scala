@@ -1,21 +1,24 @@
 package hk.edu.polyu.datamining.pamap2.ui
 
 import java.io.File
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import java.{util => ju}
 import javafx.application.Platform
 import javafx.event.ActionEvent
+import javafx.fxml.FXMLLoader
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
-import javafx.stage.FileChooser
+import javafx.scene.{Parent, Scene}
 import javafx.stage.FileChooser.ExtensionFilter
+import javafx.stage.{FileChooser, Stage}
 
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskClusterInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, StateActor, UIActor}
+import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, Node, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
@@ -28,7 +31,7 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
-  private var instance: MonitorController = null
+  private[ui] var instance: MonitorController = null
 
   def onActorSystemTerminated() = instance match {
     case controller: MonitorController if controller != null =>
@@ -56,9 +59,27 @@ object MonitorController {
     instance.promptRestarted(reason)
   })
 
-  def updateStatus(status: ActionStatusType): Unit = Platform runLater (() => {
-    instance.updated_right_status(status)
+  def receivedClusterStatus(status: ActionStatusType): Unit = Platform runLater (() => {
+    instance.updated_cluster_status(status)
   })
+
+  val nodes = new ConcurrentHashMap[String, Option[Node]]
+
+  def setNodeAddresses(addresses: Seq[String]) = {
+    nodes.synchronized({
+      nodes.clear()
+      val nodeMap: ju.Map[String, Option[Node]] = Map[String, Option[Node]](addresses.map(address => (address, None)): _*).asJava
+      nodes.putAll(nodeMap)
+      instance.btn_nodes.setText(nodes.size().toString)
+    })
+  }
+
+  def receivedNodeInfo(nodeAddress: String, nodeInfo: Node) = {
+    nodes.put(nodeAddress, Some(nodeInfo))
+    if (!nodes.containsValue(None)) {
+      println("All ready")
+    } else println("still waiting node")
+  }
 
   def runOnUIThread(fun: () => Unit) = Platform runLater fun
 
@@ -85,12 +106,22 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def customInit() = {
     /* get cluster status */
-    update_right_status(new ActionEvent())
+    update_cluster_info(new ActionEvent())
+
+    /* update general cluster info */
   }
 
-  override def update_right_status(event: ActionEvent) = {
-    right_status.setText("getting cluster status")
-    UIActor ! StateActor.AskStatus
+  override def update_cluster_info(event: ActionEvent) = {
+    cluster_status.setText("getting cluster status")
+    /* set ui to loading */
+    val loading = "loading"
+    btn_nodes setText loading
+    text_cluster_processor setText loading
+    text_cluster_memory setText loading
+    text_number_of_pending_task setText loading
+    text_number_of_completed_tasl setText loading
+    /* ask for cluster status */
+    UIActor ! AskClusterInfo
   }
 
   def promptRestarted(reason: String): Unit = {
@@ -114,6 +145,15 @@ class MonitorController extends MonitorControllerSkeleton {
     MonitorController.aborted.set(true)
   }
 
+  override def show_nodes_detail(event: ActionEvent) = {
+    val stage = new Stage()
+    val root: Parent = FXMLLoader.load(getClass.getResource("NodesDetail.fmxl"))
+    val scene = new Scene(root)
+    stage.setTitle("Nodes Detail")
+    stage.setScene(scene)
+    stage.show()
+  }
+
   def select_datafile(fileType: FileType) = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
@@ -132,7 +172,7 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   def handleNextFile(): Unit = {
-    fork(runnable = () => {
+    fork(() => {
       val hasNext = pendingFileItems.synchronized[Boolean]({
         val numberOfFile = pendingFileItems.size()
         if (numberOfFile > 0) {
@@ -186,7 +226,7 @@ class MonitorController extends MonitorControllerSkeleton {
     })
   }
 
-  def updated_right_status(statusType: ActionStatusType) = {
-    right_status.setText(statusType.toString)
+  def updated_cluster_status(statusType: ActionStatusType) = {
+    cluster_status.setText(statusType.toString)
   }
 }
