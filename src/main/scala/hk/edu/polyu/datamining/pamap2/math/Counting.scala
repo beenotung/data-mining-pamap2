@@ -7,14 +7,14 @@ import collection.mutable.HashMap
 object Counting {
 
   /**
-    * Map Function
+    * Counting Function
     * return counting result in mutable HashMap format
     *
-    * @param itemset: target items for counting
-    * @param dataset: raw records in 2d array
+    * @param itemset: target items for counting in 1d array e.g. ["a", "b"]
+    * @param dataset: raw records in 2d array e.g. [["a", "c", "d"],["b"]]
     */
 
-  def mapreduce (itemset: Array[String], dataset: Array[Array[String]]): HashMap[String,Int] = {
+  def counting (itemset: Array[String], dataset: Array[Array[String]]): HashMap[String,Int] = {
     if (dataset.length <= 2){
       val container = new HashMap[String,Int]()
       for(record <- dataset){
