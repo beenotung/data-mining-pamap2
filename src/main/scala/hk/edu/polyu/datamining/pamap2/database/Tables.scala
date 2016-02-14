@@ -7,12 +7,17 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(ClusterSeed, Status, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
+  val tableList = Seq(Debug, ClusterSeed, Status, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
     val name: String
     val fields: Iterable[String]
+  }
+
+  object Debug extends Table {
+    override val name = "debug"
+    override val fields = Seq.empty
   }
 
   object ClusterSeed extends Table {

@@ -43,7 +43,7 @@ class UIActor extends Actor with ActorLogging {
     case command: DispatchTask => SingletonActor.GlobalDispatcher.proxy(context.system) ! command
     case StateActor.ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
       log info "received status"
-    case ClusterInfo.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(sender().path.address.toString, node)
+    case ClusterInfo.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(sender().path.address, node)
       log info "received node info"
     case ClusterInfo.AskClusterInfo => log info "asking for status"
       /*
@@ -59,6 +59,12 @@ class UIActor extends Actor with ActorLogging {
       SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
       /* 2. ask cluster members info */
       //TODO update nodes count
+      //      log info "writing config to database"
+      //      DatabaseHelper.debug("config", RethinkDB.r.json({
+      //        val s = context.system.settings.config.toString
+      //        s.substring(26, s.length - 2)
+      //      }))
+      MonitorController.setNodeAddresses(MonitorActor.activeMembers.map(_.address))
       context.actorSelection(s"/user/${MonitorActor.baseName}*").tell(AskNodeInfo, self)
     case msg =>
       log error s"unsupported message : $msg"

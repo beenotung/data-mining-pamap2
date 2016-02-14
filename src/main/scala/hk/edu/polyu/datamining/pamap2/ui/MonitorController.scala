@@ -13,6 +13,7 @@ import javafx.scene.{Parent, Scene}
 import javafx.stage.FileChooser.ExtensionFilter
 import javafx.stage.{FileChooser, Stage}
 
+import akka.actor.Address
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskClusterInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
@@ -63,18 +64,18 @@ object MonitorController {
     instance.updated_cluster_status(status)
   })
 
-  val nodes = new ConcurrentHashMap[String, Option[Node]]
+  val nodes = new ConcurrentHashMap[Address, Option[Node]]
 
-  def setNodeAddresses(addresses: Seq[String]) = {
+  def setNodeAddresses(addresses: Iterable[Address]) = runOnUIThread(() => {
     nodes.synchronized({
       nodes.clear()
-      val nodeMap: ju.Map[String, Option[Node]] = Map[String, Option[Node]](addresses.map(address => (address, None)): _*).asJava
+      val nodeMap: ju.Map[Address, Option[Node]] = Map[Address, Option[Node]](addresses.map(address => (address, None)).toSeq: _*).asJava
       nodes.putAll(nodeMap)
       instance.btn_nodes.setText(nodes.size().toString)
     })
-  }
+  })
 
-  def receivedNodeInfo(nodeAddress: String, nodeInfo: Node) = {
+  def receivedNodeInfo(nodeAddress: Address, nodeInfo: Node) = {
     nodes.put(nodeAddress, Some(nodeInfo))
     if (!nodes.containsValue(None)) {
       println("All ready")
@@ -147,7 +148,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def show_nodes_detail(event: ActionEvent) = {
     val stage = new Stage()
-    val root: Parent = FXMLLoader.load(getClass.getResource("NodesDetail.fmxl"))
+    val root: Parent = FXMLLoader.load(getClass.getResource("NodesDetail.fxml"))
     val scene = new Scene(root)
     stage.setTitle("Nodes Detail")
     stage.setScene(scene)

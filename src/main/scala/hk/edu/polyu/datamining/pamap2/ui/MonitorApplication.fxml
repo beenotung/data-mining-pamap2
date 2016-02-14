@@ -84,7 +84,7 @@
                                     <Label fx:id="text_number_of_completed_tasl" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                                     <Label text="Cluster Memory" GridPane.rowIndex="2" />
                                     <Label fx:id="text_cluster_memory" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                    <Button fx:id="btn_nodes" mnemonicParsing="false" text="loading" GridPane.columnIndex="1" />
+                                    <Button fx:id="btn_nodes" mnemonicParsing="false" onAction="#show_nodes_detail" text="loading" GridPane.columnIndex="1" />
                                  </children>
                               </GridPane>
                            </children>
