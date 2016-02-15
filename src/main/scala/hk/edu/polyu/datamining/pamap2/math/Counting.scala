@@ -28,8 +28,8 @@ object Counting {
       container
     }else{
       val (left, right) = dataset.splitAt(dataset.length / 2)
-      val container = mapreduce(itemset, left)
-      val list2 = mapreduce(itemset, right)
+      val container = counting(itemset, left)
+      val list2 = counting(itemset, right)
       list2.foreach { case (key, value) => {
         val v = container.getOrElseUpdate(key, 0)
         container.update(key, v + value)
