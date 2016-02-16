@@ -7,7 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
+case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false,preferedIp:String=null) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -36,7 +36,11 @@ case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI:
       else DEFAULT_NODE
 
     // use configured ip or get host ip if available
-    val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    //val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    val ip =
+      if(isSeed)
+      else
+        HostIP.load()
     val ipValue = ConfigValueFactory fromAnyRef ip
 
     // add seed nodes to config

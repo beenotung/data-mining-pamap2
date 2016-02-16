@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2
 
-import java.net.NetworkInterface
+import java.io.{BufferedReader, InputStreamReader}
+import java.net.{InetAddress, NetworkInterface, URL}
 
 import scala.collection.JavaConversions._
 
@@ -39,4 +40,14 @@ object HostIP {
     }
 
   def +(a: String, b: String) = a + b
+
+  def localIP: String = InetAddress.getLocalHost.getHostAddress
+
+  def publicIP: String = {
+    val reader = new BufferedReader(new InputStreamReader(new URL("http://icanhazip.com").openStream()))
+    val ip = reader.readLine()
+    reader.close()
+    ip
+  }
+
 }

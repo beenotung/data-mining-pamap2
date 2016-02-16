@@ -15,7 +15,7 @@ object Main extends App {
   val nodeConfig = NodeConfig parse args
 
   // If a config could be parsed - start the system
-  nodeConfig foreach { c =>
+  def start(c: NodeConfig) {
     val system = ActorSystem(c.clusterName, c.config)
 
     /* register self to database */
@@ -55,5 +55,12 @@ object Main extends App {
     // register a ComputeActor
       system.actorOf(Props[actor.LocalDispatchActor])
   }
+
+  nodeConfig foreach (c => {
+    if (c.isSeed) {
+      start(c.copy(preferedIp = HostIP.localIP))
+      start(c.copy(preferedIp = HostIP.publicIP))
+    } else start(c)
+  })
 
 }
