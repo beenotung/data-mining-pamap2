@@ -28,18 +28,6 @@ class ProcessCell(val stage: Stage, val table: TableView[hk.edu.polyu.datamining
   onButton.setToggleGroup(toggleGroup)
   offButton.setToggleGroup(toggleGroup)
 
-  /* set event listener */
-  def onValueChanged(on: Boolean) = {
-    if (on)
-      onButton.setSelected(true)
-    else
-      offButton.setSelected(true)
-  }
-
-  onButton.setOnAction(eventHandler(_ => onValueChanged(true)))
-  offButton.setOnAction(eventHandler(_ => onValueChanged(false)))
-
-  //  override def updateItem(item:Boolean,empty:Boolean)={}
   /** places an add button in the row only if the row is not empty. */
   override protected def updateItem(item: java.lang.Boolean, empty: Boolean) {
     super.updateItem(item, empty)
@@ -52,5 +40,18 @@ class ProcessCell(val stage: Stage, val table: TableView[hk.edu.polyu.datamining
     else {
       setGraphic(null)
     }
+  }
+
+  onButton.setOnAction(eventHandler(_ => onValueChanged(true)))
+  offButton.setOnAction(eventHandler(_ => onValueChanged(false)))
+
+  //  override def updateItem(item:Boolean,empty:Boolean)={}
+
+  /* set event listener */
+  def onValueChanged(on: Boolean) = {
+    if (on)
+      onButton.setSelected(true)
+    else
+      offButton.setSelected(true)
   }
 }

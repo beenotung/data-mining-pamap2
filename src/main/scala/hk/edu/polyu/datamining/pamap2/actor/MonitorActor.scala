@@ -3,7 +3,8 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.{AskNodeInfo, ResponseNodeInfo}
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.{AskNodeInfo, ResponseNodeInfo}
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 object MonitorActor {
   val baseName = "Monitor-"
@@ -16,6 +17,18 @@ object MonitorActor {
       baseName + subName
 
   def subName(value: String): Unit = subName = value
+
+  type Members = Iterable[Member]
+  type EventHandler = (MemberEvent, Members) => Unit
+  private var listeners = Seq.empty[MonitorActor.EventHandler]
+
+  def addListener(handler: EventHandler) = listeners.synchronized(listeners :+= handler)
+
+
+  def removeListener(handler: EventHandler) = listeners.synchronized(listeners = listeners.filterNot(_.equals(handler)))
+
+  def onMemberChanged(memberEvent: MemberEvent, members: Members) = listeners.synchronized(listeners.foreach(_ (memberEvent, members)))
+
 }
 
 class MonitorActor extends Actor with ActorLogging {
@@ -36,13 +49,16 @@ class MonitorActor extends Actor with ActorLogging {
 
   // handle the member events
   def receive = {
-    case MemberUp(member) => log info s"Member up ${member.address} with roles ${member.roles}"
+    /*case MemberUp(member) => log info s"Member up ${member.address} with roles ${member.roles}"
+      activeMembers += member
     case UnreachableMember(member) => log warning s"Member unreachable ${member.address} with roles ${member.roles}"
-    //case MemberRemoved(member, _) if member.address.equals(cluster.selfAddress) => log info "shutdown local JVM"
-    //  System.exit(0)
+      activeMembers -= member
     case MemberRemoved(member, previousStatus) => log info s"Member removed ${member.address} with roles ${member.roles}"
+      activeMembers -= member
     case MemberExited(member) => log info s"Member exited ${member.address} with roles ${member.roles}"
-    case AskNodeInfo =>
+      activeMembers -= member*/
+    case event: MemberEvent => MonitorActor.onMemberChanged(event, cluster.state.members)
+    case AskNodeInfo => log info "received AskNodeInfo Request"
       val runtime: Runtime = Runtime.getRuntime
       sender ! ResponseNodeInfo(new Node(
         processor = runtime.availableProcessors(),
@@ -50,9 +66,11 @@ class MonitorActor extends Actor with ActorLogging {
         totalMemory = runtime.totalMemory(),
         maxMemory = runtime.maxMemory(),
         upTime = context.system.uptime,
-        startTime = context.system.startTime
+        startTime = context.system.startTime,
+        clusterSeedId = DatabaseHelper.clusterSeedId
       ))
-    case _: MemberEvent => // ignore
+    case msg => log info s"received message : $msg"
+      ???
   }
 
 }

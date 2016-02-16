@@ -48,6 +48,7 @@ object DatabaseHelper {
 
 
   /*    util functions    */
+  var clusterSeedId: String = null
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -60,47 +61,11 @@ object DatabaseHelper {
     )
   }
 
-
-  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
-    createDatabaseIfNotExist(dbname).run(conn)
-  }
-
-  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
-      dbExist,
-      r.hashMap("created", 0),
-      r.dbCreate(dbname)
-    )))
-  }
-
-  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
-
-  def createTableIfNotExist(tableName: String): ReqlExpr =
-    r.tableList().contains(tableName)
-      .do_(reqlFunction1(tableExist => r.branch(
-        tableExist,
-        r.hashMap("created", 0),
-        r.tableCreate(tableName)
-      )))
-
   def tableInsertRows[A](table: String, rows: java.util.List[A]): ju.HashMap[String, AnyRef] = {
     r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
   }
 
-  /*    application functions    */
-
-  /**
-    * create database if not exist
-    * create tables if not exist
-    **/
-  def initTables(): Unit = {
-    createDatabaseIfNotExistResult(dbname)
-    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
-  }
-
-var clusterSeedKey:String=null
-
-  def removeSeed(id: String=clusterSeedKey): ju.HashMap[String, AnyVal] = {
+  def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
     r.table(tableName)
       .get(id)
@@ -133,7 +98,6 @@ var clusterSeedKey:String=null
     /* update status */
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }
-
 
   def hasInit: Boolean = {
     val tableName: String = Tables.Status.name
@@ -184,6 +148,37 @@ var clusterSeedKey:String=null
       }).toIndexedSeq
   }
 
+  /**
+    * create database if not exist
+    * create tables if not exist
+    **/
+  def initTables(): Unit = {
+    createDatabaseIfNotExistResult(dbname)
+    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
+  }
+
+  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
+    createDatabaseIfNotExist(dbname).run(conn)
+  }
+
+  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
+    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
+      dbExist,
+      r.hashMap("created", 0),
+      r.dbCreate(dbname)
+    )))
+  }
+
+  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
+
+  def createTableIfNotExist(tableName: String): ReqlExpr =
+    r.tableList().contains(tableName)
+      .do_(reqlFunction1(tableExist => r.branch(
+        tableExist,
+        r.hashMap("created", 0),
+        r.tableCreate(tableName)
+      )))
+
   def addRawDataFile(filename: String, lines: Iterable[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
     val field = Tables.RawDataFile.Field
     val row = r.hashMap(field.filename.toString, filename)
@@ -193,5 +188,15 @@ var clusterSeedKey:String=null
       case FileType.testing => row.`with`(field.isTesting.toString, true)
     }
     r.table(RawDataFile.name).insert(row).run(conn)
+  }
+
+  def debug(key: String, value: Json): ju.HashMap[String, AnyRef] = {
+    val table = Tables.Debug.name
+    r.table(table).insert(r.hashMap(key, value)).run(conn)
+  }
+
+  def debug(key: String, value: String): ju.HashMap[String, AnyRef] = {
+    val table = Tables.Debug.name
+    r.table(table).insert(r.hashMap(key, value)).run(conn)
   }
 }

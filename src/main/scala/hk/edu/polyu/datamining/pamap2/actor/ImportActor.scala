@@ -12,14 +12,8 @@ import scala.language.postfixOps
   */
 object ImportActor {
 
-  object FileType extends Enumeration {
-    type FileType = Value
-    val training, testing = Value
-  }
-
   lazy val IMUField = Tables.IMU.Field
   lazy val RawField = Tables.RawData.Field
-
   var lineOffset = 0
 
   def processLine(line: String) = {
@@ -50,8 +44,13 @@ object ImportActor {
       .`with`(IMUField.mz.toString, toFloat(cols(offset + 12)))
   }
 
-  case class ImportFile(fileType: FileType,filename: String, lines: Seq[String])
+  case class ImportFile(fileType: FileType, filename: String, lines: Seq[String])
 
   final case class HandleLines(filename: String, lineOffset: Int, lineCount: Int, lines: Iterable[String])
+
+  object FileType extends Enumeration {
+    type FileType = Value
+    val training, testing = Value
+  }
 
 }
