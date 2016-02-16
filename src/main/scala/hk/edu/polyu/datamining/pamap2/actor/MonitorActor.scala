@@ -1,10 +1,15 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
 import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.{AskNodeInfo, ResponseNodeInfo}
+import hk.edu.polyu.datamining.pamap2.actor.MonitorActorProtocol.Report
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+
+import scala.concurrent.duration.Duration
 
 object MonitorActor {
   val baseName = "Monitor-"
@@ -31,6 +36,12 @@ object MonitorActor {
 
 }
 
+object MonitorActorProtocol {
+
+  case object Report
+
+}
+
 class MonitorActor extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
@@ -41,6 +52,13 @@ class MonitorActor extends Actor with ActorLogging {
     log info s"monitor path : ${self.path}"
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
+    // set repeat timer
+    val cancellable:Cancellable=context.system.scheduler.schedule(
+      Duration.Zero,
+      Duration.create(2000,TimeUnit.MILLISECONDS),
+      self,
+      Report
+    )(cluster.system.dispatcher)
   }
 
   // clean up on shutdown
@@ -69,6 +87,7 @@ class MonitorActor extends Actor with ActorLogging {
         startTime = context.system.startTime,
         clusterSeedId = DatabaseHelper.clusterSeedId
       ))
+    case Report => log info s"\ncluster members:\n${cluster.state.members.filter(_.status == MemberStatus.Up)}"
     case msg => log info s"received message : $msg"
       ???
   }

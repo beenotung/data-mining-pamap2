@@ -8,6 +8,8 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
+import scala.collection.JavaConverters._
+
 object Main extends App {
 
   val nodeConfig = NodeConfig parse args
@@ -19,7 +21,8 @@ object Main extends App {
     /* register self to database */
     val host = HostIP.all()
     val port = c.config.getInt("akka.remote.netty.tcp.port")
-    val clusterSeedKey = DatabaseHelper.addSeed(host, port, RethinkDB.r.json({
+    val roles = Cluster(system).selfRoles.toIndexedSeq.asJava
+    val clusterSeedKey = DatabaseHelper.addSeed(host, port, roles, RethinkDB.r.json({
       val s = c.config.toString
       s.substring(26, s.length - 2)
     })).get("generated_keys").asInstanceOf[java.util.List[String]].get(0)

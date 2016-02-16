@@ -26,7 +26,7 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val host, port, config = Value
+      val host, port, roles, config = Value
     }
 
   }
