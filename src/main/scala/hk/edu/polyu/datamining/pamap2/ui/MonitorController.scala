@@ -12,13 +12,13 @@ import javafx.scene.control.Alert.AlertType
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
-import akka.cluster.Member
+import akka.cluster.{Member, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskClusterInfo
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskClusterInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, Node, UIActor}
+import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, MonitorActor, Node, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
@@ -78,9 +78,8 @@ object MonitorController {
   }))
 
   def receivedNodeInfo(nodeInfo: Node) = {
-    nodes.add(nodeInfo)
-    //    nodes.put(nodeInfo.nodeAddress, Some(nodeInfo))
     println(s"received nodeinfo : $nodeInfo")
+    nodes.add(nodeInfo)
     if (nodes.size() == nodes_num)
       println("All ready")
     else {
@@ -110,9 +109,16 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def customInit() = {
     /* get cluster status */
-    update_cluster_info(new ActionEvent())
+    //update_cluster_info(new ActionEvent())
 
     /* update general cluster info */
+    MonitorActor.addListener((event, members) => {
+      val n = members.count(_.status == MemberStatus.Up)
+      UIActor ! AskClusterInfo
+      runOnUIThread(() => {
+        btn_nodes.setText(n.toString)
+      })
+    })
   }
 
   override def update_cluster_info(event: ActionEvent) = {

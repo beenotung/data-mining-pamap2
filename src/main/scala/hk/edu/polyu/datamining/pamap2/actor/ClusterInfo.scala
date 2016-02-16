@@ -7,7 +7,7 @@ import scala.collection.mutable
 /**
   * Created by beenotung on 2/8/16.
   */
-object ClusterInfo {
+object ClusterInfoProtocol {
 
   case class ResponseClusterInfo(val clusterInfo: ClusterInfo)
 
@@ -35,21 +35,6 @@ class IntUsage(override val used: Int, override val total: Int) extends Usage[In
 
 class LongUsage(override val used: Long, override val total: Long) extends Usage[Long](used, total)
 
-case class Node(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, nodeAddress: NodeAddress) extends Comparable[Node] {
-  override def compareTo(o: Node): Int = nodeAddress.compareTo(nodeAddress)
-}
-
-case class NodeAddress(val hosts: Seq[String] = Seq.empty, val port: Int = 0: Int, addressString: String = "") extends Comparable[NodeAddress] {
-
-  override def compareTo(o: NodeAddress): Int = {
-    if (hosts./:(false)((acc, c) => {
-      acc || o.hosts.contains(c)
-    })) {
-      // matched
-      0
-    } else {
-      // not matched
-      hosts.head.compareTo(o.hosts.head)
-    }
-  }
+case class Node(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String) extends Comparable[Node] {
+  override def compareTo(o: Node): Int = clusterSeedId.compareTo(o.clusterSeedId)
 }

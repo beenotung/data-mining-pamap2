@@ -60,14 +60,13 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
       val vbox = new VBox(NodesDetailController.spacing)
       vbox.getChildren.addAll(
         new Label({
-          val host = node.nodeAddress.hosts.toString
-          val port = node.nodeAddress.port
-          s"$host : $port"
+          //TODO fork and get host info from database
+          node.clusterSeedId
         }),
         new Label({
           val starttime = formatDate(node.startTime)
           val uptime = formatDuration(node.upTime)
-          val memUsage = 1d * (node.totalMemory - node.freeMemory) / node.maxMemory
+          val memUsage = 100f * (node.totalMemory - node.freeMemory) / node.maxMemory + "%"
           s"${node.processor} processor\n" +
             s"memory usage : $memUsage\n" +
             s"start time : $starttime\n" +

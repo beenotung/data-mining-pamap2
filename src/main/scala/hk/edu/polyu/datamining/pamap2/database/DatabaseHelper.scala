@@ -48,7 +48,7 @@ object DatabaseHelper {
 
 
   /*    util functions    */
-  var clusterSeedKey: String = null
+  var clusterSeedId: String = null
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -65,7 +65,7 @@ object DatabaseHelper {
     r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
   }
 
-  def removeSeed(id: String = clusterSeedKey): ju.HashMap[String, AnyVal] = {
+  def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] = {
     val tableName = Tables.ClusterSeed.name
     r.table(tableName)
       .get(id)

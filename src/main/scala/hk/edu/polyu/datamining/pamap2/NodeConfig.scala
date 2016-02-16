@@ -31,7 +31,7 @@ case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI:
     // which config should be used
     val configPath =
       if (isSeed) SEED_NODE
-      else if (isCompute) CLUSTER_NODE
+      else if (isCompute) COMPUTE_NODE
       else if (isUI) UI_NODE
       else DEFAULT_NODE
 
@@ -58,13 +58,13 @@ object NodeConfig {
   /** static configuration for seed nodes */
   val SEED_NODE = "node.seed.conf"
 
-  /** static configuration for normal cluster nodes */
-  val CLUSTER_NODE = "node.cluster.conf"
+  /** static configuration for compute nodes */
+  val COMPUTE_NODE = "node.compute.conf"
 
   /** static configuration for ui nodes */
   val UI_NODE = "node.ui.conf"
 
-  val DEFAULT_NODE = CLUSTER_NODE
+  val DEFAULT_NODE = COMPUTE_NODE
   // IP:port of the seed nodes in the ActorSystem (from database)
   val seedNodes = {
     println("finding seed hosts...")

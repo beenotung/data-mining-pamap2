@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.{Cluster, MemberStatus}
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskNodeInfo
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskNodeInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
@@ -47,13 +47,9 @@ class UIActor extends Actor with ActorLogging {
     case command: DispatchTask => SingletonActor.GlobalDispatcher.proxy(context.system) ! command
     case StateActor.ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
       log info "received status"
-    case ClusterInfo.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(node)
-      val xs = cluster.state.members.filter(x => {
-        sender().path.address.eq(x.address)
-      })
+    case ClusterInfoProtocol.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(node)
       log info "received node info"
-      println(xs)
-    case ClusterInfo.AskClusterInfo => log info "asking for status"
+    case ClusterInfoProtocol.AskClusterInfo => log info "asking for status"
       /*
       * 1. ask cluster status
       * 2. ask cluster members info
