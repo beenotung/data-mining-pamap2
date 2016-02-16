@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
   * Created by beenotung on 2/2/16.
   */
 class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) {
-  val nameProperty: StringProperty = new SimpleStringProperty(this,"name", name)
+  val nameProperty: StringProperty = new SimpleStringProperty(this, "name", name)
   val supportAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "supportAuto", supportAuto)
   val isAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "isAuto", false)
 }

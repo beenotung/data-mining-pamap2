@@ -65,10 +65,6 @@ object NodeConfig {
   val UI_NODE = "node.ui.conf"
 
   val DEFAULT_NODE = CLUSTER_NODE
-
-  /** where to find the name of the ActorSystem */
-  private val CLUSTER_NAME_PATH = "clustering.cluster.name"
-
   // IP:port of the seed nodes in the ActorSystem (from database)
   val seedNodes = {
     println("finding seed hosts...")
@@ -76,6 +72,8 @@ object NodeConfig {
     println(s"found seed hosts : $seedHosts")
     seedHosts.map(seed => s"${seed._1}:${seed._2}")
   }
+  /** where to find the name of the ActorSystem */
+  private val CLUSTER_NAME_PATH = "clustering.cluster.name"
 
   /**
     * @return NodeConfig

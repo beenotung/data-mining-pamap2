@@ -1,7 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
-import akka.cluster.Cluster
+import akka.cluster.{Cluster, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskNodeInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
@@ -16,9 +16,15 @@ object UIActor {
   private[actor] var instance: UIActor = null
 
   def !(msg: Any) = instance.self ! msg
+
+  //def cluster: Cluster = instance.cluster
+  def members = instance.cluster.state.members.filter(_.status == MemberStatus.Up)
 }
 
 class UIActor extends Actor with ActorLogging {
+  val cluster = Cluster(context.system)
+  var clusterInfoBuilder: ClusterInfoBuilder = null
+
   override def preStart = {
     UIActor.instance = this
     MonitorApplication.ready = true
@@ -37,14 +43,16 @@ class UIActor extends Actor with ActorLogging {
     })).start()
   }
 
-  var clusterInfoBuilder: ClusterInfoBuilder = null
-
   override def receive: Receive = {
     case command: DispatchTask => SingletonActor.GlobalDispatcher.proxy(context.system) ! command
     case StateActor.ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
       log info "received status"
-    case ClusterInfo.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(sender().path.address, node)
+    case ClusterInfo.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(node)
+      val xs = cluster.state.members.filter(x => {
+        sender().path.address.eq(x.address)
+      })
       log info "received node info"
+      println(xs)
     case ClusterInfo.AskClusterInfo => log info "asking for status"
       /*
       * 1. ask cluster status
@@ -58,18 +66,10 @@ class UIActor extends Actor with ActorLogging {
       /* 1, ask cluster status */
       SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
       /* 2. ask cluster members info */
-      //TODO update nodes count
-      //      log info "writing config to database"
-      //      DatabaseHelper.debug("config", RethinkDB.r.json({
-      //        val s = context.system.settings.config.toString
-      //        s.substring(26, s.length - 2)
-      //      }))
-      MonitorController.setNodeAddresses(MonitorActor.activeMembers.map(_.address))
+      MonitorController.updateNodes(cluster.state.members.filter(_.status == MemberStatus.Up))
       context.actorSelection(s"/user/${MonitorActor.baseName}*").tell(AskNodeInfo, self)
     case msg =>
       log error s"unsupported message : $msg"
       ???
   }
-
-  val cluster = Cluster(context.system)
 }

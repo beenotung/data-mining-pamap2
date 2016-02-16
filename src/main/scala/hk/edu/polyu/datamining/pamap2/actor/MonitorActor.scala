@@ -3,11 +3,15 @@ package hk.edu.polyu.datamining.pamap2.actor
 import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
+import hk.edu.polyu.datamining.pamap2.HostIP
 import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.{AskNodeInfo, ResponseNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor.MonitorActor.activeMembers
 
+import scala.collection.JavaConverters._
+
 object MonitorActor {
   val baseName = "Monitor-"
+  var activeMembers = Set.empty[Member]
   private var subName: String = null
 
   def fullName: String =
@@ -17,8 +21,6 @@ object MonitorActor {
       baseName + subName
 
   def subName(value: String): Unit = subName = value
-
-  var activeMembers = Set.empty[Member]
 }
 
 class MonitorActor extends Actor with ActorLogging {
@@ -55,7 +57,10 @@ class MonitorActor extends Actor with ActorLogging {
         totalMemory = runtime.totalMemory(),
         maxMemory = runtime.maxMemory(),
         upTime = context.system.uptime,
-        startTime = context.system.startTime
+        startTime = context.system.startTime,
+        nodeAddress = new NodeAddress(
+          hosts = HostIP.all().asScala.toIndexedSeq,
+          port = context.system.settings.config.getInt("akka.remote.netty.tcp.port"))
       ))
     case _: MemberEvent => // ignore
   }

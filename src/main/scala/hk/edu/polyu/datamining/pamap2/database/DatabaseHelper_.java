@@ -1,9 +1,5 @@
 package hk.edu.polyu.datamining.pamap2.database;
 
-import java.util.List;
-
-import static com.rethinkdb.RethinkDB.r;
-
 /**
  * Created by beenotung on 2/3/16.
  */
