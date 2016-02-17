@@ -1,0 +1,1 @@
+./opt/sbt.cmd runUI

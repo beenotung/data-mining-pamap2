@@ -50,6 +50,10 @@ case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI:
       .withFallback(ConfigFactory parseResources configPath)
       .withFallback(config)
       .resolve
+
+    // build the final config without init seed nodes
+    /*ConfigFactory parseResources configPath
+      .with*/
   }
 
 }
@@ -70,6 +74,13 @@ object NodeConfig {
     println("finding seed hosts...")
     val seedHosts = DatabaseHelper.findSeeds
     println(s"found seed hosts : $seedHosts")
+
+    //val seedHosts = Seq(("58.96.176.223", 2551))
+    //println(s"using hard-coded seed $seedHosts")
+
+    //val seedHosts=Seq.empty[(String,Int)]
+    //println("running without init seed nodes")
+
     seedHosts.map(seed => s"${seed._1}:${seed._2}")
   }
   /** where to find the name of the ActorSystem */
