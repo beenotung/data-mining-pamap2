@@ -17,11 +17,12 @@ object Main extends App {
   // If a config could be parsed - start the system
   nodeConfig foreach { c =>
     val system = ActorSystem(c.clusterName, c.config)
+    val cluster: Cluster = Cluster(system)
 
     /* register self to database */
     val host = HostIP.all()
-    val port = c.config.getInt("akka.remote.netty.tcp.port")
-    val roles = Cluster(system).selfRoles.toIndexedSeq.asJava
+    val port = cluster.selfAddress.port.getOrElse(c.config.getInt("akka.remote.netty.tcp.port"))
+    val roles = cluster.selfRoles.toIndexedSeq.asJava
     val clusterSeedKey = DatabaseHelper.addSeed(host, port, roles, RethinkDB.r.json({
       val s = c.config.toString
       s.substring(26, s.length - 2)
@@ -34,6 +35,7 @@ object Main extends App {
     system.registerOnTermination({
       /* notify UI, will shutdown JVM */
       MonitorController.onActorSystemTerminated()
+      //shutdown jvm now?
     })
 
     // Register a monitor actor for demo purposes
@@ -45,10 +47,10 @@ object Main extends App {
     SingletonActor.StateHolder.init(system)
     SingletonActor.GlobalDispatcher.init(system)
 
-    if (Cluster(system).selfRoles.contains("seed")) {
+    if (cluster.selfRoles.contains("seed")) {
       // TODO save IP to database?
     }
-    else if (Cluster(system).selfRoles.contains("ui"))
+    else if (cluster.selfRoles.contains("ui"))
     // register a UIActor
       system.actorOf(Props[actor.UIActor])
     else
