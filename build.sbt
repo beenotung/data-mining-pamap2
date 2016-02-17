@@ -26,32 +26,33 @@ libraryDependencies ++= Seq(
 
 // Create custom run tasks to start a seed and a cluster node
 // http://www.scala-sbt.org/0.13.0/docs/faq.html#how-can-i-create-a-custom-run-task-in-addition-to-run
-lazy val runSeed = taskKey[Unit]("Start the seed node on 127.0.0.1:2551")
-fullRunTask(runSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed")
-fork in runSeed := true
+lazy val runLocalSeed = taskKey[Unit]("Start the seed node on local network")
+fullRunTask(runLocalSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--local_seed")
+fork in runLocalSeed := true
 
-javaOptions in runSeed ++= Seq(
-  "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2551"
+javaOptions in runLocalSeed ++= Seq(
 )
 
-lazy val runCompute = taskKey[Unit]("Start a node on 127.0.0.1:2552")
+lazy val runPublicSeed= taskKey[Unit]("Start the seed node on public network")
+fullRunTask(runPublicSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--public_seed")
+fork in runPublicSeed := true
+
+javaOptions in runPublicSeed ++= Seq(
+)
+
+lazy val runCompute = taskKey[Unit]("Start a compute node")
 fullRunTask(runCompute, Compile, "hk.edu.polyu.datamining.pamap2.Main" ,"--compute")
 fork in runCompute := true
 
 javaOptions in runCompute ++= Seq(
-  "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2552",
   "-XX:+AggressiveHeap"
 )
 
-lazy val runUI = taskKey[Unit]("Start a UI node on 127.0.0.1:2553")
+lazy val runUI = taskKey[Unit]("Start a UI node")
 fullRunTask(runUI, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--ui")
 fork in runUI := true
 
 javaOptions in runUI ++= Seq(
-  "-Dclustering.ip=127.0.0.1",
-  "-Dclustering.port=2553",
   "-XX:+AggressiveHeap"
 )
 

@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.function.{Consumer, Predicate}
 import javafx.event.EventHandler
 import javafx.util.Callback
@@ -34,14 +34,12 @@ object Lang {
     override def test(t: A): Boolean = fun(t)
   }
 
-  implicit def removeAll(implicit  concurrentLinkedQueue: ConcurrentLinkedQueue[_]):Unit={
+  implicit def removeAll(implicit concurrentLinkedQueue: ConcurrentLinkedQueue[_]): Unit = {
     concurrentLinkedQueue.removeIf(new Predicate[Any] {
       override def test(t: Any): Boolean = true
     })
   }
-//  implicit def hasNull(implicit map:ConcurrentHashMap):Boolean={
-//    map.valu
-//  }
+
 
   /*    JavaFX Support    */
   implicit def callback[X, Y](fun: X => Y): Callback[X, Y] = new Callback[X, Y] {
@@ -51,6 +49,11 @@ object Lang {
   implicit def eventHandler[A <: javafx.event.Event](fun: A => Unit): EventHandler[A] = new EventHandler[A] {
     override def handle(t: A): Unit = fun(t)
   }
+
+  //  implicit def runOnUIThread(fun: () => Unit): Unit = Platform runLater fun
+
+  //  implicit def runOnUIThread(code: => Unit): Unit = Platform runLater { () => code }
+
 
   /*    RethinkDB support    */
   implicit def reqlFunction0(fun: () => Object): ReqlFunction0 = new ReqlFunction0 {

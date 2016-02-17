@@ -7,7 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
+case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -31,12 +31,13 @@ case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI:
     // which config should be used
     val configPath =
       if (isSeed) SEED_NODE
-      else if (isCompute) CLUSTER_NODE
+      else if (isCompute) COMPUTE_NODE
       else if (isUI) UI_NODE
       else DEFAULT_NODE
 
     // use configured ip or get host ip if available
-    val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    //val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    val ip = if (isPublic) HostIP.PublicIP else HostIP.LocalIP
     val ipValue = ConfigValueFactory fromAnyRef ip
 
     // add seed nodes to config
@@ -58,17 +59,13 @@ object NodeConfig {
   /** static configuration for seed nodes */
   val SEED_NODE = "node.seed.conf"
 
-  /** static configuration for normal cluster nodes */
-  val CLUSTER_NODE = "node.cluster.conf"
+  /** static configuration for compute nodes */
+  val COMPUTE_NODE = "node.compute.conf"
 
   /** static configuration for ui nodes */
   val UI_NODE = "node.ui.conf"
 
-  val DEFAULT_NODE = CLUSTER_NODE
-
-  /** where to find the name of the ActorSystem */
-  private val CLUSTER_NAME_PATH = "clustering.cluster.name"
-
+  val DEFAULT_NODE = COMPUTE_NODE
   // IP:port of the seed nodes in the ActorSystem (from database)
   val seedNodes = {
     println("finding seed hosts...")
@@ -76,6 +73,8 @@ object NodeConfig {
     println(s"found seed hosts : $seedHosts")
     seedHosts.map(seed => s"${seed._1}:${seed._2}")
   }
+  /** where to find the name of the ActorSystem */
+  private val CLUSTER_NAME_PATH = "clustering.cluster.name"
 
   /**
     * @return NodeConfig
@@ -85,9 +84,12 @@ object NodeConfig {
 
     val parser = new scopt.OptionParser[NodeConfig]("akka-docker") {
       head("akka-docker", "2.3.4")
-      opt[Unit]("seed") action { (_, c) =>
-        c.copy(isSeed = true)
-      } text "set this flag to start this system as a seed node"
+      opt[Unit]("public_seed") action { (_, c) =>
+        c.copy(isSeed = true, isPublic = true)
+      } text "set this flag to start this system as a public network seed node"
+      opt[Unit]("local_seed") action { (_, c) =>
+        c.copy(isSeed = true, isPublic = false)
+      } text "set this flag to start this system as a local network seed node"
       opt[Unit]("compute") action { (_, c) =>
         c.copy(isCompute = true)
       } text "set this flag to start this system as a compute node"
@@ -98,7 +100,11 @@ object NodeConfig {
       //  c.copy(seedNodes = c.seedNodes :+ n)
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
-        case NodeConfig(false, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
+        case NodeConfig(false, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
+        case NodeConfig(true, false, _, _) if seedNodes.isEmpty => {
+          reportWarning(s"this actor system is only accessible within local network")
+          success
+        }
         case _ => success
       }
     }

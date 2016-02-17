@@ -2,23 +2,23 @@ package hk.edu.polyu.datamining.pamap2.ui
 
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.{ConcurrentLinkedQueue, ConcurrentSkipListSet}
 import java.{util => ju}
 import javafx.application.Platform
+import javafx.application.Platform.{runLater => runOnUIThread}
 import javafx.event.ActionEvent
-import javafx.fxml.FXMLLoader
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.{Parent, Scene}
+import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
-import javafx.stage.{FileChooser, Stage}
 
+import akka.cluster.{Member, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfo.AskClusterInfo
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskClusterInfo
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, Node, UIActor}
+import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, MonitorActor, Node, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
@@ -31,25 +31,23 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
+  val nodes = new ConcurrentSkipListSet[Node]()
+  val aborted = new AtomicBoolean(false)
+  var nodes_num = UIActor.members.size
   private[ui] var instance: MonitorController = null
 
-  def onActorSystemTerminated() = instance match {
-    case controller: MonitorController if controller != null =>
-      Platform runLater runnable(() => {
-        val alert = new Alert(AlertType.ERROR)
-        alert.setTitle("Error")
-        alert.setHeaderText("Actor System is shutdown")
-        alert.setContentText("check the console for more detail\ne.g. not implemented error (???)")
-        alert.showAndWait()
-        Platform.exit()
-      })
-    case _ =>
-  }
+  def onActorSystemTerminated() = if (instance != null) runOnUIThread(() => {
+    val alert = new Alert(AlertType.ERROR)
+    alert.setTitle("Error")
+    alert.setHeaderText("Actor System is shutdown")
+    alert.setContentText("check the console for more detail\ne.g. not implemented error (???)")
+    alert.showAndWait()
+    Platform.exit()
+  })
 
   def importingFile(filename: String) = Platform runLater (() => {
     instance.left_status.setText(s"importing $filename")
   })
-
 
   def importedFile(filename: String): Unit = Platform runLater (() => {
     instance.left_status.setText(s"imported $filename")
@@ -63,25 +61,32 @@ object MonitorController {
     instance.updated_cluster_status(status)
   })
 
-  val nodes = new ConcurrentHashMap[String, Option[Node]]
-
-  def setNodeAddresses(addresses: Seq[String]) = {
+  /*@deprecated
+  def setNodeAddresses(addresses: Iterable[NodeAddress]) = runOnUIThread(() => {
     nodes.synchronized({
       nodes.clear()
-      val nodeMap: ju.Map[String, Option[Node]] = Map[String, Option[Node]](addresses.map(address => (address, None)): _*).asJava
-      nodes.putAll(nodeMap)
+      val nodeMap: ju.Map[NodeAddress, Option[Node]] = Map[NodeAddress, Option[Node]](addresses.map(address => (address, None)).toSeq: _*).asJava
+      nodes.addAll(nodeMap)
       instance.btn_nodes.setText(nodes.size().toString)
     })
-  }
+  })*/
 
-  def receivedNodeInfo(nodeAddress: String, nodeInfo: Node) = {
-    nodes.put(nodeAddress, Some(nodeInfo))
-    if (!nodes.containsValue(None)) {
+  def updateNodes(members: Iterable[Member]) = runOnUIThread(() => nodes.synchronized({
+    nodes.clear()
+    nodes_num = members.size
+    instance.btn_nodes.setText(nodes_num.toString)
+  }))
+
+  def receivedNodeInfo(nodeInfo: Node) = {
+    println(s"received nodeinfo : $nodeInfo")
+    nodes.add(nodeInfo)
+    if (nodes.size() == nodes_num)
       println("All ready")
-    } else println("still waiting node")
+    else {
+      println("still waiting node")
+      println(nodes)
+    }
   }
-
-  def runOnUIThread(fun: () => Unit) = Platform runLater fun
 
   def setFileProgressText(value: String) = Platform runLater (() => {
     instance.file_progress_text.setText(value)
@@ -90,8 +95,6 @@ object MonitorController {
   def setProgress(value: Double) = runOnUIThread(() => {
     instance.import_file_progress.setProgress(value)
   })
-
-  val aborted = new AtomicBoolean(false)
 }
 
 class MonitorController extends MonitorControllerSkeleton {
@@ -106,9 +109,16 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def customInit() = {
     /* get cluster status */
-    update_cluster_info(new ActionEvent())
+    //update_cluster_info(new ActionEvent())
 
     /* update general cluster info */
+    MonitorActor.addListener((event, members) => {
+      val n = members.count(_.status == MemberStatus.Up)
+      UIActor ! AskClusterInfo
+      runOnUIThread(() => {
+        btn_nodes.setText(n.toString)
+      })
+    })
   }
 
   override def update_cluster_info(event: ActionEvent) = {
@@ -146,12 +156,7 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def show_nodes_detail(event: ActionEvent) = {
-    val stage = new Stage()
-    val root: Parent = FXMLLoader.load(getClass.getResource("NodesDetail.fmxl"))
-    val scene = new Scene(root)
-    stage.setTitle("Nodes Detail")
-    stage.setScene(scene)
-    stage.show()
+    NodesDetailController.start()
   }
 
   def select_datafile(fileType: FileType) = {
