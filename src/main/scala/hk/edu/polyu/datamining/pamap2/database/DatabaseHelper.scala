@@ -174,7 +174,8 @@ object DatabaseHelper {
       .withFields(hostField, portField)
       .run(conn)
     result.toList.asScala
-      .map { row => (row.get(hostField).asInstanceOf[String], row.get(portField).asInstanceOf[Int]) }
+      .map { row => (row.get(hostField).asInstanceOf[String], row.get(portField).asInstanceOf[Long].toInt) }
+      .toIndexedSeq
   }
 
   def addRawDataFile(filename: String, lines: Iterable[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
