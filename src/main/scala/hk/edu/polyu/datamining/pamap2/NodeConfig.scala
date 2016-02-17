@@ -7,7 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
+case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -50,10 +50,6 @@ case class NodeConfig(isSeed: Boolean = false, isCompute: Boolean = false, isUI:
       .withFallback(ConfigFactory parseResources configPath)
       .withFallback(config)
       .resolve
-
-    // build the final config without init seed nodes
-    /*ConfigFactory parseResources configPath
-      .with*/
   }
 
 }
@@ -74,13 +70,6 @@ object NodeConfig {
     println("finding seed hosts...")
     val seedHosts = DatabaseHelper.findSeeds
     println(s"found seed hosts : $seedHosts")
-
-    //val seedHosts = Seq(("58.96.176.223", 2551))
-    //println(s"using hard-coded seed $seedHosts")
-
-    //val seedHosts=Seq.empty[(String,Int)]
-    //println("running without init seed nodes")
-
     seedHosts.map(seed => s"${seed._1}:${seed._2}")
   }
   /** where to find the name of the ActorSystem */
@@ -94,9 +83,12 @@ object NodeConfig {
 
     val parser = new scopt.OptionParser[NodeConfig]("akka-docker") {
       head("akka-docker", "2.3.4")
-      opt[Unit]("seed") action { (_, c) =>
-        c.copy(isSeed = true)
-      } text "set this flag to start this system as a seed node"
+      opt[Unit]("public_seed") action { (_, c) =>
+        c.copy(isSeed = true, isPublic = true)
+      } text "set this flag to start this system as a public network seed node"
+      opt[Unit]("local_seed") action { (_, c) =>
+        c.copy(isSeed = true, isPublic = false)
+      } text "set this flag to start this system as a local network seed node"
       opt[Unit]("compute") action { (_, c) =>
         c.copy(isCompute = true)
       } text "set this flag to start this system as a compute node"
@@ -107,7 +99,11 @@ object NodeConfig {
       //  c.copy(seedNodes = c.seedNodes :+ n)
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
-        case NodeConfig(false, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
+        case NodeConfig(false, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
+        case NodeConfig(true, false, _, _) if seedNodes.isEmpty => {
+          reportWarning(s"this actor system is only accessible within local network")
+          success
+        }
         case _ => success
       }
     }

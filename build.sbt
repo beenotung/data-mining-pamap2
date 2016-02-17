@@ -27,14 +27,14 @@ libraryDependencies ++= Seq(
 // Create custom run tasks to start a seed and a cluster node
 // http://www.scala-sbt.org/0.13.0/docs/faq.html#how-can-i-create-a-custom-run-task-in-addition-to-run
 lazy val runLocalSeed = taskKey[Unit]("Start the seed node on local network")
-fullRunTask(runLocalSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed","--localip")
+fullRunTask(runLocalSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--local_seed")
 fork in runLocalSeed := true
 
 javaOptions in runLocalSeed ++= Seq(
 )
 
 lazy val runPublicSeed= taskKey[Unit]("Start the seed node on public network")
-fullRunTask(runPublicSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed","--publicip")
+fullRunTask(runPublicSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--public_seed")
 fork in runPublicSeed := true
 
 javaOptions in runPublicSeed ++= Seq(
