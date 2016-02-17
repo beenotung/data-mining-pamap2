@@ -20,7 +20,7 @@ object Main extends App {
     val cluster: Cluster = Cluster(system)
 
     /* register self to database */
-    val host = HostIP.all()
+    val host = cluster.selfAddress.host.get
     val port = cluster.selfAddress.port.getOrElse(c.config.getInt("akka.remote.netty.tcp.port"))
     val roles = cluster.selfRoles.toIndexedSeq.asJava
     val clusterSeedKey = DatabaseHelper.addSeed(host, port, roles, RethinkDB.r.json({

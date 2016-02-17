@@ -118,7 +118,7 @@ object DatabaseHelper {
     ).run(conn)
   }
 
-  def addSeed(host: java.util.List[String], port: Int, roles: ju.List[String], config: Json): ju.HashMap[String, AnyVal] = {
+  def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): ju.HashMap[String, AnyVal] = {
     initTables()
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
@@ -131,23 +131,6 @@ object DatabaseHelper {
         .`with`(rolesField, roles)
         .`with`(configField, config)
     ).run(conn)
-  }
-
-  def findSeeds: Seq[(String, Int)] = {
-    initTables()
-    val tableName = Tables.ClusterSeed.name
-    val hostField = Tables.ClusterSeed.Field.host.toString
-    val portField = Tables.ClusterSeed.Field.port.toString
-    //val configField = Tables.ClusterSeed.Field.config.toString
-    val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
-      .withFields(hostField, portField)
-      .run(conn)
-    result.toList.asScala
-      .flatMap(seed => {
-        val port = seed.get(portField)
-        seed.get(hostField).asInstanceOf[ju.List[String]].asScala
-          .map(ip => (ip, port.asInstanceOf[jl.Long].toInt))
-      }).toIndexedSeq
   }
 
   /**
@@ -180,6 +163,19 @@ object DatabaseHelper {
         r.hashMap("created", 0),
         r.tableCreate(tableName)
       )))
+
+  def findSeeds: Seq[(String, Int)] = {
+    initTables()
+    val tableName = Tables.ClusterSeed.name
+    val hostField = Tables.ClusterSeed.Field.host.toString
+    val portField = Tables.ClusterSeed.Field.port.toString
+    //val configField = Tables.ClusterSeed.Field.config.toString
+    val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
+      .withFields(hostField, portField)
+      .run(conn)
+    result.toList.asScala
+      .map { row => (row.get(hostField).asInstanceOf[String], row.get(portField).asInstanceOf[Int]) }
+  }
 
   def addRawDataFile(filename: String, lines: Iterable[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
     val field = Tables.RawDataFile.Field
