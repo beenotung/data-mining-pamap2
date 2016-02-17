@@ -36,7 +36,8 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
       else DEFAULT_NODE
 
     // use configured ip or get host ip if available
-    val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    //val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
+    val ip = if (isPublic) HostIP.PublicIP else HostIP.LocalIP
     val ipValue = ConfigValueFactory fromAnyRef ip
 
     // add seed nodes to config
