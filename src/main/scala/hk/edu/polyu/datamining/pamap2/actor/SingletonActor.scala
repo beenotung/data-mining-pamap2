@@ -39,10 +39,10 @@ object SingletonActor {
     override def actorProps: Props = Props[StateActor]
   }
 
-  case object GlobalDispatcher extends SingletonActorType {
+  case object Dispatcher extends SingletonActorType {
     override val name: String = "global-dispatcher"
 
-    override def actorProps: Props = Props[GlobalDispatchActor]
+    override def actorProps: Props = Props[DispatchActor]
   }
 
 }

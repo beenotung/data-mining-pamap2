@@ -45,7 +45,7 @@ object Main extends App {
 
     /* set singletons */
     SingletonActor.StateHolder.init(system)
-    SingletonActor.GlobalDispatcher.init(system)
+    SingletonActor.Dispatcher.init(system)
 
     if (cluster.selfRoles.contains("seed")) {
       // TODO save IP to database?
@@ -55,6 +55,6 @@ object Main extends App {
       system.actorOf(Props[actor.UIActor])
     else
     // register a ComputeActor
-      system.actorOf(Props[actor.LocalDispatchActor])
+      system.actorOf(Props[actor.ComputeActor])
   }
 }

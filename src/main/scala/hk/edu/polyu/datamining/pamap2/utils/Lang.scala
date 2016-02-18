@@ -6,6 +6,7 @@ import javafx.event.EventHandler
 import javafx.util.Callback
 
 import akka.actor.{ActorContext, ActorSystem}
+import akka.cluster.Cluster
 import com.rethinkdb.gen.ast._
 
 import scala.annotation.tailrec
@@ -77,8 +78,9 @@ object Lang {
   }
 
   /*    Akka    */
-  implicit def actorSystem(context: ActorContext): ActorSystem = context.system
+  implicit def cluster(implicit system: ActorSystem) = Cluster(system)
 
+  implicit def system(implicit context: ActorContext) = context.system
 
   /*    Others    */
   implicit def unit(x: Any): Unit = Unit

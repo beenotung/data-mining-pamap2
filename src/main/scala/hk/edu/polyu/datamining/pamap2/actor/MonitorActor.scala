@@ -1,18 +1,15 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.{AskNodeInfo, ResponseNodeInfo}
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
-
-import scala.concurrent.duration.Duration
 
 object MonitorActor {
+  type Members = Iterable[Member]
+  type EventHandler = (MemberEvent, Members) => Unit
   val baseName = "Monitor-"
   private var subName: String = null
+  private var listeners = Seq.empty[MonitorActor.EventHandler]
 
   def fullName: String =
     if (subName == null)
@@ -21,10 +18,6 @@ object MonitorActor {
       baseName + subName
 
   def subName(value: String): Unit = subName = value
-
-  type Members = Iterable[Member]
-  type EventHandler = (MemberEvent, Members) => Unit
-  private var listeners = Seq.empty[MonitorActor.EventHandler]
 
   def addListener(handler: EventHandler) = listeners.synchronized(listeners :+= handler)
 
@@ -36,8 +29,6 @@ object MonitorActor {
 }
 
 object MonitorActorProtocol {
-
-
 }
 
 class MonitorActor extends Actor with ActorLogging {
@@ -67,17 +58,6 @@ class MonitorActor extends Actor with ActorLogging {
     case MemberExited(member) => log info s"Member exited ${member.address} with roles ${member.roles}"
       activeMembers -= member*/
     case event: MemberEvent => MonitorActor.onMemberChanged(event, cluster.state.members)
-    case AskNodeInfo => log info "received AskNodeInfo Request"
-      val runtime: Runtime = Runtime.getRuntime
-      sender ! ResponseNodeInfo(new NodeInfo(
-        processor = runtime.availableProcessors(),
-        freeMemory = runtime.freeMemory(),
-        totalMemory = runtime.totalMemory(),
-        maxMemory = runtime.maxMemory(),
-        upTime = context.system.uptime,
-        startTime = context.system.startTime,
-        clusterSeedId = DatabaseHelper.clusterSeedId
-      ))
     case msg => log info s"received message : $msg"
       ???
   }

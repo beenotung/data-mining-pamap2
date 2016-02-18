@@ -56,7 +56,7 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
   }
 
   def updateList() = {
-    val nodes = MonitorController.nodes.asScala.map { node => {
+    val nodes = MonitorController.nodes.map { node => {
       val vbox = new VBox(NodesDetailController.spacing)
       vbox.getChildren.addAll(
         new Label({

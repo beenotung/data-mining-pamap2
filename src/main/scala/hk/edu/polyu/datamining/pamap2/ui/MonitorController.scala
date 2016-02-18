@@ -1,8 +1,8 @@
 package hk.edu.polyu.datamining.pamap2.ui
 
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ConcurrentLinkedQueue, ConcurrentSkipListSet}
 import java.{util => ju}
 import javafx.application.Platform
 import javafx.application.Platform.{runLater => runOnUIThread}
@@ -12,10 +12,8 @@ import javafx.scene.control.Alert.AlertType
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
-import akka.cluster.{Member, MemberStatus}
+import akka.cluster.MemberStatus
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.ask
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor._
@@ -31,10 +29,13 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
-  val nodes = new ConcurrentSkipListSet[NodeInfo]()
   val aborted = new AtomicBoolean(false)
+  var nodes = Set.empty[NodeInfo]
   var nodes_num = UIActor.members.size
   private[ui] var instance: MonitorController = null
+
+  def receivedNodeInfos(newNodes: Seq[NodeInfo]) = nodes = newNodes.toSet
+
 
   def onActorSystemTerminated() = if (instance != null) runOnUIThread(() => {
     val alert = new Alert(AlertType.ERROR)
@@ -60,33 +61,6 @@ object MonitorController {
   def receivedClusterStatus(status: ActionStatusType): Unit = Platform runLater (() => {
     instance.updated_cluster_status(status)
   })
-
-  /*@deprecated
-  def setNodeAddresses(addresses: Iterable[NodeAddress]) = runOnUIThread(() => {
-    nodes.synchronized({
-      nodes.clear()
-      val nodeMap: ju.Map[NodeAddress, Option[Node]] = Map[NodeAddress, Option[Node]](addresses.map(address => (address, None)).toSeq: _*).asJava
-      nodes.addAll(nodeMap)
-      instance.btn_nodes.setText(nodes.size().toString)
-    })
-  })*/
-
-  def updateNodes(members: Iterable[Member]) = runOnUIThread(() => nodes.synchronized({
-    nodes.clear()
-    nodes_num = members.size
-    instance.btn_nodes.setText(nodes_num.toString)
-  }))
-
-  def receivedNodeInfo(nodeInfo: NodeInfo) = {
-    println(s"received nodeinfo : $nodeInfo")
-    nodes.add(nodeInfo)
-    if (nodes.size() == nodes_num)
-      println("All ready")
-    else {
-      println("still waiting node")
-      println(nodes)
-    }
-  }
 
   def setFileProgressText(value: String) = Platform runLater (() => {
     instance.file_progress_text.setText(value)
@@ -114,7 +88,7 @@ class MonitorController extends MonitorControllerSkeleton {
     /* update general cluster info */
     MonitorActor.addListener((event, members) => {
       val n = members.count(_.status == MemberStatus.Up)
-      UIActor ! AskClusterInfo
+      UIActor.requestUpdate()
       runOnUIThread(() => {
         btn_nodes.setText(n.toString)
       })
@@ -131,7 +105,7 @@ class MonitorController extends MonitorControllerSkeleton {
     text_number_of_pending_task setText loading
     text_number_of_completed_tasl setText loading
     /* ask for cluster status */
-    UIActor ! ask[ClusterInfo]
+    UIActor.requestUpdate()
   }
 
   def promptRestarted(reason: String): Unit = {
@@ -207,7 +181,8 @@ class MonitorController extends MonitorControllerSkeleton {
               })
             setProgress(0)
             /* 3. tell global dispatcher */
-            UIActor ! new DispatchTask(DispatchActorProtocol.Task.extractFromRawLine)
+            //TODO
+            //            UIActor ! new DispatchTask(DispatchActorProtocol.Task.extractFromRawLine)
             /* 4. tell UI done */
             importedFile(filename)
             true

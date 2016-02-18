@@ -2,10 +2,10 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.{Cluster, MemberStatus}
-import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.Ask
+import hk.edu.polyu.datamining.pamap2.actor.StateActor.ResponseStatus
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
-import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
-
+import hk.edu.polyu.datamining.pamap2.utils.Lang
+import hk.edu.polyu.datamining.pamap2.utils.Lang.{runnable, _}
 
 /**
   * Created by beenotung on 1/30/16.
@@ -14,28 +14,26 @@ object UIActor {
   /* only reference to local instance */
   private[actor] var instance: UIActor = null
 
-  private[actor]
-  def !(msg: Any) = instance.self ! msg
-
   //def cluster: Cluster = instance.cluster
   def members = instance.cluster.state.members.filter(_.status == MemberStatus.Up)
 
-  def requestUpdate = {
-    UIActor ! ActorProtocol.ask[Clu]
+  def requestUpdate(): Unit = {
+    UIActor ! StateActor.AskStatus
+    UIActor ! MessageProtocol.Request[MessageProtocol.ClusterComputeInfo]()
   }
+
+  private[actor]
+  def !(msg: Any) = instance.self ! msg
 }
 
 class UIActor extends Actor with ActorLogging {
 
-  import ActorUtils._
-
   val cluster = Cluster(context.system)
-  var clusterInfoBuilder: ClusterInfoBuilder = null
 
   override def preStart = {
     UIActor.instance = this
     MonitorApplication.ready = true
-    new Thread(runnable(() => {
+    Lang.fork(() => {
       try {
         MonitorApplication.main(Array.empty)
         /* leave cluster when GUI window is closed by user */
@@ -47,12 +45,14 @@ class UIActor extends Actor with ActorLogging {
         case e: IllegalStateException => log warning "restarting UIActor with existing JavaFX Application"
           MonitorController.restarted("UIActor is restarted")
       }
-    })).start()
+    })
   }
 
   override def receive: Receive = {
     case StateActor.AskStatus => SingletonActor.StateHolder.proxy ! StateActor.AskStatus
-    case msg: Ask[ClusterInfoProtocol.ClusterInfo] => SingletonActor.GlobalDispatcher.proxy ! msg
+    case ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
+    case msg: MessageProtocol.Request[MessageProtocol.ClusterComputeInfo] => SingletonActor.Dispatcher.proxy ! msg
+    case msg: MessageProtocol.ClusterComputeInfo => MonitorController.receivedNodeInfos(msg)
     case msg =>
       log error s"unsupported message : $msg"
       ???

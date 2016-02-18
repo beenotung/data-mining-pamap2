@@ -1,42 +1,11 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.ActorSystem
-import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.{Ask, Response}
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.ClusterInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
-
-import scala.collection.mutable
 
 /**
   * Created by beenotung on 2/8/16.
   */
-object ClusterInfoProtocol {
-  @deprecated
-  type ResponseClusterInfo = Response[ClusterInfo]
-
-  @deprecated
-  type ResponseNodeInfo = Response[NodeInfo]
-
-  @deprecated
-  type AskClusterInfo = Ask[ClusterInfo]
-
-  @deprecated
-  type AskNodeInfo = Ask[NodeInfo]
-
-  type ClusterInfo = Seq[NodeInfo]
-}
-
-
-class ClusterInfoBuilder(val n: Int) {
-  val nodes = mutable.Buffer.empty[NodeInfo]
-
-  def +(node: NodeInfo) = nodes.+=(node)
-
-  def isReady = nodes.size == n
-
-  def build(system: ActorSystem): ClusterInfo = nodes.toIndexedSeq
-}
-
 class Usage[A <: AnyVal](val used: A, val total: A)
 
 class IntUsage(override val used: Int, override val total: Int) extends Usage[Int](used, total)
