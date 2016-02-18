@@ -182,7 +182,7 @@ class MonitorController extends MonitorControllerSkeleton {
             setProgress(0)
             /* 3. tell global dispatcher */
             //TODO
-            //            UIActor ! new DispatchTask(DispatchActorProtocol.Task.extractFromRawLine)
+            UIActor.onImportedRawFile()
             /* 4. tell UI done */
             importedFile(filename)
             true

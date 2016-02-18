@@ -5,7 +5,13 @@ package hk.edu.polyu.datamining.pamap2.actor
   */
 object MessageProtocol {
 
-  type ClusterComputeInfo = Seq[NodeInfo]
+  case class ClusterComputeInfo(nodeInfo: Seq[NodeInfo])
+
+  sealed trait Request
+
+  case object RequestClusterComputeInfo extends Request
+
+  case object RequestNodeInfo extends Request
 
   sealed trait DispatchActorProtocol
 
@@ -13,9 +19,8 @@ object MessageProtocol {
 
   case class UnRegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
 
-  case class Report(nodeInfo: NodeInfo) extends DispatchActorProtocol
+  sealed trait Task
 
-  case class Request[A]()
+  case class ExtractFromRaw(ids: Seq[String]) extends Task
 
-  case class Response[A](response: A)
 }

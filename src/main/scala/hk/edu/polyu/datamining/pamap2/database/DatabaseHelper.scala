@@ -6,6 +6,8 @@ package hk.edu.polyu.datamining.pamap2.database
 
 import java.{lang => jl, util => ju}
 
+import com.rethinkdb.RethinkDB
+import com.rethinkdb.ast.ReqlAst
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.net.Cursor
 import com.typesafe.config.ConfigFactory
@@ -188,6 +190,12 @@ object DatabaseHelper {
     }
     r.table(RawDataFile.name).insert(row).run(conn)
   }
+
+  def getRawDataFileIds(): ju.List[String] = {
+    ???
+  }
+
+  def run[A](fun: RethinkDB => ReqlAst) = fun(r).run(conn)
 
   def debug(key: String, value: Json): ju.HashMap[String, AnyRef] = {
     val table = Tables.Debug.name

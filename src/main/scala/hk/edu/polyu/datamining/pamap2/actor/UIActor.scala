@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.{Cluster, MemberStatus}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.actor.StateActor.ResponseStatus
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang
@@ -19,7 +20,11 @@ object UIActor {
 
   def requestUpdate(): Unit = {
     UIActor ! StateActor.AskStatus
-    UIActor ! MessageProtocol.Request[MessageProtocol.ClusterComputeInfo]()
+    UIActor ! RequestClusterComputeInfo
+  }
+
+  def onImportedRawFile(): Unit = {
+    UIActor ! ExtractFromRaw
   }
 
   private[actor]
@@ -51,8 +56,9 @@ class UIActor extends Actor with ActorLogging {
   override def receive: Receive = {
     case StateActor.AskStatus => SingletonActor.StateHolder.proxy ! StateActor.AskStatus
     case ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
-    case msg: MessageProtocol.Request[MessageProtocol.ClusterComputeInfo] => SingletonActor.Dispatcher.proxy ! msg
-    case msg: MessageProtocol.ClusterComputeInfo => MonitorController.receivedNodeInfos(msg)
+    case RequestClusterComputeInfo => SingletonActor.Dispatcher.proxy ! RequestClusterComputeInfo
+    case ClusterComputeInfo(nodeInfos) => MonitorController.receivedNodeInfos(nodeInfos)
+    case ExtractFromRaw => SingletonActor.Dispatcher.proxy ! ExtractFromRaw
     case msg =>
       log error s"unsupported message : $msg"
       ???

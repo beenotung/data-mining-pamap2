@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ExtractFromRaw, Task}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
@@ -17,6 +18,9 @@ class WorkerActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
+    case task: Task => task match {
+      case task: ExtractFromRaw => ???
+    }
     case msg => log error s"Unsupported msg : $msg"
       ???
   }
