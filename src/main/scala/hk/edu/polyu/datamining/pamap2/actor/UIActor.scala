@@ -2,8 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.{Cluster, MemberStatus}
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskNodeInfo
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.DispatchTask
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
@@ -22,6 +21,7 @@ object UIActor {
 }
 
 class UIActor extends Actor with ActorLogging {
+  import ActorUtils._
   val cluster = Cluster(context.system)
   var clusterInfoBuilder: ClusterInfoBuilder = null
 
@@ -52,18 +52,12 @@ class UIActor extends Actor with ActorLogging {
     case ClusterInfoProtocol.AskClusterInfo => log info "asking for status"
       /*
       * 1. ask cluster status
-      * 2. ask cluster members info
-      *    1. number of nodes
-      *    2. processor usage
-      *    3. memory usage
-      *    4. task (pending and completed)
+      * 2. ask nodes info (system resources)
       * */
-      clusterInfoBuilder = new ClusterInfoBuilder
       /* 1, ask cluster status */
       SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
       /* 2. ask cluster members info */
-      MonitorController.updateNodes(cluster.state.members.filter(_.status == MemberStatus.Up))
-      context.actorSelection(s"/user/${MonitorActor.baseName}*").tell(AskNodeInfo, self)
+      SingletonActor.GlobalDispatcher.proxy ! ClusterInfoProtocol.AskNodeInfo
     case msg =>
       log error s"unsupported message : $msg"
       ???

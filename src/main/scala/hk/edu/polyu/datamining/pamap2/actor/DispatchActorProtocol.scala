@@ -1,10 +1,13 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.SupervisorStrategy.{Escalate, Stop}
 import akka.actor._
 import akka.routing.{ActorRefRoutee, Broadcast, RoundRobinRoutingLogic, Router}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.Task.TaskType
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.{DispatchTask, FinishRangedTask, FinishTask, Task}
+import hk.edu.polyu.datamining.pamap2.actor.ActorUtils.system
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.Task.TaskType
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol._
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang
 
@@ -13,7 +16,7 @@ import scala.collection.mutable
 /**
   * Created by beenotung on 1/26/16.
   */
-object DispatchActor {
+object DispatchActorProtocol {
   val PreferedTaskSize = DatabaseHelper.BestInsertCount
 
   sealed trait Task {
@@ -35,8 +38,14 @@ object DispatchActor {
     val extractFromRawLine, itemCount = Value
   }
 
+  case class ComputeNodeInfo(numWorker: Int, numPendingTask: Int)
+
+  type ComputeClusterInfo = Seq[ComputeNodeInfo]
 }
 
+/**
+  * this is singleton actor among the whole cluster
+  **/
 class GlobalDispatchActor extends Actor with ActorLogging {
   /* dispatched */
   val pendingTasks = mutable.HashMap.empty[TaskType, mutable.Set[Range]]
@@ -51,6 +60,8 @@ class GlobalDispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Actor.Receive = {
+    case ClusterInfoProtocol.AskClusterInfo =>
+      ???
     case DispatchTask(task) =>
       if (!taskOwners.keySet.contains(task)) {
         /* new task */
@@ -94,6 +105,9 @@ import akka.actor.SupervisorStrategy.{Restart, Resume}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
+/**
+  * this actor has one instance on each compute node
+  **/
 class LocalDispatchActor extends Actor with ActorLogging {
   override val supervisorStrategy =
     OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
@@ -111,6 +125,16 @@ class LocalDispatchActor extends Actor with ActorLogging {
     Router(RoundRobinRoutingLogic(), routees)
   }
 
+  override def preStart = {
+    // set repeat timer
+    val cancellable: Cancellable = context.system.scheduler.schedule(
+      Duration.Zero,
+      Duration.create(2000, TimeUnit.MILLISECONDS),
+      self,
+      ClusterInfoProtocol.AskNodeInfo
+    )(system.dispatcher)
+  }
+
   override def receive = {
     case status: ActionState.ActionStatusType => router.route(Broadcast(status), self)
     case w: Task => router.route(w, sender())
@@ -119,10 +143,16 @@ class LocalDispatchActor extends Actor with ActorLogging {
       val newActorRef = context actorOf Props[WorkerActor]
       context watch newActorRef
       router = router addRoutee actorRef
+    case ClusterInfoProtocol.AskNodeInfo =>
+      // reply node info to sender or global dispatcher
+      if (self.equals(sender())) self else SingletonActor.GlobalDispatcher.proxy(system) ! ClusterInfoProtocol.ResponseNodeInfo(NodeInfo.newInstance)
     case msg => log error s"Unsupported message : $msg"
   }
 }
 
+/**
+  * this actor has NUMBER_OF_CPU instance on each compute node
+  **/
 class WorkerActor extends Actor with ActorLogging {
   var concreteActor: ActorRef = null
 

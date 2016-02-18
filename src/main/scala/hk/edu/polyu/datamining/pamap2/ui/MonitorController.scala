@@ -15,10 +15,10 @@ import javafx.stage.FileChooser.ExtensionFilter
 import akka.cluster.{Member, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskClusterInfo
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.DispatchTask
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.{DispatchActor, MonitorActor, Node, UIActor}
+import hk.edu.polyu.datamining.pamap2.actor.{DispatchActorProtocol, MonitorActor, NodeInfo, UIActor}
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
@@ -31,7 +31,7 @@ import scala.io.Source
   * Created by beenotung on 1/30/16.
   */
 object MonitorController {
-  val nodes = new ConcurrentSkipListSet[Node]()
+  val nodes = new ConcurrentSkipListSet[NodeInfo]()
   val aborted = new AtomicBoolean(false)
   var nodes_num = UIActor.members.size
   private[ui] var instance: MonitorController = null
@@ -77,7 +77,7 @@ object MonitorController {
     instance.btn_nodes.setText(nodes_num.toString)
   }))
 
-  def receivedNodeInfo(nodeInfo: Node) = {
+  def receivedNodeInfo(nodeInfo: NodeInfo) = {
     println(s"received nodeinfo : $nodeInfo")
     nodes.add(nodeInfo)
     if (nodes.size() == nodes_num)
@@ -207,7 +207,7 @@ class MonitorController extends MonitorControllerSkeleton {
               })
             setProgress(0)
             /* 3. tell global dispatcher */
-            UIActor ! new DispatchTask(DispatchActor.Task.extractFromRawLine)
+            UIActor ! new DispatchTask(DispatchActorProtocol.Task.extractFromRawLine)
             /* 4. tell UI done */
             importedFile(filename)
             true

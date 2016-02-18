@@ -16,7 +16,7 @@ object SingletonActor {
     def actorSelection(context: ActorContext): ActorSelection =
       context.actorSelection(context.self.path.root / "user" / name / SINGLETON)
 
-    def init(system: ActorSystem) =
+    def init(implicit system: ActorSystem) =
       system.actorOf(
         ClusterSingletonManager.props(
           actorProps,
@@ -24,7 +24,7 @@ object SingletonActor {
           ClusterSingletonManagerSettings.create(system)
         ), name)
 
-    def proxy(system: ActorSystem) =
+    def proxy(implicit system: ActorSystem) =
       system.actorOf(ClusterSingletonProxy.props(
         singletonManagerPath = s"/user/$name",
         settings = ClusterSingletonProxySettings.create(system)
