@@ -1,6 +1,8 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.ActorSystem
+import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.{Ask, Response}
+import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.ClusterInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 import scala.collection.mutable
@@ -9,22 +11,21 @@ import scala.collection.mutable
   * Created by beenotung on 2/8/16.
   */
 object ClusterInfoProtocol {
+  @deprecated
+  type ResponseClusterInfo = Response[ClusterInfo]
 
-  case class Ask[A]()
+  @deprecated
+  type ResponseNodeInfo = Response[NodeInfo]
 
-  case class Response[A](val response: A)
+  @deprecated
+  type AskClusterInfo = Ask[ClusterInfo]
 
-  case class ResponseClusterInfo(val clusterInfo: ClusterInfo)
+  @deprecated
+  type AskNodeInfo = Ask[NodeInfo]
 
-  case class ResponseNodeInfo(val node: NodeInfo)
-
-  object AskClusterInfo
-
-  object AskNodeInfo
-
+  type ClusterInfo = Seq[NodeInfo]
 }
 
-class ClusterInfo(val nodes: Seq[NodeInfo], val clusterUptime: Long)
 
 class ClusterInfoBuilder(val n: Int) {
   val nodes = mutable.Buffer.empty[NodeInfo]
@@ -33,7 +34,7 @@ class ClusterInfoBuilder(val n: Int) {
 
   def isReady = nodes.size == n
 
-  def build(system: ActorSystem): ClusterInfo = new ClusterInfo(nodes.toIndexedSeq, system.uptime)
+  def build(system: ActorSystem): ClusterInfo = nodes.toIndexedSeq
 }
 
 class Usage[A <: AnyVal](val used: A, val total: A)

@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.{Cluster, MemberStatus}
-import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.DispatchTask
+import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.Ask
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
@@ -14,14 +14,21 @@ object UIActor {
   /* only reference to local instance */
   private[actor] var instance: UIActor = null
 
+  private[actor]
   def !(msg: Any) = instance.self ! msg
 
   //def cluster: Cluster = instance.cluster
   def members = instance.cluster.state.members.filter(_.status == MemberStatus.Up)
+
+  def requestUpdate = {
+    UIActor ! ActorProtocol.ask[Clu]
+  }
 }
 
 class UIActor extends Actor with ActorLogging {
+
   import ActorUtils._
+
   val cluster = Cluster(context.system)
   var clusterInfoBuilder: ClusterInfoBuilder = null
 
@@ -44,20 +51,8 @@ class UIActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case command: DispatchTask => SingletonActor.GlobalDispatcher.proxy(context.system) ! command
-    case StateActor.ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
-      log info "received status"
-    case ClusterInfoProtocol.ResponseNodeInfo(node) => MonitorController.receivedNodeInfo(node)
-      log info "received node info"
-    case ClusterInfoProtocol.AskClusterInfo => log info "asking for status"
-      /*
-      * 1. ask cluster status
-      * 2. ask nodes info (system resources)
-      * */
-      /* 1, ask cluster status */
-      SingletonActor.StateHolder.proxy(context.system) ! StateActor.AskStatus
-      /* 2. ask cluster members info */
-      SingletonActor.GlobalDispatcher.proxy ! ClusterInfoProtocol.AskNodeInfo
+    case StateActor.AskStatus => SingletonActor.StateHolder.proxy ! StateActor.AskStatus
+    case msg: Ask[ClusterInfoProtocol.ClusterInfo] => SingletonActor.GlobalDispatcher.proxy ! msg
     case msg =>
       log error s"unsupported message : $msg"
       ???

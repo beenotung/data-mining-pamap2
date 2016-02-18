@@ -14,11 +14,11 @@ import javafx.stage.FileChooser.ExtensionFilter
 
 import akka.cluster.{Member, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.ClusterInfoProtocol.AskClusterInfo
+import hk.edu.polyu.datamining.pamap2.actor.ActorProtocol.ask
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActorProtocol.DispatchTask
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.{DispatchActorProtocol, MonitorActor, NodeInfo, UIActor}
+import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
@@ -131,7 +131,7 @@ class MonitorController extends MonitorControllerSkeleton {
     text_number_of_pending_task setText loading
     text_number_of_completed_tasl setText loading
     /* ask for cluster status */
-    UIActor ! AskClusterInfo
+    UIActor ! ask[ClusterInfo]
   }
 
   def promptRestarted(reason: String): Unit = {

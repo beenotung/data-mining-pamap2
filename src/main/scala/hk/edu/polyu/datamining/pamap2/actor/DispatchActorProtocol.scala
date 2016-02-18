@@ -60,7 +60,7 @@ class GlobalDispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Actor.Receive = {
-    case ClusterInfoProtocol.AskClusterInfo =>
+    case msg: ClusterInfoProtocol.AskClusterInfo =>
       ???
     case DispatchTask(task) =>
       if (!taskOwners.keySet.contains(task)) {
@@ -131,7 +131,7 @@ class LocalDispatchActor extends Actor with ActorLogging {
       Duration.Zero,
       Duration.create(2000, TimeUnit.MILLISECONDS),
       self,
-      ClusterInfoProtocol.AskNodeInfo
+      ActorProtocol.ask[NodeInfo]
     )(system.dispatcher)
   }
 
@@ -143,7 +143,7 @@ class LocalDispatchActor extends Actor with ActorLogging {
       val newActorRef = context actorOf Props[WorkerActor]
       context watch newActorRef
       router = router addRoutee actorRef
-    case ClusterInfoProtocol.AskNodeInfo =>
+    case _: ClusterInfoProtocol.AskNodeInfo =>
       // reply node info to sender or global dispatcher
       if (self.equals(sender())) self else SingletonActor.GlobalDispatcher.proxy(system) ! ClusterInfoProtocol.ResponseNodeInfo(NodeInfo.newInstance)
     case msg => log error s"Unsupported message : $msg"

@@ -11,3 +11,14 @@ object ActorUtils {
 
   implicit def system(implicit context: ActorContext) = context.system
 }
+
+object ActorProtocol {
+
+  case class Ask[A]() {
+  }
+
+  def ask[A] = new Ask[A]
+
+  case class Response[A](val response: A)
+
+}
