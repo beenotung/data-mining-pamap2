@@ -27,4 +27,19 @@ object FormatUtils {
   } catch {
     case e: NumberFormatException => Byte.MinValue
   }
+
+  def formatSize(byte: Long): String = {
+    if (byte > 1024L * 1024L * 1024L * 1024L * 1024L)
+      byte / 1024L / 1024L / 1024L / 1024L / 1024L + "PB"
+    else if (byte > 1024L * 1024L * 1024L * 1024L)
+      byte / 1024L / 1024L / 1024L / 1024L + "TB"
+    else if (byte > 1024L * 1024L * 1024L)
+      byte / 1024L / 1024L / 1024L + "GB"
+    else if (byte > 1024L * 1024L)
+      byte / 1024L / 1024L + "MB"
+    else if (byte > 1024L)
+      byte / 1024L + "KB"
+    else
+      byte + "B"
+  }
 }

@@ -29,7 +29,8 @@ class ComputeActor extends Actor with ActorLogging {
   }
 
   override def postStop = {
-
+    workers.foreach(context.stop)
+    workers.retain(_ => false)
   }
 
   override def receive: Receive = {

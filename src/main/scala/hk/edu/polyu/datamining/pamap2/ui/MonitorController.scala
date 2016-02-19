@@ -12,7 +12,6 @@ import javafx.scene.control.Alert.AlertType
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
-import akka.cluster.MemberStatus
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
@@ -21,6 +20,7 @@ import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
+import hk.edu.polyu.datamining.pamap2.utils.FormatUtils.formatSize
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
@@ -38,6 +38,10 @@ object MonitorController {
   def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
     computeNodeInfos = newVals
     runOnUIThread(() => instance.updated_computeNodeInfos())
+    fork(() => {
+      Thread.sleep(1000)
+      UIActor.requestUpdate()
+    })
   }
 
   def onActorSystemTerminated() = if (instance != null) runOnUIThread(() => {
@@ -86,16 +90,16 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def customInit() = {
     /* get cluster status */
-    //update_cluster_info(new ActionEvent())
+    update_cluster_info(new ActionEvent())
 
     /* update general cluster info */
-    MonitorActor.addListener((event, members) => {
+    /*MonitorActor.addListener((event, members) => {
       val n = members.count(_.status == MemberStatus.Up)
       UIActor.requestUpdate()
       runOnUIThread(() => {
         btn_nodes.setText(n.toString)
       })
-    })
+    })*/
   }
 
   override def update_cluster_info(event: ActionEvent) = {
@@ -221,7 +225,9 @@ class MonitorController extends MonitorControllerSkeleton {
       val total = nodeInfos.map(_.totalMemory).sum
       val free = nodeInfos.map(_.freeMemory).sum
       val max = nodeInfos.map(_.maxMemory).sum
-      100f * (total - free) / max + "%"
+      val used: Long = total - free
+      val usage = 100 * used / max
+      s"${formatSize(used)} / ${formatSize(max)} ($usage%)"
     }
     val workerRecords = computeNodeInfos.flatMap(_.workerRecords).toIndexedSeq
     text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString

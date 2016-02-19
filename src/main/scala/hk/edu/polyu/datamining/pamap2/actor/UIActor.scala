@@ -23,12 +23,12 @@ object UIActor {
     UIActor ! RequestClusterComputeInfo
   }
 
+  private[actor]
+  def !(msg: Any) = instance.self ! msg
+
   def onImportedRawFile(): Unit = {
     UIActor ! ExtractFromRaw
   }
-
-  private[actor]
-  def !(msg: Any) = instance.self ! msg
 }
 
 class UIActor extends Actor with ActorLogging {

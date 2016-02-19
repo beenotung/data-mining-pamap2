@@ -12,6 +12,7 @@ import javafx.stage.Stage
 import javafx.util.Duration
 
 import hk.edu.polyu.datamining.pamap2.ui.NodesDetailController._
+import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
@@ -68,7 +69,9 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
         new Label({
           val starttime = formatDate(nodeInfo.startTime)
           val uptime = formatDuration(nodeInfo.upTime)
-          val memUsage = 100f * (nodeInfo.totalMemory - nodeInfo.freeMemory) / nodeInfo.maxMemory + "%"
+          val used: Long = nodeInfo.totalMemory - nodeInfo.freeMemory
+          val usage = 100 * used / nodeInfo.maxMemory
+          val memUsage = s"${formatSize(used)} / ${formatSize(nodeInfo.maxMemory)} ($usage%)"
           val pending = node.workerRecords.map(_.pendingTask).sum
           val completed = node.workerRecords.map(_.pendingTask).sum
           s"${nodeInfo.processor} processor\n" +
