@@ -89,7 +89,7 @@ object Lang {
 
   def space(count: Int, str: String = " "): String = {
     var res = ""
-    for (i <- count) res += str
+    for (i <- 1 to count) res += str
     res
   }
 

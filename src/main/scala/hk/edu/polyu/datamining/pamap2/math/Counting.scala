@@ -3,7 +3,7 @@
   */
 package hk.edu.polyu.datamining.pamap2.math
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 
 object Counting {
 
@@ -15,12 +15,12 @@ object Counting {
     * @param dataset : raw records in 2d array e.g. [["a", "c", "d"],["b"]]
     */
 
-  def counting(itemset: Array[String], dataset: Array[Array[String]]): HashMap[String, Int] = {
+  def counting(itemset: Array[String], dataset: Array[Array[String]]): mutable.HashMap[String, Int] = {
     if (dataset.length <= 2) {
-      val container = new HashMap[String, Int]()
+      val container = new mutable.HashMap[String, Int]()
       for (record <- dataset) {
         for (item <- record) {
-          if (itemset contains (item)) {
+          if (itemset contains item) {
             val v = container.getOrElseUpdate(item, 0)
             container.update(item, v + 1)
           }
@@ -31,10 +31,9 @@ object Counting {
       val (left, right) = dataset.splitAt(dataset.length / 2)
       val container = counting(itemset, left)
       val list2 = counting(itemset, right)
-      list2.foreach { case (key, value) => {
+      list2.foreach { case (key, value) =>
         val v = container.getOrElseUpdate(key, 0)
         container.update(key, v + value)
-      }
       }
       container
     }
