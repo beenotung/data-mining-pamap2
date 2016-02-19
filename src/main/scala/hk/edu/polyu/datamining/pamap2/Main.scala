@@ -28,6 +28,7 @@ object Main extends App {
       s.substring(26, s.length - 2)
     }))
 
+    /* set shutdown hook */
     Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => {
       /* unregister self to database */
       DatabaseHelper.removeSeed(clusterSeedId)
@@ -59,4 +60,5 @@ object Main extends App {
     // register a ComputeActor
       system.actorOf(Props[actor.ComputeActor])
   }
+  def config=nodeConfig.get.config
 }

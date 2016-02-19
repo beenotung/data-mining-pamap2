@@ -33,8 +33,6 @@ object UIActor {
 
 class UIActor extends Actor with ActorLogging {
 
-  val cluster = Cluster(context.system)
-
   override def preStart = {
     UIActor.instance = this
     if (!cluster.selfRoles.contains("ui")) {
@@ -55,6 +53,8 @@ class UIActor extends Actor with ActorLogging {
       })
     }
   }
+
+  def cluster = Cluster(context.system)
 
   override def receive: Receive = {
     case StateActor.AskStatus => SingletonActor.StateHolder.proxy ! StateActor.AskStatus

@@ -7,11 +7,12 @@ import java.{util => ju}
 import javafx.application.Platform
 import javafx.application.Platform.{runLater => runOnUIThread}
 import javafx.event.ActionEvent
-import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.{Alert, Labeled}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
+import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
@@ -31,6 +32,8 @@ import scala.io.Source
   */
 object MonitorController {
   val aborted = new AtomicBoolean(false)
+  val autoUpdate = Main.config.getBoolean("ui.autoupdate.enable")
+  val interval = Main.config.getInt("ui.autoupdate.interval")
   var clusterComputeInfo: ClusterComputeInfo = ClusterComputeInfo(Seq.empty)
   var computeNodeInfos = Seq.empty[ComputeNodeInfo]
   private[ui] var instance: MonitorController = null
@@ -38,10 +41,11 @@ object MonitorController {
   def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
     computeNodeInfos = newVals
     runOnUIThread(() => instance.updated_computeNodeInfos())
-    fork(() => {
-      Thread.sleep(1000)
-      UIActor.requestUpdate()
-    })
+    if (autoUpdate)
+      fork(() => {
+        Thread.sleep(interval)
+        UIActor.requestUpdate()
+      })
   }
 
   def onActorSystemTerminated() = if (instance != null) runOnUIThread(() => {
@@ -110,7 +114,7 @@ class MonitorController extends MonitorControllerSkeleton {
     text_cluster_processor setText loading
     text_cluster_memory setText loading
     text_number_of_pending_task setText loading
-    text_number_of_completed_tasl setText loading
+    text_number_of_completed_task setText loading
     /* ask for cluster status */
     UIActor.requestUpdate()
   }
@@ -218,19 +222,30 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   def updated_computeNodeInfos() = {
-    btn_nodes setText computeNodeInfos.size.toString
-    val nodeInfos = computeNodeInfos.map(_.nodeInfo)
-    text_cluster_processor setText nodeInfos.map(_.processor).sum.toString
-    text_cluster_memory setText {
-      val total = nodeInfos.map(_.totalMemory).sum
-      val free = nodeInfos.map(_.freeMemory).sum
-      val max = nodeInfos.map(_.maxMemory).sum
-      val used: Long = total - free
-      val usage = 100 * used / max
-      s"${formatSize(used)} / ${formatSize(max)} ($usage%)"
+    if (computeNodeInfos.isEmpty) {
+      def setText(x: Labeled) = {
+        x setText "none"
+      }
+      setText(btn_nodes)
+      setText(text_cluster_processor)
+      setText(text_cluster_memory)
+      setText(text_number_of_pending_task)
+      setText(text_number_of_completed_task)
+    } else {
+      btn_nodes setText computeNodeInfos.size.toString
+      val nodeInfos = computeNodeInfos.map(_.nodeInfo)
+      text_cluster_processor setText nodeInfos.map(_.processor).sum.toString
+      text_cluster_memory setText {
+        val total = nodeInfos.map(_.totalMemory).sum
+        val free = nodeInfos.map(_.freeMemory).sum
+        val max = nodeInfos.map(_.maxMemory).sum
+        val used: Long = total - free
+        val usage = 100 * used / max
+        s"${formatSize(used)} / ${formatSize(max)} ($usage%)"
+      }
+      val workerRecords = computeNodeInfos.flatMap(_.workerRecords).toIndexedSeq
+      text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString
+      text_number_of_completed_task setText workerRecords.map(_.completedTask).sum.toString
     }
-    val workerRecords = computeNodeInfos.flatMap(_.workerRecords).toIndexedSeq
-    text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString
-    text_number_of_completed_tasl setText workerRecords.map(_.completedTask).sum.toString
   }
 }

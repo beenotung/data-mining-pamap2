@@ -35,6 +35,7 @@ class ComputeActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case RequestNodeInfo => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
+      log info "report node info"
     case msg => log error s"Unsupported msg : $msg"
       ???
   }

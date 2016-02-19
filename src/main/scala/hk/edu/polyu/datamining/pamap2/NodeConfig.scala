@@ -7,7 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false) {
+case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false, ip: String = null, port: Int = 0) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -37,8 +37,18 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
 
     // use configured ip or get host ip if available
     //val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
-    val ip = if (isPublic) HostIP.PublicIP else HostIP.LocalIP
-    val ipValue = ConfigValueFactory fromAnyRef ip
+    val ipValue = ConfigValueFactory fromAnyRef {
+      if (ip != null) ip
+      else if (config hasPath "clustering.ip") config getString "clustering.ip"
+      else if (isPublic) HostIP.PublicIP
+      else HostIP.LocalIP
+    }
+    val portValue = ConfigValueFactory fromAnyRef {
+      if (port != 0) port
+      else if (config hasPath "clustering.port") config getString "clustering.port"
+      else 0
+    }
+
 
     // add seed nodes to config
     val seedNodesString = seedNodes.map { node =>
@@ -48,6 +58,7 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
     // build the final config and resolve it
     (ConfigFactory parseString seedNodesString)
       .withValue("clustering.ip", ipValue)
+      .withValue("clustering.port", portValue)
       .withFallback(ConfigFactory parseResources configPath)
       .withFallback(config)
       .resolve
@@ -64,7 +75,6 @@ object NodeConfig {
 
   /** static configuration for ui nodes */
   val UI_NODE = "node.ui.conf"
-
   val DEFAULT_NODE = COMPUTE_NODE
   // IP:port of the seed nodes in the ActorSystem (from database)
   val seedNodes = {
@@ -100,8 +110,8 @@ object NodeConfig {
       //  c.copy(seedNodes = c.seedNodes :+ n)
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
-        case NodeConfig(false, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
-        case NodeConfig(true, false, _, _) if seedNodes.isEmpty =>
+        case NodeConfig(false, _, _, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
+        case NodeConfig(true, false, _, _, _, _) if seedNodes.isEmpty =>
           reportWarning(s"this actor system is only accessible within local network")
           success
         case _ => success

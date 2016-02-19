@@ -26,8 +26,8 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="text_number_of_pending_task"
   protected Label text_number_of_pending_task; // Value injected by FXMLLoader
 
-  @FXML // fx:id="text_number_of_completed_tasl"
-  protected Label text_number_of_completed_tasl; // Value injected by FXMLLoader
+  @FXML // fx:id="text_number_of_completed_task"
+  protected Label text_number_of_completed_task; // Value injected by FXMLLoader
 
   @FXML // fx:id="text_cluster_memory"
   protected Label text_cluster_memory; // Value injected by FXMLLoader
@@ -91,7 +91,7 @@ public class MonitorControllerSkeleton {
   void initialize() {
     assert text_cluster_processor != null : "fx:id=\"text_cluster_processor\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_number_of_pending_task != null : "fx:id=\"text_number_of_pending_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert text_number_of_completed_tasl != null : "fx:id=\"text_number_of_completed_tasl\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_number_of_completed_task != null : "fx:id=\"text_number_of_completed_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_cluster_memory != null : "fx:id=\"text_cluster_memory\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";

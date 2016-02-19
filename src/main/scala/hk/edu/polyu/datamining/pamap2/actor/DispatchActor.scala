@@ -22,12 +22,12 @@ class DispatchActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos += ((nodeInfo.clusterSeedId, nodeInfo))
+      log info "received nodeinfo"
     case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
     case UnRegisterWorker(clusterSeedId) => workers -= sender()
     case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
     case MessageProtocol.ExtractFromRaw => extractFromRaw()
     case msg => log error s"Unsupported msg : $msg"
-      ???
   }
 
   def mkClusterComputeInfo(): ClusterComputeInfo =
@@ -44,6 +44,8 @@ class DispatchActor extends Actor with ActorLogging {
 
   def dispatch(task: Task): Unit = {
     // pick the less busy worker (min. pending task)
-    workers.minBy(_._2.pendingTask)._1 ! task
+    val worker = workers.minBy(_._2.pendingTask)
+    worker._1 ! task
+    worker._2.pendingTask += 1
   }
 }

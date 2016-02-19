@@ -86,7 +86,7 @@
                                                        GridPane.columnIndex="1" GridPane.rowIndex="1"/>
                                                 <Label fx:id="text_number_of_pending_task" text="loading"
                                                        GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                                                <Label fx:id="text_number_of_completed_tasl" text="loading"
+                                                <Label fx:id="text_number_of_completed_task" text="loading"
                                                        GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                                                 <Label text="Cluster Memory" GridPane.rowIndex="2"/>
                                                 <Label fx:id="text_cluster_memory" text="loading"
