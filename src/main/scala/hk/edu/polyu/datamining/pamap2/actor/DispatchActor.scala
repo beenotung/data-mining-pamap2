@@ -34,7 +34,7 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos += ((nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis)))
+    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos put (nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis))
     case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
     case UnRegisterWorker(clusterSeedId) => removeWorker(clusterSeedId)
       log warning "removed worker"
