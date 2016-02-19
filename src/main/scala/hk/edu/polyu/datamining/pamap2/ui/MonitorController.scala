@@ -234,7 +234,7 @@ class MonitorController extends MonitorControllerSkeleton {
     } else {
       btn_nodes setText computeNodeInfos.size.toString
       val nodeInfos = computeNodeInfos.map(_.nodeInfo)
-      text_cluster_processor setText nodeInfos.map(_.processor).sum.toString
+      text_cluster_processor setText computeNodeInfos.map(_.workerRecords.length).sum.toString
       text_cluster_memory setText {
         val total = nodeInfos.map(_.totalMemory).sum
         val free = nodeInfos.map(_.freeMemory).sum

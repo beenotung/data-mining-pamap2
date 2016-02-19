@@ -20,11 +20,15 @@ class DispatchActor extends Actor with ActorLogging {
     log info s"the path is ${self.path}"
   }
 
+  def removeWorker(clusterSeedId: String): Unit = workers.retain((ref, record) => !clusterSeedId.equals(record.clusterSeedId))
+
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos += ((nodeInfo.clusterSeedId, nodeInfo))
       log info "received nodeinfo"
     case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
-    case UnRegisterWorker(clusterSeedId) => workers -= sender()
+    case UnRegisterWorker(clusterSeedId) => removeWorker(clusterSeedId)
+    case UnRegisterComputeNode(clusterSeedId) => nodeInfos -= clusterSeedId
+      removeWorker(clusterSeedId)
     case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
     case MessageProtocol.ExtractFromRaw => extractFromRaw()
     case msg => log error s"Unsupported msg : $msg"

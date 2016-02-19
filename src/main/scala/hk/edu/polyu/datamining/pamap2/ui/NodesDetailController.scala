@@ -67,14 +67,15 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
           space(name.length, "_") + s"\n$name"
         }),
         new Label({
-          val starttime = formatDate(nodeInfo.startTime)
-          val uptime = formatDuration(nodeInfo.upTime)
+          val processorUsage = node.workerRecords.length + " / " + nodeInfo.processor
           val used: Long = nodeInfo.totalMemory - nodeInfo.freeMemory
           val usage = 100 * used / nodeInfo.maxMemory
           val memUsage = s"${formatSize(used)} / ${formatSize(nodeInfo.maxMemory)} ($usage%)"
           val pending = node.workerRecords.map(_.pendingTask).sum
           val completed = node.workerRecords.map(_.pendingTask).sum
-          s"${nodeInfo.processor} processor\n" +
+          val starttime = formatDate(nodeInfo.startTime)
+          val uptime = formatDuration(nodeInfo.upTime)
+          s"processor : $processorUsage\n" +
             s"memory usage : $memUsage\n" +
             s"pending task : $pending\n" +
             s"completed task : $completed\n" +

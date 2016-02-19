@@ -13,7 +13,7 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
   import NodeConfig._
 
   // Initialize the config once
-  lazy val config = asConfig
+  lazy val config = asConfig()
 
   // Name of the ActorSystem
   lazy val clusterName = config getString CLUSTER_NAME_PATH

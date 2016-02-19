@@ -29,6 +29,8 @@ object MessageProtocol {
 
   case class UnRegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
 
+  case class UnRegisterComputeNode(clusterSeedId: String) extends DispatchActorProtocol
+
   case class ExtractFromRaw(ids: Seq[String]) extends Task
 
   case object RequestClusterComputeInfo extends Request

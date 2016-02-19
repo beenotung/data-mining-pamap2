@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor._
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.RequestNodeInfo
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocolFactory.NodeInfo
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.mutable
@@ -29,6 +30,7 @@ class ComputeActor extends Actor with ActorLogging {
   }
 
   override def postStop = {
+    SingletonActor.Dispatcher.proxy ! MessageProtocol.UnRegisterComputeNode(DatabaseHelper.clusterSeedId)
     workers.foreach(context.stop)
     workers.retain(_ => false)
   }
