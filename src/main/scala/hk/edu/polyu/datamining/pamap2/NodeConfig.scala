@@ -101,10 +101,9 @@ object NodeConfig {
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
       checkConfig {
         case NodeConfig(false, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
-        case NodeConfig(true, false, _, _) if seedNodes.isEmpty => {
+        case NodeConfig(true, false, _, _) if seedNodes.isEmpty =>
           reportWarning(s"this actor system is only accessible within local network")
           success
-        }
         case _ => success
       }
     }

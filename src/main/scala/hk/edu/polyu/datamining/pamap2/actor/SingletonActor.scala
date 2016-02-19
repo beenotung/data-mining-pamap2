@@ -11,12 +11,13 @@ object SingletonActor {
 
   sealed trait SingletonActorType {
     val name: String
+    protected val actorProps: Props
 
     @deprecated
     def actorSelection(context: ActorContext): ActorSelection =
       context.actorSelection(context.self.path.root / "user" / name / SINGLETON)
 
-    def init(implicit system: ActorSystem) =
+    def init(system: ActorSystem) =
       system.actorOf(
         ClusterSingletonManager.props(
           actorProps,
@@ -29,20 +30,18 @@ object SingletonActor {
         singletonManagerPath = s"/user/$name",
         settings = ClusterSingletonProxySettings.create(system)
       ))
-
-    protected def actorProps: Props
   }
 
   case object StateHolder extends SingletonActorType {
     override val name: String = "state-holder"
 
-    override def actorProps: Props = Props[StateActor]
+    override val actorProps: Props = Props[StateActor]
   }
 
   case object Dispatcher extends SingletonActorType {
-    override val name: String = "global-dispatcher"
+    override val name: String = "task-dispatcher"
 
-    override def actorProps: Props = Props[DispatchActor]
+    override val actorProps: Props = Props[DispatchActor]
   }
 
 }

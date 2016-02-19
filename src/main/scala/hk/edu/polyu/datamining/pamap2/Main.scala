@@ -48,7 +48,8 @@ object Main extends App {
     SingletonActor.Dispatcher.init(system)
 
     if (cluster.selfRoles.contains("seed")) {
-      // TODO save IP to database?
+      // register self to seed node list (akka)
+      cluster.join(cluster.selfAddress)
     }
     else if (cluster.selfRoles.contains("ui"))
     // register a UIActor

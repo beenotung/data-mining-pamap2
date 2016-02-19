@@ -46,8 +46,8 @@ object StateActor {
 class StateActor extends Actor with ActorLogging {
   var status: ActionStatusType = null
 
-  override def preStart() = {
-    log info s"Starting ${getClass.getSimpleName}"
+  override def preStart(): Unit = {
+    log info s"Starting State Actor"
     log info s"The path of this ${getClass.getSimpleName} is ${self.path}"
     self ! SetStatus(ActionState.checkStatus)
   }

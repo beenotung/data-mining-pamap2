@@ -19,21 +19,26 @@ class DispatchActor extends Actor with ActorLogging {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
 
+  override def preStart(): Unit = {
+    log info "starting Task-Dispatcher"
+    log info s"the path is ${self.path}"
+  }
+
   override def receive: Receive = {
     case nodeInfo: NodeInfo => nodeInfos += ((nodeInfo.clusterSeedId, nodeInfo))
     case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(sender(), clusterSeedId)))
     case UnRegisterWorker(clusterSeedId) => workers -= sender()
-    case RequestClusterComputeInfo => sender() ! nodeInfos.values.toIndexedSeq
+    case RequestClusterComputeInfo => sender() ! MessageProtocol.ClusterComputeInfo(nodeInfos.values.toIndexedSeq)
     case MessageProtocol.ExtractFromRaw => extractFromRaw()
     case msg => log error s"Unsupported msg : $msg"
       ???
   }
 
-  def dispatch(task: Task): Unit = {
-    workers.minBy(_._2.pending)._1 ! task
-  }
-
   def extractFromRaw(): Unit = {
     DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
+  }
+
+  def dispatch(task: Task): Unit = {
+    workers.minBy(_._2.pending)._1 ! task
   }
 }
