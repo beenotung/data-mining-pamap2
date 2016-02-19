@@ -120,19 +120,21 @@ object DatabaseHelper {
     ).run(conn)
   }
 
-  def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): ju.HashMap[String, AnyVal] = {
+  def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): String = {
     initTables()
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
     val portField = Tables.ClusterSeed.Field.port.toString
     val rolesField = Tables.ClusterSeed.Field.roles.toString
     val configField = Tables.ClusterSeed.Field.config.toString
-    r.table(tableName).insert(
+    val result: ju.HashMap[String, AnyVal] = r.table(tableName).insert(
       r.hashMap(hostField, host)
         .`with`(portField, port)
         .`with`(rolesField, roles)
         .`with`(configField, config)
     ).run(conn)
+    clusterSeedId = result.get("generated_keys").asInstanceOf[java.util.List[String]].get(0)
+    clusterSeedId
   }
 
   /**

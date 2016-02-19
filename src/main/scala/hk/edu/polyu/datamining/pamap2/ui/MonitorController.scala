@@ -16,6 +16,7 @@ import akka.cluster.MemberStatus
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
@@ -30,12 +31,14 @@ import scala.io.Source
   */
 object MonitorController {
   val aborted = new AtomicBoolean(false)
-  var nodes = Set.empty[NodeInfo]
-  var nodes_num = UIActor.members.size
+  var clusterComputeInfo: ClusterComputeInfo = ClusterComputeInfo(Seq.empty)
+  var computeNodeInfos = Seq.empty[ComputeNodeInfo]
   private[ui] var instance: MonitorController = null
 
-  def receivedNodeInfos(newNodes: Seq[NodeInfo]) = nodes = newNodes.toSet
-
+  def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
+    computeNodeInfos = newVals
+    runOnUIThread(() => instance.updated_computeNodeInfos())
+  }
 
   def onActorSystemTerminated() = if (instance != null) runOnUIThread(() => {
     val alert = new Alert(AlertType.ERROR)
@@ -208,5 +211,20 @@ class MonitorController extends MonitorControllerSkeleton {
 
   def updated_cluster_status(statusType: ActionStatusType) = {
     cluster_status.setText(statusType.toString)
+  }
+
+  def updated_computeNodeInfos() = {
+    btn_nodes setText computeNodeInfos.size.toString
+    val nodeInfos = computeNodeInfos.map(_.nodeInfo)
+    text_cluster_processor setText nodeInfos.map(_.processor).sum.toString
+    text_cluster_memory setText {
+      val total = nodeInfos.map(_.totalMemory).sum
+      val free = nodeInfos.map(_.freeMemory).sum
+      val max = nodeInfos.map(_.maxMemory).sum
+      100f * (total - free) / max + "%"
+    }
+    val workerRecords = computeNodeInfos.flatMap(_.workerRecords).toIndexedSeq
+    text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString
+    text_number_of_completed_tasl setText workerRecords.map(_.completedTask).sum.toString
   }
 }

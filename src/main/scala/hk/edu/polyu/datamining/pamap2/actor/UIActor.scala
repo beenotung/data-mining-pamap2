@@ -37,20 +37,23 @@ class UIActor extends Actor with ActorLogging {
 
   override def preStart = {
     UIActor.instance = this
-    MonitorApplication.ready = true
-    Lang.fork(() => {
-      try {
-        MonitorApplication.main(Array.empty)
-        /* leave cluster when GUI window is closed by user */
-        val cluster = Cluster(context.system)
-        cluster.leave(cluster.selfAddress)
-        System.exit(0)
-      }
-      catch {
-        case e: IllegalStateException => log warning "restarting UIActor with existing JavaFX Application"
-          MonitorController.restarted("UIActor is restarted")
-      }
-    })
+    if (!cluster.selfRoles.contains("ui")) {
+      context.stop(self)
+    } else {
+      MonitorApplication.ready = true
+      Lang.fork(() => {
+        try {
+          MonitorApplication.main(Array.empty)
+          /* leave cluster when GUI window is closed by user */
+          cluster.leave(cluster.selfAddress)
+          System.exit(0)
+        }
+        catch {
+          case e: IllegalStateException => log warning "restarting UIActor with existing JavaFX Application"
+            MonitorController.restarted("UIActor is restarted")
+        }
+      })
+    }
   }
 
   override def receive: Receive = {

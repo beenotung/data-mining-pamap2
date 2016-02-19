@@ -10,10 +10,6 @@ import scala.collection.mutable
 /**
   * Created by beenotung on 2/18/16.
   */
-class WorkerRecord(actorRef: ActorRef, clusterSeedId: String) {
-  var pending: Int = 0
-  var completed: Int = 0
-}
 
 class DispatchActor extends Actor with ActorLogging {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
@@ -25,20 +21,29 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case nodeInfo: NodeInfo => nodeInfos += ((nodeInfo.clusterSeedId, nodeInfo))
-    case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(sender(), clusterSeedId)))
+    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos += ((nodeInfo.clusterSeedId, nodeInfo))
+    case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
     case UnRegisterWorker(clusterSeedId) => workers -= sender()
-    case RequestClusterComputeInfo => sender() ! MessageProtocol.ClusterComputeInfo(nodeInfos.values.toIndexedSeq)
+    case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
     case MessageProtocol.ExtractFromRaw => extractFromRaw()
     case msg => log error s"Unsupported msg : $msg"
       ???
   }
+
+  def mkClusterComputeInfo(): ClusterComputeInfo =
+    ClusterComputeInfo(workers.values
+      .filterNot(_.clusterSeedId == null)
+      .groupBy(_.clusterSeedId)
+      .map(workerGroup => ComputeNodeInfo(nodeInfos(workerGroup._1), workerGroup._2.toIndexedSeq))
+      .toIndexedSeq
+    )
 
   def extractFromRaw(): Unit = {
     DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
   }
 
   def dispatch(task: Task): Unit = {
-    workers.minBy(_._2.pending)._1 ! task
+    // pick the less busy worker (min. pending task)
+    workers.minBy(_._2.pendingTask)._1 ! task
   }
 }

@@ -56,26 +56,32 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
   }
 
   def updateList() = {
-    val nodes = MonitorController.nodes.map { node => {
+    val nodes = MonitorController.computeNodeInfos.map { node => {
+      val nodeInfo = node.nodeInfo
       val vbox = new VBox(NodesDetailController.spacing)
       vbox.getChildren.addAll(
         new Label({
           //TODO fork and get host info from database
-          node.clusterSeedId
+          val name = nodeInfo.clusterSeedId
+          space(name.length, "_") + s"\n$name"
         }),
         new Label({
-          val starttime = formatDate(node.startTime)
-          val uptime = formatDuration(node.upTime)
-          val memUsage = 100f * (node.totalMemory - node.freeMemory) / node.maxMemory + "%"
-          s"${node.processor} processor\n" +
+          val starttime = formatDate(nodeInfo.startTime)
+          val uptime = formatDuration(nodeInfo.upTime)
+          val memUsage = 100f * (nodeInfo.totalMemory - nodeInfo.freeMemory) / nodeInfo.maxMemory + "%"
+          val pending = node.workerRecords.map(_.pendingTask).sum
+          val completed = node.workerRecords.map(_.pendingTask).sum
+          s"${nodeInfo.processor} processor\n" +
             s"memory usage : $memUsage\n" +
+            s"pending task : $pending\n" +
+            s"completed task : $completed\n" +
             s"start time : $starttime\n" +
             s"uptime : $uptime"
         }))
       vbox
     }
     }
-    messageLabel setText s"${nodes.size}/${MonitorController.nodes_num} host(s)"
+    messageLabel setText s"${MonitorController.computeNodeInfos.size} host(s)"
     detailsLabel setText " "
     main_vbox.getChildren.addAll(nodes.asJavaCollection)
   }

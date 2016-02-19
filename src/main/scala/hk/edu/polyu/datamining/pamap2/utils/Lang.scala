@@ -87,6 +87,12 @@ object Lang {
 
   implicit def not[A](f: A => Boolean)(a: A): Boolean = !f(a)
 
+  def space(count: Int, str: String = " "): String = {
+    var res = ""
+    for (i <- count) res += str
+    res
+  }
+
   /*  range  */
   def isWrapped(outer: immutable.Range, inner: immutable.Range): Boolean = {
     outer.contains(inner.start) && outer.contains(inner.last)

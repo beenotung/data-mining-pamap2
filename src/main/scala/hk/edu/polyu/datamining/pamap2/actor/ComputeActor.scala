@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor._
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.RequestNodeInfo
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocolFactory.NodeInfo
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.mutable
@@ -24,7 +25,7 @@ class ComputeActor extends Actor with ActorLogging {
     }
     // set repeat timer to report resources
     val timer: Cancellable = context.system.scheduler.schedule(Duration.Zero,
-      Duration.create(50, TimeUnit.MILLISECONDS), self, RequestNodeInfo)
+      Duration.create(1000, TimeUnit.MILLISECONDS), self, RequestNodeInfo)
   }
 
   override def postStop = {
@@ -32,7 +33,7 @@ class ComputeActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case  RequestNodeInfo=> SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
+    case RequestNodeInfo => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
     case msg => log error s"Unsupported msg : $msg"
       ???
   }
