@@ -4,6 +4,7 @@ package hk.edu.polyu.datamining.pamap2.database
   * Created by beenotung on 1/26/16.
   */
 
+import java.time.OffsetDateTime
 import java.{lang => jl, util => ju}
 
 import com.rethinkdb.RethinkDB
@@ -13,7 +14,8 @@ import com.rethinkdb.net.Cursor
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.database.Tables.RawDataFile
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
+import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
@@ -21,6 +23,7 @@ import scala.collection.JavaConverters._
 object DatabaseHelper {
   val BestInsertCount = 200
   val r = com.rethinkdb.RethinkDB.r
+  val generated_keys: String = "generated_keys"
   private val config = ConfigFactory parseResources "database.conf"
   private val port = config getInt "rethinkdb.port"
   private val dbname = config getString "rethinkdb.dbname"
@@ -47,8 +50,6 @@ object DatabaseHelper {
     println(s"Database : connected to ${conn.hostname}")
     conn
   }
-
-
   /*    util functions    */
   var clusterSeedId: String = null
 
@@ -133,6 +134,8 @@ object DatabaseHelper {
         .`with`(rolesField, roles)
         .`with`(configField, config)
     ).run(conn)
+
+    /** REMARK : this assignment cannot be removed */
     clusterSeedId = result.get("generated_keys").asInstanceOf[java.util.List[String]].get(0)
     clusterSeedId
   }
@@ -182,7 +185,9 @@ object DatabaseHelper {
       .toIndexedSeq
   }
 
-  def addRawDataFile(filename: String, lines: Iterable[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
+  /** this approach generate large network traffic demand */
+  @deprecated
+  def addRawDataFile(filename: String, lines: ju.List[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
     val field = Tables.RawDataFile.Field
     val row = r.hashMap(field.filename.toString, filename)
       .`with`(field.lines.toString, lines)
@@ -193,11 +198,22 @@ object DatabaseHelper {
     r.table(RawDataFile.name).insert(row).run(conn)
   }
 
+  def addNewTask(task: Task, workerId: String): String = {
+    val field = Tables.Task.Field
+    run[ju.List[String]](r => r.table(Tables.Task.name).insert(
+      r.hashMap(field.workerId.toString, workerId)
+        .`with`(field.createTime.toString, OffsetDateTime.now())
+    ).getField(generated_keys))
+      .get(0)
+  }
+
+  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
+
+  def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
+
   def getRawDataFileIds(): ju.List[String] = {
     ???
   }
-
-  def run[A](fun: RethinkDB => ReqlAst) = fun(r).run(conn)
 
   def debug(key: String, value: Json): ju.HashMap[String, AnyRef] = {
     val table = Tables.Debug.name

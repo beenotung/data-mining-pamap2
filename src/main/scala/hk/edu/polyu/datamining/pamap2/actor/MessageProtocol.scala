@@ -1,5 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
+import java.{util => ju}
+
 import akka.actor.ActorSystem
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
@@ -13,7 +15,9 @@ object MessageProtocol {
 
   sealed trait DispatchActorProtocol
 
-  sealed trait Task
+  sealed trait Task {
+    var id: String = null
+  }
 
   case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String) extends Comparable[NodeInfo] {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
@@ -31,11 +35,20 @@ object MessageProtocol {
 
   case class UnRegisterComputeNode(clusterSeedId: String) extends DispatchActorProtocol
 
+  case class TaskCompleted(taskId: String)
+
+  /** this approach waste bandwidth on database */
+  @deprecated
   case class ExtractFromRaw(ids: Seq[String]) extends Task
+
+  case class ProcessRawLines(filename: String, lines: ju.List[String], fileType: ImportActor.FileType.FileType) extends Task
+
+  case object ReBindDispatcher
 
   case object RequestClusterComputeInfo extends Request
 
   case object RequestNodeInfo extends Request
+
 
 }
 

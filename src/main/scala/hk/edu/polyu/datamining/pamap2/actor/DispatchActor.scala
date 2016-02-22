@@ -11,19 +11,20 @@ import scala.collection.mutable
 /**
   * Created by beenotung on 2/18/16.
   */
-
 class DispatchActor extends Actor with ActorLogging {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, (NodeInfo, Long)]
+  val pendingTask = mutable.ListBuffer.empty[Task]
 
   override def preStart(): Unit = {
     log info "starting Task-Dispatcher"
     //log info s"the path is ${self.path}"
   }
 
-  def removeWorker(clusterSeedId: String): Unit = workers.retain((ref, record) => !clusterSeedId.equals(record.clusterSeedId))
-
-  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
+  override def postStop() = {
+    log info "stopping dispatcher"
+    workers.keys.foreach(r => r ! MessageProtocol.ReBindDispatcher)
+  }
 
   /* remove dead workers */
   def checkWorkers(): Unit = {
@@ -34,17 +35,20 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos put (nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis))
+    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos put(nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis))
     case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
-    case UnRegisterWorker(clusterSeedId) => removeWorker(clusterSeedId)
+    case UnRegisterWorker(clusterSeedId) => workers.retain((ref, record) => ref.equals(sender()))
       log warning "removed worker"
     case UnRegisterComputeNode(clusterSeedId) => nodeInfos -= clusterSeedId
       removeWorker(clusterSeedId)
       log warning "removed compute node"
     case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
-    case MessageProtocol.ExtractFromRaw => extractFromRaw()
-    case msg => log error s"Unsupported msg : $msg"
+    //case MessageProtocol.ExtractFromRaw => extractFromRaw()
+    case task: MessageProtocol.Task => dispatch(task)
+    //case msg => log error s"Unsupported msg : $msg"
   }
+
+  def removeWorker(clusterSeedId: String): Unit = workers.retain((ref, record) => !clusterSeedId.equals(record.clusterSeedId))
 
   def mkClusterComputeInfo(): ClusterComputeInfo = {
     val margin = getMargin
@@ -57,14 +61,24 @@ class DispatchActor extends Actor with ActorLogging {
     )
   }
 
-  def extractFromRaw(): Unit = {
-    DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
-  }
+  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
 
   def dispatch(task: Task): Unit = {
-    // pick the less busy worker (min. pending task)
-    val worker = workers.minBy(_._2.pendingTask)
-    worker._1 ! task
-    worker._2.pendingTask += 1
+    if (workers.isEmpty) {
+      log warning "recevied task, but no worker"
+      pendingTask += task
+    } else {
+      // pick the less busy worker (min. pending task)
+      val worker = workers.minBy(_._2.pendingTask)
+      // stamp the task
+      task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId)
+      worker._1 ! task
+      worker._2.pendingTask += 1
+    }
+  }
+
+  @deprecated
+  def extractFromRaw(): Unit = {
+    DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
   }
 }

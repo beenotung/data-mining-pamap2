@@ -54,7 +54,7 @@ class StateActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case AskStatus => sender ! ResponseStatus(status)
-      log info "responded status"
+    //      log info "responded status"
     case NextStatus => self forward SetStatus(ActionState.next(status))
     case SetStatus(newStatus) => if (status == null || !status.equals(newStatus)) onStatusChanged(status, newStatus)
     case msg => log info s"unsupported message : $msg"

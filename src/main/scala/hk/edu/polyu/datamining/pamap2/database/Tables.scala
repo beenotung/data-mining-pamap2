@@ -7,7 +7,7 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(Debug, ClusterSeed, Status, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
+  val tableList = Seq(Debug, ClusterSeed, Status, Task, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
@@ -38,6 +38,17 @@ object Tables {
     object Field extends Enumeration {
       type Field = Value
       val actionStatus, pendingIds, dispatchedIds = Value
+    }
+
+  }
+
+  object Task extends Table {
+    override val name: String = "task"
+    override val fields: Iterable[String] = Field.values.map(_.toString)
+
+    object Field extends Enumeration {
+      type Field = Value
+      val workerId, createTime, completeTime = Value
     }
 
   }

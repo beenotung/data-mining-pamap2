@@ -1,6 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import com.rethinkdb.RethinkDB.r
+import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
@@ -16,7 +17,7 @@ object ImportActor {
   lazy val RawField = Tables.RawData.Field
   var lineOffset = 0
 
-  def processLine(line: String) = {
+  def processLine(line: String): MapObject = {
     lineOffset += 1
     println(s"processing line : $lineOffset")
     val cols = line.split(" ")
@@ -28,7 +29,7 @@ object ImportActor {
       .`with`(RawField.ankle.toString, processIMU(cols, 37))
   }
 
-  def processIMU(cols: Array[String], offset: Int) = {
+  def processIMU(cols: Array[String], offset: Int): MapObject = {
     r.hashMap(IMUField.temperature.toString, toFloat(cols(offset)))
       .`with`(IMUField.a16x.toString, toFloat(cols(offset + 1)))
       .`with`(IMUField.a16y.toString, toFloat(cols(offset + 2)))

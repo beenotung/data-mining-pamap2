@@ -184,16 +184,23 @@ class MonitorController extends MonitorControllerSkeleton {
             /* 2. save to database */
             val N = FileUtils.lineCount(file) / DatabaseHelper.BestInsertCount
             var i = 0f
-            Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
+            /*Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
               .foreach(lines => {
                 setProgress(i / N)
                 DatabaseHelper.addRawDataFile(filename, lines, fileType)
+                i += 1
+              })*/
+            Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
+              .foreach(lines => {
+                setProgress(i / N)
+                //TODO test
+                UIActor.dispatch(MessageProtocol.ProcessRawLines(filename, lines, fileType))
                 i += 1
               })
             setProgress(0)
             /* 3. tell global dispatcher */
             //TODO
-            UIActor.onImportedRawFile()
+            //            UIActor.onImportedRawFile()
             /* 4. tell UI done */
             importedFile(filename)
             true
