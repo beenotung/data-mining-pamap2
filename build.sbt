@@ -27,21 +27,21 @@ libraryDependencies ++= Seq(
 // Create custom run tasks to start a seed and a cluster node
 // http://www.scala-sbt.org/0.13.0/docs/faq.html#how-can-i-create-a-custom-run-task-in-addition-to-run
 lazy val runLocalSeed = taskKey[Unit]("Start the seed node on local network")
-fullRunTask(runLocalSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed --local")
+fullRunTask(runLocalSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--localSeed")
 fork in runLocalSeed := true
 
 javaOptions in runLocalSeed ++= Seq(
 )
 
 lazy val runPublicSeed = taskKey[Unit]("Start the seed node on public network")
-fullRunTask(runPublicSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--seed --public")
+fullRunTask(runPublicSeed, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--publicSeed")
 fork in runPublicSeed := true
 
 javaOptions in runPublicSeed ++= Seq(
 )
 
 lazy val runVMCompute = taskKey[Unit]("Start a compute node")
-fullRunTask(runVMCompute, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--compute --vm")
+fullRunTask(runVMCompute, Compile, "hk.edu.polyu.datamining.pamap2.Main", "--vmCompute")
 fork in runVMCompute := true
 
 javaOptions in runVMCompute ++= Seq(
@@ -64,9 +64,9 @@ javaOptions in runUI ++= Seq(
   "-XX:+AggressiveHeap"
 )
 
-lazy val runHost = taskKey[Unit]("Start a host node")
-fullRunTask(runUI, Compile, "hk.edu.polyu.datamining.pamap2.HostMain")
-fork in runHost := true
+lazy val runLocalHost = taskKey[Unit]("Start a host node")
+fullRunTask(runLocalHost, Compile, "hk.edu.polyu.datamining.pamap2.HostMain", "--local")
+fork in runLocalHost := true
 
 //javaOptions ++= Seq(
 //  "-XX:+AggressiveHeap"
