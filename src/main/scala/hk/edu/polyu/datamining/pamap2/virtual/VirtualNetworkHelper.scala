@@ -42,7 +42,7 @@ object VirtualNetworkHelper {
   def getHostIPFromVM: String = {
     println(s"waiting host connection on port $guest_port")
     val serverSocket = new ServerSocket(guest_port)
-    var hostIP = ""
+    var hostIP: String = null
     val loop = new Breaks()
     loop.breakable({
       while (true) {
@@ -52,7 +52,8 @@ object VirtualNetworkHelper {
           hostIP = in.getLines().toIndexedSeq(0)
           in.close()
           socket.close()
-          loop.break()
+          if (hostIP != null)
+            loop.break()
         } catch {
           case e: Exception => println(e)
         }
