@@ -30,6 +30,7 @@ object VirtualNetworkHelper {
           println(s"sent host ip : $hostIP")
           out.close()
           socket.close()
+          loop.break()
         } catch {
           case e: Exception =>
             println(e)
