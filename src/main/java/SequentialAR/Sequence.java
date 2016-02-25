@@ -1,11 +1,10 @@
-package SequentialAR;
 /*
  * Class Sequence.java is use to find the frequent sequences by using Sequential Association Rule
  * 
  * input: ItemSets for all training data
  *    e.g ItemSets[0] = first training data
  *        ItemSets[1] = second training data...
- * Output: ArrayList of the sequences (within min_sup)
+ * Output: ArrayList of the sequences (within min-support count)
  *    e.g ArrayList.get(0) = sequences in 1_sequence
  *        ArrayList.get(1) = sequences in 2_sequence...
  *        
@@ -15,17 +14,19 @@ import java.util.ArrayList;
 
 public class Sequence {
 	
-	private double min_support;
+	private int min_support_count;
 	private ItemSets activity_set[];
 	private ArrayList<ItemSets[]> seq_result;
 // main functions **
+	public Sequence(){
+	}
 	public Sequence(ItemSets[] activity){
 		this.activity_set = activity;
-		this. min_support=1;
+		this. min_support_count=1;
 		this.seq_result = null;
 	}
-	public void setMin_sup(double min_sup){
-		this. min_support=min_sup;
+	public void setMin_sup(int min_sup_count){
+		this.min_support_count=min_sup_count;
 	}
 	public ArrayList<ItemSets[]> getSeq_result(){
 		return seq_result;
@@ -40,45 +41,42 @@ public class Sequence {
 		return str;
 	}
 	public void run(){
-		seq_result = findSeq(activity_set, min_support);
+		seq_result = findSeq(activity_set, min_support_count);
 	}
 //** end of main function
-	
-	public static ArrayList<ItemSets[]> findSeq(ItemSets[] activity, double min_sup){
+	public static void printSeqArray(ItemSets[] seq){
+		String str = "";
+		for(int i=0; i<seq.length; i++){
+			str+=seq[i].toString()+"="+seq[i].getCount()+"\n";
+		}
+		System.out.println(str);
+	}
+	public static void printSeqArrayList(ArrayList<ItemSets> seq){
+		String str = "";
+		for(int i=0; i<seq.size(); i++){
+			str+=seq.get(i).toString()+"="+seq.get(i).getCount()+"\n";
+		}
+		System.out.println(str);
+	}
+	public static ArrayList<ItemSets[]> findSeq(ItemSets[] activity, int min_sup_count){
 		// FirstSeq
 		ArrayList<ItemSets[]> all_seq_sets = new ArrayList<ItemSets[]>();
-		all_seq_sets.add(createFirstSeq(activity, min_sup));
-				
-		for(int i=0; i<all_seq_sets.size(); i++){
-			ItemSets[] isets = all_seq_sets.get(i);
-			ArrayList<ItemSets> seq_sets = new ArrayList<ItemSets>();
-
-			for(int seq_no1=0; seq_no1<isets.length; seq_no1++){
-				String[][] array1 = isets[seq_no1].getItemSets();
-				for(int seq_no2=0; seq_no2<isets.length; seq_no2++){
-					String[][] array2 = isets[seq_no2].getItemSets();
-					if(equals2DArray(array1, array2, array1.length-1)){
-						String[][] input = addArrayRow(array1, array2[array2.length-1]);
-						ItemSets input_set = new ItemSets(input);
-						if(!seq_sets.toString().contains(input_set.toString())){
-							seq_sets.add(input_set);
-						}
-					}
-				}
-			}
+		
+		if(all_seq_sets.size()==0){
+			ArrayList<ItemSets> seq_sets = createFirstSeq(activity);
 			// count the item_set
-			for(int i2=0; i2<seq_sets.size(); i2++){
-				String[][] array1 = seq_sets.get(i2).getItemSets();
-				for(int act=0; act<activity.length; act++){
-					if(activity[act].isContain(array1)){
-						int new_sum = seq_sets.get(i2).getCount()+1;
-						seq_sets.get(i2).setCount(new_sum);
-					}
-				}
-			}
-			//System.out.println("Content of Array list"+i+":"+seq_sets.toString());
-					
-			ItemSets[] seq = checkMinSup(seq_sets, min_sup, activity.length);
+			seq_sets = countActSeq(activity, seq_sets);
+			ItemSets[] seq = checkMinSup(seq_sets, min_sup_count);
+			all_seq_sets.add(seq);
+		}
+			
+		for(int i=0; i<all_seq_sets.size(); i++){
+			ArrayList<ItemSets> seq_sets = createNextSeq(all_seq_sets.get(i));
+			// count the item_set
+			seq_sets = countActSeq(activity, seq_sets);
+			
+			//System.out.println("Content of Array list"+i+":"+seq_sets.toString());		
+			ItemSets[] seq = checkMinSup(seq_sets, min_sup_count);
 
 			if(seq.length!=0){
 				all_seq_sets.add(seq);
@@ -87,7 +85,7 @@ public class Sequence {
 		return all_seq_sets;
 	}
 	
-	public static ItemSets[] createFirstSeq(ItemSets[] activity, double min_sup){
+	public static ArrayList<ItemSets> createFirstSeq(ItemSets[] activity){
 		ArrayList<ItemSets> one_seq_sets = new ArrayList<ItemSets>();
 		// build the first item_set
 		for(int act=0; act<activity.length; act++){
@@ -125,39 +123,55 @@ public class Sequence {
 				}
 			}
 		}
-
-		// count the item_set
-		for(int i=0; i<one_seq_sets.size(); i++){
-			String[][] array1 = one_seq_sets.get(i).getItemSets();
-			for(int act=0; act<activity.length; act++){
-				ItemSets activity_iset = activity[act];
-				if(activity_iset.isContain(array1)){
-					int new_sum = one_seq_sets.get(i).getCount()+1;
-					one_seq_sets.get(i).setCount(new_sum);
+		
+		return one_seq_sets;
+	}
+	
+	public static ArrayList<ItemSets> createNextSeq(ItemSets[] previous_seq_sets){
+		ArrayList<ItemSets> seq_sets = new ArrayList<ItemSets>();
+		for(int seq_no1=0; seq_no1<previous_seq_sets.length; seq_no1++){
+			String[][] array1 = previous_seq_sets[seq_no1].getItemSets();
+			for(int seq_no2=0; seq_no2<previous_seq_sets.length; seq_no2++){
+				String[][] array2 = previous_seq_sets[seq_no2].getItemSets();
+				if(equals2DArray(array1, array2, array1.length-1)){
+					String[][] input = addArrayRow(array1, array2[array2.length-1]);
+					ItemSets input_set = new ItemSets(input);
+					if(!seq_sets.toString().contains(input_set.toString())){
+						seq_sets.add(input_set);
+					}
 				}
 			}
 		}
-		//System.out.println("Content of Array list:"+one_seq_sets.toString()); //**
-
-		// return in array
-		ItemSets[] one_seq = checkMinSup(one_seq_sets, min_sup, activity.length);
-		
-		return one_seq;
+		return seq_sets;
 	}
 	
-	public static ItemSets[] checkMinSup(ArrayList<ItemSets> seq_sets, double min_sup, int activity_count){
+	public static ArrayList<ItemSets> countActSeq(ItemSets[] activity, ArrayList<ItemSets> seq_sets){
+		// count the item_set
+		for(int i=0; i<seq_sets.size(); i++){
+			String[][] array1 = seq_sets.get(i).getItemSets();
+			for(int act=0; act<activity.length; act++){
+				if(activity[act].isContain(array1)){
+					int new_sum = seq_sets.get(i).getCount()+1;
+					seq_sets.get(i).setCount(new_sum);
+				}
+			}
+		}
+		//System.out.println("Content of Array list - "+seq_sets.get(0).getItemSets().length+":"+seq_sets.toString());
+		return seq_sets;
+	}
+	
+	public static ItemSets[] checkMinSup(ArrayList<ItemSets> seq_sets, int min_sup_count){
 		// return in array
-		double min_count = activity_count*min_sup;
 		int n=0;
 		for(int i=0; i<seq_sets.size(); i++){
-			if(seq_sets.get(i).getCount()>=min_count){
+			if(seq_sets.get(i).getCount()>=min_sup_count){
 				n++;
 			}
 		}
 		ItemSets[] seq = new ItemSets[n];
 		n=0;
 		for(int i=0; i<seq_sets.size(); i++){
-			if(seq_sets.get(i).getCount()>=min_count){
+			if(seq_sets.get(i).getCount()>=min_sup_count){
 				seq[n] = seq_sets.get(i);
 				n++;
 			}
@@ -179,7 +193,28 @@ public class Sequence {
 		}
 		return result;
 	}
-	
+//	combine sequence sets
+	public static ArrayList<ItemSets> combine2SeqCount(ArrayList<ItemSets> seq1, ArrayList<ItemSets> seq2){
+		ArrayList<ItemSets> seq_sets = new ArrayList<ItemSets>();
+		int i, j;
+		for(i=0; i<seq1.size(); i++){
+			seq_sets.add(seq1.get(i));
+		}
+		for(i=0; i<seq2.size(); i++){
+			for(j=0; j<seq1.size(); j++){
+				if(seq2.get(i).toString().equals(seq1.get(j).toString())){
+					int new_sum = seq_sets.get(j).getCount()+seq2.get(i).getCount();
+					seq_sets.get(j).setCount(new_sum);
+					j=seq1.size();
+				}else{
+					if(j==seq1.size()-1){
+						seq_sets.add(seq2.get(i));
+					}
+				}
+			}
+		}
+		return seq_sets;
+	}
 //  for array checking
 	public static boolean equals2DArray(String[][] array1, String[][] array2, int length){
 		for(int i=0; i<length; i++){
