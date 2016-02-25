@@ -1,3 +1,4 @@
+package SequentialAR;
 /*
  * Class Sequence.java is use to collect the one data set in String[a][b]
  *	 a : the order in each item_set
