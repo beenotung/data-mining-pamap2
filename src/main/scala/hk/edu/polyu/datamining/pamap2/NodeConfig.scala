@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2
 
 import com.typesafe.config._
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.virtual.VirtualNetworkHelper
 
 /**
   * This configuration is intended to run in a docker environment
@@ -94,21 +95,35 @@ object NodeConfig {
 
     val parser = new scopt.OptionParser[NodeConfig]("akka-docker") {
       head("akka-docker", "2.3.4")
-      opt[Unit]("public_seed") action { (_, c) =>
-        c.copy(isSeed = true, isPublic = true)
-      } text "set this flag to start this system as a public network seed node"
-      opt[Unit]("local_seed") action { (_, c) =>
-        c.copy(isSeed = true, isPublic = false)
-      } text "set this flag to start this system as a local network seed node"
+
+      opt[Unit]("seed") action { (_, c) =>
+        c.copy(isSeed = true)
+      } text "set this flag to start this system as a need node"
+
+      opt[Unit]("public") action { (_, c) =>
+        c.copy(isPublic = true)
+      } text "set this flag to indicate this node on public network"
+
+      opt[Unit]("local") action { (_, c) =>
+        c.copy(isPublic = false)
+      } text "set this flag to indicate this node on local network"
+
       opt[Unit]("compute") action { (_, c) =>
         c.copy(isCompute = true)
       } text "set this flag to start this system as a compute node"
+
       opt[Unit]("ui") action { (_, c) =>
         c.copy(isUI = true)
       } text "set this flag to start this system as a ui node"
+
+      opt[Unit]("vm") action { (_, c) =>
+        c.copy(ip = VirtualNetworkHelper.getHostIPFromVM)
+      } text "set this flag to indicate this system is in virtual network"
+
       //arg[String]("<seed-node>...") unbounded() optional() action { (n, c) =>
       //  c.copy(seedNodes = c.seedNodes :+ n)
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
+
       checkConfig {
         case NodeConfig(false, _, _, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
         case NodeConfig(true, false, _, _, _, _) if seedNodes.isEmpty =>
@@ -120,5 +135,4 @@ object NodeConfig {
     // parser.parse returns Option[C]
     parser.parse(args, NodeConfig())
   }
-
 }
