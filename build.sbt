@@ -64,7 +64,7 @@ javaOptions in runUI ++= Seq(
   "-XX:+AggressiveHeap"
 )
 
-lazy val runLocalHost = taskKey[Unit]("Start a host node")
+lazy val runLocalHost = taskKey[Unit]("Start a local host publisher")
 fullRunTask(runLocalHost, Compile, "hk.edu.polyu.datamining.pamap2.HostMain", "--local")
 fork in runLocalHost := true
 

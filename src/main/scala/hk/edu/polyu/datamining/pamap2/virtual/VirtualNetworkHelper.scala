@@ -27,6 +27,7 @@ object VirtualNetworkHelper {
           println("connected to guest system")
           val out = new PrintWriter(socket.getOutputStream)
           out.println(hostIP)
+          println(s"sent host ip : $hostIP")
           out.close()
           socket.close()
         } catch {
@@ -49,6 +50,9 @@ object VirtualNetworkHelper {
           val socket = serverSocket.accept()
           val in = Source.fromInputStream(socket.getInputStream)
           hostIP = in.getLines().toIndexedSeq(0)
+          in.close()
+          socket.close()
+          loop.break()
         } catch {
           case e: Exception => println(e)
         }
