@@ -8,7 +8,8 @@ import hk.edu.polyu.datamining.pamap2.virtual.VirtualNetworkHelper
   * This configuration is intended to run in a docker environment
   * It won't work
   */
-case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false, ip: String = null, port: Int = 0) {
+//case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isCompute: Boolean = false, isUI: Boolean = false, ip: String = null, port: Int = 0) {
+case class NodeConfig(mode: NodeConfig.ClusterType.Type = NodeConfig.ClusterType.compute, isPublic: Boolean = false, ip: String = null, port: Int = 0) {
 
   import ConfigFactory._
   import NodeConfig._
@@ -30,11 +31,11 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
     val name = config getString CLUSTER_NAME_PATH
 
     // which config should be used
-    val configPath =
-      if (isSeed) SEED_NODE
-      else if (isCompute) COMPUTE_NODE
-      else if (isUI) UI_NODE
-      else DEFAULT_NODE
+    val configPath = mode match {
+      case ClusterType.seed => SEED_NODE
+      case ClusterType.compute => COMPUTE_NODE
+      case ClusterType.ui => UI_NODE
+    }
 
     // use configured ip or get host ip if available
     //val ip = if (config hasPath "clustering.ip") config getString "clustering.ip" else HostIP.load getOrElse "127.0.0.1"
@@ -68,6 +69,12 @@ case class NodeConfig(isSeed: Boolean = false, isPublic: Boolean = false, isComp
 }
 
 object NodeConfig {
+
+  object ClusterType extends Enumeration {
+    type Type = Value
+    val seed, compute, ui = Value
+  }
+
   /** static configuration for seed nodes */
   val SEED_NODE = "node.seed.conf"
 
@@ -96,10 +103,21 @@ object NodeConfig {
     val parser = new scopt.OptionParser[NodeConfig]("akka-docker") {
       head("akka-docker", "2.3.4")
 
+      /*/* akka cluster role */
       opt[Unit]("seed") action { (_, c) =>
-        c.copy(isSeed = true)
-      } text "set this flag to start this system as a need node"
+        c.copy(mode = ClusterType.seed)
+      } text "start this system as seed node"
 
+      opt[Unit]("compute") action { (_, c) =>
+        c.copy(mode = ClusterType.compute)
+      } text "start this system as compute node"
+
+      opt[Unit]("ui") action { (_, c) =>
+        c.copy(mode = ClusterType.ui)
+      } text "start this system as ui node"
+
+
+      /* network config */
       opt[Unit]("public") action { (_, c) =>
         c.copy(isPublic = true)
       } text "set this flag to indicate this node on public network"
@@ -108,27 +126,41 @@ object NodeConfig {
         c.copy(isPublic = false)
       } text "set this flag to indicate this node on local network"
 
-      opt[Unit]("compute") action { (_, c) =>
-        c.copy(isCompute = true)
-      } text "set this flag to start this system as a compute node"
-
-      opt[Unit]("ui") action { (_, c) =>
-        c.copy(isUI = true)
-      } text "set this flag to start this system as a ui node"
-
       opt[Unit]("vm") action { (_, c) =>
         c.copy(ip = VirtualNetworkHelper.getHostIPFromVM)
-      } text "set this flag to indicate this system is in virtual network"
+      } text "set this flag to indicate this system in virtual network"*/
+
 
       //arg[String]("<seed-node>...") unbounded() optional() action { (n, c) =>
       //  c.copy(seedNodes = c.seedNodes :+ n)
       //} text ("give a list of seed nodes like this: <ip>:<port> <ip>:<port>")
 
+      opt[Unit]("localSeed") action { (_, c) =>
+        c.copy(mode = ClusterType.seed, isPublic = false)
+      } text "start this system as seed node on local network"
+      opt[Unit]("publicSeed") action { (_, c) =>
+        c.copy(mode = ClusterType.seed, isPublic = true)
+      } text "start this system as seed node on public network"
+      opt[Unit]("vmCompute") action { (_, c) =>
+        c.copy(mode = ClusterType.compute, ip = VirtualNetworkHelper.getHostIPFromVM)
+      } text "start this system as compute node on virtual network"
+      opt[Unit]("compute") action { (_, c) =>
+        //TODO added public local network detect
+        c.copy(mode = ClusterType.compute)
+      } text "start this system as compute node"
+      opt[Unit]("ui") action { (_, c) =>
+        c.copy(mode = ClusterType.ui)
+      } text "start this system as ui node"
+
+      /* checking */
       checkConfig {
-        case NodeConfig(false, _, _, _, _, _) if seedNodes.isEmpty => failure(s"this node require at least one seed node")
-        case NodeConfig(true, false, _, _, _, _) if seedNodes.isEmpty =>
-          reportWarning(s"this actor system is only accessible within local network")
+        case NodeConfig(ClusterType.seed, isPublic, _, _) if !isPublic && seedNodes.isEmpty =>
+          reportWarning("this actor is only accessible within local network")
           success
+        case NodeConfig(ClusterType.compute, _, _, _) if seedNodes.isEmpty =>
+          failure("this node require at least one seed node")
+        case NodeConfig(ClusterType.ui, _, _, _) if seedNodes.isEmpty =>
+          failure("this node require at least one seed node")
         case _ => success
       }
     }
