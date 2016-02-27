@@ -34,6 +34,8 @@ class WorkerActor extends Actor with ActorLogging {
   }
 
   override def preStart = {
-    SingletonActor.Dispatcher.proxy ! MessageProtocol.RegisterWorker(DatabaseHelper.clusterSeedId)
+    SingletonActor.Dispatcher.proxy ! MessageProtocol.RegisterWorker(DatabaseHelper.clusterSeedId, workerId)
   }
+
+  def workerId: String = self.path.toStringWithAddress(self.path.address)
 }

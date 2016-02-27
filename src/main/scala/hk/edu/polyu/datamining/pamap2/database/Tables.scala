@@ -48,7 +48,7 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val workerId, createTime, completeTime = Value
+      val clusterId, workerId, createTime, completeTime = Value
     }
 
   }

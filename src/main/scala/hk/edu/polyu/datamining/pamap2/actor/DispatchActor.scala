@@ -26,21 +26,12 @@ class DispatchActor extends Actor with ActorLogging {
     workers.keys.foreach(r => r ! MessageProtocol.ReBindDispatcher)
   }
 
-  /* remove dead workers */
-  def checkWorkers(): Unit = {
-    val margin = getMargin
-    val outdatedIds = nodeInfos.values.filter(_._2 < margin).map(_._1.clusterSeedId).toIndexedSeq
-    workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
-    nodeInfos --= outdatedIds
-  }
-
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos put(nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis))
-    case RegisterWorker(clusterSeedId) => workers += ((sender(), new WorkerRecord(clusterSeedId)))
+    case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId)))
     case UnRegisterWorker(clusterSeedId) => workers.retain((ref, record) => ref.equals(sender()))
       log warning "removed worker"
-    case UnRegisterComputeNode(clusterSeedId) => nodeInfos -= clusterSeedId
-      removeWorker(clusterSeedId)
+    case UnRegisterComputeNode(clusterSeedId) => unregisterComputeNode(clusterSeedId)
       log warning "removed compute node"
     case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
     //case MessageProtocol.ExtractFromRaw => extractFromRaw()
@@ -48,7 +39,38 @@ class DispatchActor extends Actor with ActorLogging {
     //case msg => log error s"Unsupported msg : $msg"
   }
 
-  def removeWorker(clusterSeedId: String): Unit = workers.retain((ref, record) => !clusterSeedId.equals(record.clusterSeedId))
+  def unregisterComputeNode(clusterSeedId: String) = {
+    DatabaseHelper.removeSeed(clusterSeedId)
+    nodeInfos -= clusterSeedId
+    //TODO to test
+    val workerIds = workers.values.filter(_.clusterSeedId.equals(clusterSeedId)).map(_.workerId).toIndexedSeq
+    unregisterWorkers(workerIds)
+  }
+
+  def unregisterWorkers(workerIds: IndexedSeq[String]) = {
+    val tasks: Seq[Task] = workerIds.flatMap(workerId => DatabaseHelper.getTasksByWorkerId(workerId))
+    workers.retain((ref, record) => !workerIds.contains(record.workerId))
+    tasks.foreach(task => dispatch(task, reassign = true))
+  }
+
+  def dispatch(task: Task, reassign: Boolean = false): Unit = {
+    if (workers.isEmpty) {
+      log warning "recevied task, but no worker"
+      pendingTask += task
+    } else {
+      // pick the less busy worker (min. pending task)
+      val worker = workers.minBy(_._2.pendingTask)
+      if (reassign) {
+        // reset create time and worker id
+        DatabaseHelper.reassignTask(task.id, worker._2.clusterSeedId, worker._2.workerId)
+      } else {
+        // stamp the task
+        task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId, worker._2.workerId)
+      }
+      worker._1 ! task
+      worker._2.pendingTask += 1
+    }
+  }
 
   def mkClusterComputeInfo(): ClusterComputeInfo = {
     val margin = getMargin
@@ -61,21 +83,16 @@ class DispatchActor extends Actor with ActorLogging {
     )
   }
 
-  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
-
-  def dispatch(task: Task): Unit = {
-    if (workers.isEmpty) {
-      log warning "recevied task, but no worker"
-      pendingTask += task
-    } else {
-      // pick the less busy worker (min. pending task)
-      val worker = workers.minBy(_._2.pendingTask)
-      // stamp the task
-      task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId)
-      worker._1 ! task
-      worker._2.pendingTask += 1
-    }
+  /* remove dead Compute Nodes */
+  def checkComputeNodes(): Unit = {
+    val margin = getMargin
+    val outdatedIds = nodeInfos.values.filter(_._2 < margin).map(_._1.clusterSeedId).toIndexedSeq
+    outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
+    workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
+    nodeInfos --= outdatedIds
   }
+
+  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
 
   @deprecated
   def extractFromRaw(): Unit = {

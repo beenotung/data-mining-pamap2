@@ -23,13 +23,13 @@ object MessageProtocol {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
   }
 
-  case class WorkerRecord(val clusterSeedId: String, var pendingTask: Int = 0, var completedTask: Int = 0)
+  case class WorkerRecord(val clusterSeedId: String, workerId: String, var pendingTask: Int = 0, var completedTask: Int = 0)
 
   case class ComputeNodeInfo(val nodeInfo: NodeInfo, val workerRecords: Seq[WorkerRecord])
 
   case class ClusterComputeInfo(nodeInfo: Seq[ComputeNodeInfo])
 
-  case class RegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
+  case class RegisterWorker(clusterSeedId: String, workerId: String) extends DispatchActorProtocol
 
   case class UnRegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
 

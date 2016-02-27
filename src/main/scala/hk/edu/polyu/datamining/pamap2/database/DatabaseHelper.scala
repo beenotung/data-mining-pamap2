@@ -79,8 +79,6 @@ object DatabaseHelper {
 
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
-  def leaveReplicas(conn: Connection = conn) = updateReplicas(conn, 1)
-
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
     val n = numberOfServer(conn) - offset
     r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
@@ -92,6 +90,8 @@ object DatabaseHelper {
 
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
+
+  def leaveReplicas(conn: Connection = conn) = updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -238,21 +238,38 @@ object DatabaseHelper {
     r.table(RawDataFile.name).insert(row).run(conn)
   }
 
-  def addNewTask(task: Task, workerId: String): String = {
+  def addNewTask(task: Task, clusterId: String, workerId: String): String = {
     val field = Tables.Task.Field
+    //TODO add more detail about the task
     run[ju.List[String]](r => r.table(Tables.Task.name).insert(
       r.hashMap(field.workerId.toString, workerId)
+        .`with`(field.clusterId.toString, clusterId)
         .`with`(field.createTime.toString, OffsetDateTime.now())
     ).getField(generated_keys))
       .get(0)
   }
 
+  def reassignTask(taskId: String, clusterId: String, workerId: String) = {
+    val field = Tables.Task.Field
+    run[Any](r => r.table(Tables.Task.name).get(taskId).update(
+      r.hashMap(field.workerId.toString, workerId)
+        .`with`(field.clusterId.toString, clusterId)
+        .`with`(field.createTime.toString, OffsetDateTime.now())
+    ))
+  }
+
   def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
+
+  def getTasksByWorkerId(workerId: String): Seq[Task] = {
+    //TODO
+    Seq.empty
+  }
 
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
 
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
+  @deprecated
   def getRawDataFileIds(): ju.List[String] = {
     ???
   }
