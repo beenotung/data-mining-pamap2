@@ -1,3 +1,4 @@
+package SequentialAR;
 /*
  * Class Sequence.java is use to find the frequent sequences by using Sequential Association Rule
  * 
