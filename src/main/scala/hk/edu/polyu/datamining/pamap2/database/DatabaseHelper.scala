@@ -10,48 +10,88 @@ import java.{lang => jl, util => ju}
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
-import com.rethinkdb.net.Cursor
+import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
 import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.Lang_
 
 import scala.collection.JavaConverters._
 
 object DatabaseHelper {
-  val BestInsertCount = 200
+  /* db constants */
+  lazy val rethinkdb = "rethinkdb"
+  lazy val server_config = "server_config"
+  lazy val tags = "tags"
+  lazy val id = "id"
+  lazy val shards = "shards"
+  lazy val replicas = "replicas"
+  lazy val BestInsertCount = 200
+
+  /* db variables */
   val r = com.rethinkdb.RethinkDB.r
   val generated_keys: String = "generated_keys"
   private val config = ConfigFactory parseResources "database.conf"
   private val port = config getInt "rethinkdb.port"
   private val dbname = config getString "rethinkdb.dbname"
-  private val conn = {
-    val conn = try {
+  private val (conn, isUsingBackupHost) = {
+    val (conn, isUsingBackupHost) = try {
       val hostname = config getString "rethinkdb.host"
       println(s"Database : try to connect to $hostname")
-      r.connection()
+      val conn = r.connection()
         .hostname(hostname)
         .port(port)
         .db(dbname)
         .connect()
+      maxReplicas(conn)
+      //Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => leaveReplicas(conn))))
+      (conn, false)
     }
     catch {
       case e: Exception =>
+        println(e)
         val hostname = config getString "rethinkdb.backup_host"
         println(s"Database : try to connect to $hostname")
-        r.connection()
+        val conn = r.connection()
           .hostname(hostname)
           .port(port)
           .db(dbname)
           .connect()
+        (conn, true)
     }
     println(s"Database : connected to ${conn.hostname}")
-    conn
+    (conn, isUsingBackupHost)
   }
-  /*    util functions    */
+  DatabaseHelper_.setConn(conn)
   var clusterSeedId: String = null
+
+  def tableNames: ju.List[String] = r.db(dbname).tableList().run(conn)
+
+  def selectServerIdsByTag(tag: String) = {
+    run[Cursor[List[String]]](r => r.db(rethinkdb).table(server_config)
+      .filter(reqlFunction1(server => server.getField(tags).contains(tag)))
+      .map(reqlFunction1(server => server.getField(id)))
+    ).toList
+  }
+
+  def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
+
+  def leaveReplicas(conn: Connection = conn) = updateReplicas(conn, 1)
+
+  def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
+    val n = numberOfServer(conn) - offset
+    r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
+      .reconfigure()
+      .optArg(shards, 1)
+      .optArg(replicas, n)
+    )).run(conn)
+  }
+
+  /*    util functions    */
+  def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -140,6 +180,20 @@ object DatabaseHelper {
     clusterSeedId
   }
 
+  def findSeeds: Seq[(String, Int)] = {
+    initTables()
+    val tableName = Tables.ClusterSeed.name
+    val hostField = Tables.ClusterSeed.Field.host.toString
+    val portField = Tables.ClusterSeed.Field.port.toString
+    //val configField = Tables.ClusterSeed.Field.config.toString
+    val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
+      .withFields(hostField, portField)
+      .run(conn)
+    result.toList.asScala
+      .map { row => (row.get(hostField).asInstanceOf[String], row.get(portField).asInstanceOf[Long].toInt) }
+      .toIndexedSeq
+  }
+
   /**
     * create database if not exist
     * create tables if not exist
@@ -171,20 +225,6 @@ object DatabaseHelper {
         r.tableCreate(tableName)
       )))
 
-  def findSeeds: Seq[(String, Int)] = {
-    initTables()
-    val tableName = Tables.ClusterSeed.name
-    val hostField = Tables.ClusterSeed.Field.host.toString
-    val portField = Tables.ClusterSeed.Field.port.toString
-    //val configField = Tables.ClusterSeed.Field.config.toString
-    val result: Cursor[ju.Map[String, AnyRef]] = r.table(tableName)
-      .withFields(hostField, portField)
-      .run(conn)
-    result.toList.asScala
-      .map { row => (row.get(hostField).asInstanceOf[String], row.get(portField).asInstanceOf[Long].toInt) }
-      .toIndexedSeq
-  }
-
   /** this approach generate large network traffic demand */
   @deprecated
   def addRawDataFile(filename: String, lines: ju.List[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
@@ -207,9 +247,11 @@ object DatabaseHelper {
       .get(0)
   }
 
+  def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
+
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
 
-  def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
+  def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
   def getRawDataFileIds(): ju.List[String] = {
     ???

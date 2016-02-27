@@ -32,6 +32,7 @@ object Main extends App {
     Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => {
       /* unregister self to database */
       DatabaseHelper.removeSeed(clusterSeedId)
+      DatabaseHelper.leaveReplicas()
     })))
     system.registerOnTermination({
       /* notify UI, will shutdown JVM */
@@ -60,5 +61,6 @@ object Main extends App {
     // register a ComputeActor
       system.actorOf(Props[actor.ComputeActor])
   }
-  def config=nodeConfig.get.config
+
+  def config = nodeConfig.get.config
 }
