@@ -70,17 +70,10 @@ case class NodeConfig(mode: NodeConfig.ClusterType.Type = NodeConfig.ClusterType
 
 object NodeConfig {
 
-  object ClusterType extends Enumeration {
-    type Type = Value
-    val seed, compute, ui = Value
-  }
-
   /** static configuration for seed nodes */
   val SEED_NODE = "node.seed.conf"
-
   /** static configuration for compute nodes */
   val COMPUTE_NODE = "node.compute.conf"
-
   /** static configuration for ui nodes */
   val UI_NODE = "node.ui.conf"
   val DEFAULT_NODE = COMPUTE_NODE
@@ -166,5 +159,10 @@ object NodeConfig {
     }
     // parser.parse returns Option[C]
     parser.parse(args, NodeConfig())
+  }
+
+  object ClusterType extends Enumeration {
+    type Type = Value
+    val seed, compute, ui = Value
   }
 }
