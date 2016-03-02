@@ -15,11 +15,13 @@ object MessageProtocol {
 
   sealed trait DispatchActorProtocol
 
-  sealed trait Task {
+  sealed trait Task extends Comparable[Task] {
     var id: String = null
+
+    override def compareTo(o: Task) = id.compareTo(o.id)
   }
 
-  case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String) extends Comparable[NodeInfo] {
+  case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String, val genTime: Long = System.currentTimeMillis()) extends Comparable[NodeInfo] {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
   }
 

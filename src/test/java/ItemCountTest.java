@@ -1,5 +1,6 @@
 import SequentialAR.ItemSets;
 import SequentialAR.Sequence;
+import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
 

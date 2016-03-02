@@ -5,14 +5,17 @@ import java.util.Locale
 import javafx.application.Platform.{runLater => runOnUIThread}
 import javafx.event.ActionEvent
 import javafx.fxml.FXMLLoader
-import javafx.scene.control.Label
+import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.{Alert, Button, Label}
 import javafx.scene.layout.VBox
 import javafx.scene.{Parent, Scene}
 import javafx.stage.Stage
 import javafx.util.Duration
 
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.NodesDetailController._
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
+import hk.edu.polyu.datamining.pamap2.utils.Lang
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
 import scala.collection.JavaConverters._
@@ -59,12 +62,27 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
   def updateList() = {
     val nodes = MonitorController.computeNodeInfos.map { node => {
       val nodeInfo = node.nodeInfo
+      val name = {
+        val (host, port, roles) = DatabaseHelper.getHostInfo(nodeInfo.clusterSeedId)
+        s"$host:$port $roles (${nodeInfo.clusterSeedId})"
+      }
       val vbox = new VBox(NodesDetailController.spacing)
       vbox.getChildren.addAll(
+        new Label("_" * nodeInfo.clusterSeedId.length), {
+          val btn = new Button("remove")
+          btn.setOnAction(Lang.eventHandler(event => Lang.fork(() => {
+            DatabaseHelper.removeSeed(nodeInfo.clusterSeedId)
+            val alert = new Alert(AlertType.INFORMATION)
+            alert.setTitle("Success")
+            alert.setHeaderText(s"The node $name has been removed")
+            runOnUIThread(Lang.runnable(() => {
+              alert.show()
+            }))
+          })))
+          btn
+        },
         new Label({
-          //TODO fork and get host info from database
-          val name = nodeInfo.clusterSeedId
-          space(name.length, "_") + s"\n$name"
+          name
         }),
         new Label({
           val processorUsage = node.workerRecords.length + " / " + nodeInfo.processor
@@ -74,13 +92,15 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
           val pending = node.workerRecords.map(_.pendingTask).sum
           val completed = node.workerRecords.map(_.pendingTask).sum
           val starttime = formatDate(nodeInfo.startTime)
+          val reporttime = formatDate(nodeInfo.genTime)
           val uptime = formatDuration(nodeInfo.upTime)
           s"processor : $processorUsage\n" +
             s"memory usage : $memUsage\n" +
             s"pending task : $pending\n" +
             s"completed task : $completed\n" +
             s"start time : $starttime\n" +
-            s"uptime : $uptime"
+            s"last report time : $reporttime\n"
+          s"uptime : $uptime"
         }))
       vbox
     }

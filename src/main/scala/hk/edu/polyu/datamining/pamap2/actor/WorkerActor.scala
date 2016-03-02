@@ -37,5 +37,5 @@ class WorkerActor extends Actor with ActorLogging {
     SingletonActor.Dispatcher.proxy ! MessageProtocol.RegisterWorker(DatabaseHelper.clusterSeedId, workerId)
   }
 
-  def workerId: String = self.path.toStringWithAddress(self.path.address)
+  def workerId: String = DatabaseHelper.clusterSeedId + "@" + self.path.toStringWithAddress(self.path.address)
 }

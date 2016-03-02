@@ -13,7 +13,7 @@ import scala.collection.mutable
   */
 class DispatchActor extends Actor with ActorLogging {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
-  val nodeInfos = mutable.Map.empty[String, (NodeInfo, Long)]
+  val nodeInfos = mutable.Map.empty[String, NodeInfo]
   val pendingTask = mutable.ListBuffer.empty[Task]
 
   override def preStart(): Unit = {
@@ -27,7 +27,7 @@ class DispatchActor extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos put(nodeInfo.clusterSeedId, (nodeInfo, System.currentTimeMillis))
+    case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
     case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId)))
     case UnRegisterWorker(clusterSeedId) => workers.retain((ref, record) => ref.equals(sender()))
       log warning "removed worker"
@@ -41,9 +41,9 @@ class DispatchActor extends Actor with ActorLogging {
 
   def unregisterComputeNode(clusterSeedId: String) = {
     DatabaseHelper.removeSeed(clusterSeedId)
-    nodeInfos -= clusterSeedId
+    nodeInfos.remove(clusterSeedId)
     //TODO to test
-    val workerIds = workers.values.filter(_.clusterSeedId.equals(clusterSeedId)).map(_.workerId).toIndexedSeq
+    val workerIds = workers.values.filter(clusterSeedId.equals).map(_.workerId).toIndexedSeq
     unregisterWorkers(workerIds)
   }
 
@@ -74,22 +74,29 @@ class DispatchActor extends Actor with ActorLogging {
 
   def mkClusterComputeInfo(): ClusterComputeInfo = {
     val margin = getMargin
-    ClusterComputeInfo(workers.values
-      .filterNot(_.clusterSeedId == null)
-      .groupBy(_.clusterSeedId)
-      .map(workerGroup => ComputeNodeInfo(nodeInfos(workerGroup._1)._1, workerGroup._2.toIndexedSeq))
-      .filterNot(x => nodeInfos(x.nodeInfo.clusterSeedId)._2 < margin)
-      .toIndexedSeq
+    ClusterComputeInfo(
+      workers.values.filterNot(_.clusterSeedId == null)
+        .groupBy(_.clusterSeedId)
+        .flatMap(workerGroup => {
+          nodeInfos.get(workerGroup._1) match {
+            case None =>
+              log info s"skip this node : ${workerGroup._1}"
+              log info s"all nodes $nodeInfos"
+              None
+            case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
+          }
+        })
+        .toIndexedSeq
     )
   }
 
   /* remove dead Compute Nodes */
   def checkComputeNodes(): Unit = {
     val margin = getMargin
-    val outdatedIds = nodeInfos.values.filter(_._2 < margin).map(_._1.clusterSeedId).toIndexedSeq
-    outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
+    val outdatedIds = nodeInfos.values.filter(_.genTime < margin).map(_.clusterSeedId).toIndexedSeq
     workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
-    nodeInfos --= outdatedIds
+    outdatedIds.foreach(nodeInfos.remove)
+    outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
   }
 
   def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")

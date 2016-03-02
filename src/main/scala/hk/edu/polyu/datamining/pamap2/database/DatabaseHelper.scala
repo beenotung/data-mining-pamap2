@@ -66,6 +66,7 @@ object DatabaseHelper {
     (conn, isUsingBackupHost)
   }
   DatabaseHelper_.setConn(conn)
+
   var clusterSeedId: String = null
 
   def tableNames: ju.List[String] = r.db(dbname).tableList().run(conn)
@@ -91,7 +92,7 @@ object DatabaseHelper {
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
 
-  def leaveReplicas(conn: Connection = conn) = updateReplicas(conn, 1)
+  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -242,7 +243,8 @@ object DatabaseHelper {
     val field = Tables.Task.Field
     //TODO add more detail about the task
     run[ju.List[String]](r => r.table(Tables.Task.name).insert(
-      r.hashMap(field.workerId.toString, workerId)
+      r.hashMap(field.taskType.toString, task.getClass.getName)
+        .`with`(field.workerId.toString, workerId)
         .`with`(field.clusterId.toString, clusterId)
         .`with`(field.createTime.toString, OffsetDateTime.now())
     ).getField(generated_keys))
@@ -282,5 +284,16 @@ object DatabaseHelper {
   def debug(key: String, value: String): ju.HashMap[String, AnyRef] = {
     val table = Tables.Debug.name
     r.table(table).insert(r.hashMap(key, value)).run(conn)
+  }
+
+  def getHostInfo(clusterSeedId: String) = {
+    val field = Tables.ClusterSeed.Field
+    val res = run[ju.HashMap[String, AnyRef]](r => r.db(dbname).table(Tables.ClusterSeed.name)
+      .get(clusterSeedId)
+      .without(field.config.toString)
+    )
+    (res.get(field.host.toString).asInstanceOf[String],
+      res.get(field.port.toString).asInstanceOf[Long],
+      res.get(field.roles.toString).asInstanceOf[ju.List[String]])
   }
 }

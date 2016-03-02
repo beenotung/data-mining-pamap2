@@ -190,6 +190,7 @@ class MonitorController extends MonitorControllerSkeleton {
                 DatabaseHelper.addRawDataFile(filename, lines, fileType)
                 i += 1
               })*/
+            setProgress(0)
             Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
               .foreach(lines => {
                 setProgress(i / N)
@@ -197,7 +198,7 @@ class MonitorController extends MonitorControllerSkeleton {
                 UIActor.dispatch(MessageProtocol.ProcessRawLines(filename, lines, fileType))
                 i += 1
               })
-            setProgress(0)
+            setProgress(1)
             /* 3. tell global dispatcher */
             //TODO
             //            UIActor.onImportedRawFile()
