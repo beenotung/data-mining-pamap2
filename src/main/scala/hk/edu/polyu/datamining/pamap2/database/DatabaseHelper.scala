@@ -195,6 +195,12 @@ object DatabaseHelper {
       .toIndexedSeq
   }
 
+  def findClusterSeedIds={
+    initTables()
+    run[Cursor[ju.Map[String,String]]](r=>r.table(Tables.ClusterSeed.name).withFields(id))
+      .iterator().asScala.map(_.get(id)).toIndexedSeq
+  }
+
   /**
     * create database if not exist
     * create tables if not exist
@@ -287,13 +293,17 @@ object DatabaseHelper {
   }
 
   def getHostInfo(clusterSeedId: String) = {
-    val field = Tables.ClusterSeed.Field
-    val res = run[ju.HashMap[String, AnyRef]](r => r.db(dbname).table(Tables.ClusterSeed.name)
-      .get(clusterSeedId)
-      .without(field.config.toString)
-    )
-    (res.get(field.host.toString).asInstanceOf[String],
-      res.get(field.port.toString).asInstanceOf[Long],
-      res.get(field.roles.toString).asInstanceOf[ju.List[String]])
+    try {
+      val field = Tables.ClusterSeed.Field
+      val res = run[ju.HashMap[String, AnyRef]](r => r.db(dbname).table(Tables.ClusterSeed.name)
+        .get(clusterSeedId)
+        .without(field.config.toString)
+      )
+      (res.get(field.host.toString).asInstanceOf[String],
+        res.get(field.port.toString).asInstanceOf[Long],
+        res.get(field.roles.toString).asInstanceOf[ju.List[String]])
+    } catch {
+      case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
+    }
   }
 }

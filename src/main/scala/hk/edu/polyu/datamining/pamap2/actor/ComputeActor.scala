@@ -28,7 +28,7 @@ class ComputeActor extends Actor with ActorLogging {
 
   override def preStart = {
     // init worker pool
-    for (i <- 0 until Runtime.getRuntime.availableProcessors()) {
+    for (i <- 0 until ComputeActor.numberOfWorker) {
       log info s"start worker - $i"
       workers += context.actorOf(Props[WorkerActor])
     }

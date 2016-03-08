@@ -1,4 +1,4 @@
-
+import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
   * Created by beenotung on 1/24/16.
@@ -11,7 +11,7 @@ object DatabaseHelperTest extends App {
   //val result = DatabaseHelper.selectServerIdsByTag("public")
   //val result = DatabaseHelper.maxReplicas
   //DatabaseHelper.leaveReplicas
-  val result = ""
+  val result = DatabaseHelper.findClusterSeedIds
   println(s"result = $result")
   println(s"class = ${result.getClass}")
 }

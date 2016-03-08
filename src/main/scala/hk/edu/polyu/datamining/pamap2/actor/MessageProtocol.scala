@@ -21,7 +21,7 @@ object MessageProtocol {
     override def compareTo(o: Task) = id.compareTo(o.id)
   }
 
-  case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String, val genTime: Long = System.currentTimeMillis()) extends Comparable[NodeInfo] {
+  case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String, val genTime: Long ) extends Comparable[NodeInfo] {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
   }
 
@@ -60,7 +60,7 @@ object MessageProtocolFactory {
     def newInstance(implicit system: ActorSystem): NodeInfo = {
       val runtime = Runtime.getRuntime
       new NodeInfo(
-        processor = ComputeActor.numberOfWorker,
+        processor = runtime.availableProcessors(),
         freeMemory = runtime.freeMemory(),
         totalMemory = runtime.totalMemory(),
         maxMemory = runtime.maxMemory(),
@@ -70,7 +70,8 @@ object MessageProtocolFactory {
           val id = DatabaseHelper.clusterSeedId
           if (id == null) println(s"warning : clusterSeedId is null !!!")
           id
-        }
+        },
+        genTime = System.currentTimeMillis()
       )
     }
   }

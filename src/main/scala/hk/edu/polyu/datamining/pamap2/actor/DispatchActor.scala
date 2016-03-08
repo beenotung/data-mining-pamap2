@@ -93,6 +93,7 @@ class DispatchActor extends Actor with ActorLogging {
   /* remove dead Compute Nodes */
   def checkComputeNodes(): Unit = {
     val margin = getMargin
+    //TODO add 'removed clusterSeedIds' from DatabaseHelper
     val outdatedIds = nodeInfos.values.filter(_.genTime < margin).map(_.clusterSeedId).toIndexedSeq
     workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
     outdatedIds.foreach(nodeInfos.remove)
