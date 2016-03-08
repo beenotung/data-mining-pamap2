@@ -16,6 +16,13 @@ import scala.concurrent.duration.Duration
 /**
   * Created by beenotung on 2/18/16.
   */
+object ComputeActor {
+  lazy val numberOfWorker = {
+    val x = Main.config.getInt("compute.number_of_worker")
+    if (x > 0) x else Runtime.getRuntime.availableProcessors()
+  }
+}
+
 class ComputeActor extends Actor with ActorLogging {
   val workers = mutable.Set.empty[ActorRef]
 

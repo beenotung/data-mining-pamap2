@@ -99,8 +99,8 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
             s"pending task : $pending\n" +
             s"completed task : $completed\n" +
             s"start time : $starttime\n" +
-            s"last report time : $reporttime\n"
-          s"uptime : $uptime"
+            s"last report time : $reporttime\n" +
+            s"uptime : $uptime"
         }))
       vbox
     }

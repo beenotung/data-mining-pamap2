@@ -60,7 +60,7 @@ object MessageProtocolFactory {
     def newInstance(implicit system: ActorSystem): NodeInfo = {
       val runtime = Runtime.getRuntime
       new NodeInfo(
-        processor = runtime.availableProcessors(),
+        processor = ComputeActor.numberOfWorker,
         freeMemory = runtime.freeMemory(),
         totalMemory = runtime.totalMemory(),
         maxMemory = runtime.maxMemory(),
