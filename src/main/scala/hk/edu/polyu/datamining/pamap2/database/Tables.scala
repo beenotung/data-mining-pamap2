@@ -48,11 +48,12 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val taskType,clusterId, workerId, createTime, completeTime = Value
+      val taskType, clusterId, workerId, createTime, completeTime = Value
     }
 
   }
 
+  @deprecated("slow in practise")
   object RawDataFile extends Table {
     override val name: String = "raw_datafile"
     override val fields: Iterable[String] = Field.values.map(_.toString)

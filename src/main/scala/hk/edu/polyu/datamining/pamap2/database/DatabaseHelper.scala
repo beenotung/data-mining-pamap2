@@ -44,7 +44,7 @@ object DatabaseHelper {
       val conn = r.connection()
         .hostname(hostname)
         .port(port)
-        .db(dbname)
+        //.db(dbname)
         .connect()
       maxReplicas(conn)
       //Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => leaveReplicas(conn))))
@@ -52,16 +52,18 @@ object DatabaseHelper {
     }
     catch {
       case e: Exception =>
-        println(e)
+        System.err.println(e)
         val hostname = config getString "rethinkdb.backup_host"
         println(s"Database : try to connect to $hostname")
         val conn = r.connection()
           .hostname(hostname)
           .port(port)
-          .db(dbname)
+          //.db(dbname)
           .connect()
         (conn, true)
     }
+    createDatabaseIfNotExist(dbname).run(conn)
+    conn.use(dbname)
     println(s"Database : connected to ${conn.hostname}")
     (conn, isUsingBackupHost)
   }
@@ -81,6 +83,7 @@ object DatabaseHelper {
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
+    initTables(conn)
     val n = numberOfServer(conn) - offset
     r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
       .reconfigure()
@@ -163,7 +166,6 @@ object DatabaseHelper {
   }
 
   def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): String = {
-    initTables()
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
     val portField = Tables.ClusterSeed.Field.port.toString
@@ -182,7 +184,6 @@ object DatabaseHelper {
   }
 
   def findSeeds: Seq[(String, Int)] = {
-    initTables()
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
     val portField = Tables.ClusterSeed.Field.port.toString
@@ -195,9 +196,8 @@ object DatabaseHelper {
       .toIndexedSeq
   }
 
-  def findClusterSeedIds={
-    initTables()
-    run[Cursor[ju.Map[String,String]]](r=>r.table(Tables.ClusterSeed.name).withFields(id))
+  def findClusterSeedIds = {
+    run[Cursor[ju.Map[String, String]]](r => r.table(Tables.ClusterSeed.name).withFields(id))
       .iterator().asScala.map(_.get(id)).toIndexedSeq
   }
 
@@ -205,9 +205,9 @@ object DatabaseHelper {
     * create database if not exist
     * create tables if not exist
     **/
-  def initTables(): Unit = {
-    createDatabaseIfNotExistResult(dbname)
-    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName))
+  def initTables(conn: Connection = conn): Unit = {
+    createDatabaseIfNotExist(dbname).run(conn)
+    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName, conn))
   }
 
   def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
@@ -222,7 +222,7 @@ object DatabaseHelper {
     )))
   }
 
-  def createTableIfNotExistResult(tableName: String): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
+  def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
 
   def createTableIfNotExist(tableName: String): ReqlExpr =
     r.tableList().contains(tableName)

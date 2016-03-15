@@ -18,7 +18,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor._
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.database.{Tables, DatabaseHelper}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils.formatSize
@@ -161,69 +161,37 @@ class MonitorController extends MonitorControllerSkeleton {
     }
   }
 
-  def handleNextFile(): Unit = {
-    fork(() => {
-      val hasNext = pendingFileItems.synchronized[Boolean]({
-        val numberOfFile = pendingFileItems.size()
-        if (numberOfFile > 0) {
-          setFileProgressText(s"$numberOfFile file(s) pending")
-          val fileItem = pendingFileItems.poll()
-          if (fileItem != null) {
-            /**
-              * 1. tell UI doing
-              * 2. save to database
-              * 3. tell global dispatcher
-              * 4. tell UI done
-              **/
-            val file = fileItem._1
-            val fileType = fileItem._2
-
-            /* 1. tell UI doing */
-            val filename: String = file.getName
-            importingFile(filename)
-            /* 2. save to database */
-            val N = FileUtils.lineCount(file) / DatabaseHelper.BestInsertCount
-            var i = 0f
-            /*Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
-              .foreach(lines => {
-                setProgress(i / N)
-                DatabaseHelper.addRawDataFile(filename, lines, fileType)
-                i += 1
-              })*/
-            setProgress(0)
-            Source.fromFile(file).getLines().grouped(DatabaseHelper.BestInsertCount)
-              .foreach(lines => {
-                setProgress(i / N)
-                //TODO test
-                UIActor.dispatch(MessageProtocol.ProcessRawLines(filename, lines, fileType))
-                i += 1
-              })
-            setProgress(1)
-            /* 3. tell global dispatcher */
-            //TODO
-            //            UIActor.onImportedRawFile()
-            /* 4. tell UI done */
-            importedFile(filename)
-            true
-          }
-          else
-            false
-        } else {
-          setFileProgressText("all imported")
-          false
-        }
-      })
-      /* check if abort is fired */
-      if (aborted.get()) {
-        /* user has abort the uploading, remove all files from pending queue */
-        removeAll(pendingFileItems)
-      } else {
-        /* user has not abort the uploading, continue next file if exist */
-        if (hasNext)
-          handleNextFile()
-      }
-    })
-  }
+  def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => pendingFileItems.synchronized({
+    val numberOfFile = pendingFileItems.size()
+    if (numberOfFile > 1) {
+      left_status.setText(s"finished $numberOfFileDone file(s)")
+      // handle one now
+      val fileItem = pendingFileItems.poll()
+      if (fileItem == null)
+        return
+      val (file, filetype) = fileItem
+      val filename = file.getName
+      setFileProgressText(s"importing $filename")
+      setProgress(0)
+      val N = FileUtils.lineCount(file)
+      var i = 0f
+      Source.fromFile(file).getLines()
+        .grouped(DatabaseHelper.BestInsertCount)
+        .foreach(lines => {
+          setProgress(i / N)
+          val rows = lines.map(ImportActor.processLine)
+          if (rows != null)
+            DatabaseHelper.tableInsertRows(Tables.RawData.name, rows)
+          i += lines.size
+        })
+      setProgress(1)
+      setFileProgressText(s"finished $filename")
+      if (numberOfFile > 2)
+        handleNextFile(numberOfFileDone + 1)
+      else
+        setFileProgressText("all imported")
+    }
+  }))
 
   def updated_cluster_status(statusType: ActionStatusType) = {
     cluster_status.setText(statusType.toString)
