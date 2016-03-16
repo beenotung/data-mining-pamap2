@@ -46,8 +46,6 @@ object DatabaseHelper {
         .port(port)
         //.db(dbname)
         .connect()
-      maxReplicas(conn)
-      //Runtime.getRuntime.addShutdownHook(new Thread(runnable(() => leaveReplicas(conn))))
       (conn, false)
     }
     catch {
@@ -62,8 +60,10 @@ object DatabaseHelper {
           .connect()
         (conn, true)
     }
-    createDatabaseIfNotExist(dbname).run(conn)
+    initTables(conn)
     conn.use(dbname)
+    if (!isUsingBackupHost)
+      maxReplicas(conn)
     println(s"Database : connected to ${conn.hostname}")
     (conn, isUsingBackupHost)
   }
@@ -83,7 +83,7 @@ object DatabaseHelper {
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
-    initTables(conn)
+    //initTables(conn)
     val n = numberOfServer(conn) - offset
     r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
       .reconfigure()
@@ -207,7 +207,12 @@ object DatabaseHelper {
     **/
   def initTables(conn: Connection = conn): Unit = {
     createDatabaseIfNotExist(dbname).run(conn)
-    Tables.tableNames.foreach(tableName => createTableIfNotExistResult(tableName, conn))
+    conn.use(dbname)
+    Tables.tableNames.foreach(tableName => {
+      println(s"checking table : $tableName")
+      createTableIfNotExistResult(tableName, conn)
+    })
+    println("check table : finished")
   }
 
   def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
@@ -224,7 +229,7 @@ object DatabaseHelper {
 
   def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
 
-  def createTableIfNotExist(tableName: String): ReqlExpr =
+  def createTableIfNotExist(tableName: String, dbname: String = dbname): ReqlExpr =
     r.tableList().contains(tableName)
       .do_(reqlFunction1(tableExist => r.branch(
         tableExist,
