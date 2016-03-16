@@ -12,6 +12,9 @@ import javafx.scene.{Parent, Scene}
 import javafx.stage.Stage
 import javafx.util.Duration
 
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{UnRegisterComputeNode, UnRegisterWorker}
+import hk.edu.polyu.datamining.pamap2.actor.SingletonActor.Dispatcher
+import hk.edu.polyu.datamining.pamap2.actor.UIActor
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.NodesDetailController._
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
@@ -72,10 +75,11 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
           val btn = new Button("remove")
           btn.setOnAction(Lang.eventHandler(event => Lang.fork(() => {
             DatabaseHelper.removeSeed(nodeInfo.clusterSeedId)
-            val alert = new Alert(AlertType.INFORMATION)
-            alert.setTitle("Success")
-            alert.setHeaderText(s"The node $name has been removed")
+            UIActor.dispatch(UnRegisterComputeNode(nodeInfo.clusterSeedId))
             runOnUIThread(Lang.runnable(() => {
+              val alert = new Alert(AlertType.INFORMATION)
+              alert.setTitle("Success")
+              alert.setHeaderText(s"The node $name has been removed")
               alert.show()
             }))
           })))

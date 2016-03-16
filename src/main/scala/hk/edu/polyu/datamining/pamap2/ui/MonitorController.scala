@@ -57,13 +57,7 @@ object MonitorController {
     Platform.exit()
   })
 
-  def importingFile(filename: String) = Platform runLater (() => {
-    instance.left_status.setText(s"importing $filename")
-  })
-
-  def importedFile(filename: String): Unit = Platform runLater (() => {
-    instance.left_status.setText(s"imported $filename")
-  })
+  def setLeftStatus(s:String)=runOnUIThread(()=>instance.left_status.setText(s))
 
   def restarted(reason: String) = Platform runLater (() => {
     instance.promptRestarted(reason)
@@ -164,7 +158,7 @@ class MonitorController extends MonitorControllerSkeleton {
   def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => pendingFileItems.synchronized({
     val numberOfFile = pendingFileItems.size()
     if (numberOfFile > 1) {
-      left_status.setText(s"finished $numberOfFileDone file(s)")
+      setLeftStatus(s"finished $numberOfFileDone file(s)")
       // handle one now
       val fileItem = pendingFileItems.poll()
       if (fileItem == null)
