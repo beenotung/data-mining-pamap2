@@ -91,6 +91,8 @@ object Tables {
     object Field extends Enumeration {
       type Field = Value
       val subject, timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
+      val isTest = Value
+      val done = Value
     }
 
   }

@@ -57,7 +57,7 @@ object MonitorController {
     Platform.exit()
   })
 
-  def setLeftStatus(s:String)=runOnUIThread(()=>instance.left_status.setText(s))
+  def setLeftStatus(s: String) = runOnUIThread(() => instance.left_status.setText(s))
 
   def restarted(reason: String) = Platform runLater (() => {
     instance.promptRestarted(reason)
@@ -71,7 +71,7 @@ object MonitorController {
     instance.file_progress_text.setText(value)
   })
 
-  def setProgress(value: Double) = runOnUIThread(() => {
+  def setImportProgress(value: Double) = runOnUIThread(() => {
     instance.import_file_progress.setProgress(value)
   })
 }
@@ -101,7 +101,9 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def update_cluster_info(event: ActionEvent) = {
-    cluster_status.setText("getting cluster status")
+    val msg: String = "getting cluster status"
+    println(msg)
+    cluster_status.setText(msg)
     /* set ui to loading */
     val loading = "loading"
     btn_nodes setText loading
@@ -138,6 +140,38 @@ class MonitorController extends MonitorControllerSkeleton {
     NodesDetailController.start()
   }
 
+  override def refresh_dataset_count(event: ActionEvent) = {
+    val msg: String = "refreshing dataset count"
+    println(msg)
+    left_status setText msg
+    training_data_count setText "loading"
+    testing_data_count setText "loading"
+    refresh_dataset_count_progress.setProgress(-1)
+    fork(() => {
+      /* get content from database */
+      val table = Tables.RawData
+      val trainCount: Long = DatabaseHelper.run(_.table(table.name).without(table.Field.isTest.toString).count())
+      runOnUIThread(() => {
+        refresh_dataset_count_progress setProgress 0.5
+      })
+      val testCount: Long = DatabaseHelper.run(_.table(table.name).withFields(table.Field.isTest.toString).count())
+      println(s"result $trainCount, $testCount")
+      runOnUIThread(() => {
+        /* show content to ui */
+        training_data_count.setText(trainCount.toString)
+        testing_data_count.setText(testCount.toString)
+        val msg: String = "refreshed dateset count"
+        println(msg)
+        left_status setText msg
+        refresh_dataset_count_progress setProgress 1
+      })
+    })
+  }
+
+  override def start_association_rule_mining(event: ActionEvent) = {
+
+  }
+
   def select_datafile(fileType: FileType) = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
@@ -166,19 +200,19 @@ class MonitorController extends MonitorControllerSkeleton {
       val (file, filetype) = fileItem
       val filename = file.getName
       setFileProgressText(s"importing $filename")
-      setProgress(0)
+      setImportProgress(0)
       val N = FileUtils.lineCount(file)
       var i = 0f
       Source.fromFile(file).getLines()
         .grouped(DatabaseHelper.BestInsertCount)
         .foreach(lines => {
-          setProgress(i / N)
+          setImportProgress(i / N)
           val rows = lines.map(ImportActor.processLine)
           if (rows != null)
             DatabaseHelper.tableInsertRows(Tables.RawData.name, rows)
           i += lines.size
         })
-      setProgress(1)
+      setImportProgress(1)
       setFileProgressText(s"finished $filename")
       if (numberOfFile > 2)
         handleNextFile(numberOfFileDone + 1)

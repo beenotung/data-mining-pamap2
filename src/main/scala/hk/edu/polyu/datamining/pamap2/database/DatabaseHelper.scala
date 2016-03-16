@@ -80,7 +80,11 @@ object DatabaseHelper {
     ).toList
   }
 
+  def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
+
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
+
+  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
     //initTables(conn)
@@ -94,8 +98,6 @@ object DatabaseHelper {
 
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
-
-  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -215,6 +217,16 @@ object DatabaseHelper {
     println("check table : finished")
   }
 
+  def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
+
+  def createTableIfNotExist(tableName: String, dbname: String = dbname): ReqlExpr =
+    r.tableList().contains(tableName)
+      .do_(reqlFunction1(tableExist => r.branch(
+        tableExist,
+        r.hashMap("created", 0),
+        r.tableCreate(tableName)
+      )))
+
   def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
     createDatabaseIfNotExist(dbname).run(conn)
   }
@@ -226,16 +238,6 @@ object DatabaseHelper {
       r.dbCreate(dbname)
     )))
   }
-
-  def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
-
-  def createTableIfNotExist(tableName: String, dbname: String = dbname): ReqlExpr =
-    r.tableList().contains(tableName)
-      .do_(reqlFunction1(tableExist => r.branch(
-        tableExist,
-        r.hashMap("created", 0),
-        r.tableCreate(tableName)
-      )))
 
   /** this approach generate large network traffic demand */
   @deprecated
@@ -270,8 +272,6 @@ object DatabaseHelper {
         .`with`(field.createTime.toString, OffsetDateTime.now())
     ))
   }
-
-  def run[A](fun: RethinkDB => ReqlAst): A = fun(r).run(conn)
 
   def getTasksByWorkerId(workerId: String): Seq[Task] = {
     //TODO

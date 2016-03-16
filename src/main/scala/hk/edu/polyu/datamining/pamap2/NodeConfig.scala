@@ -165,4 +165,5 @@ object NodeConfig {
     type Type = Value
     val seed, compute, ui = Value
   }
+
 }
