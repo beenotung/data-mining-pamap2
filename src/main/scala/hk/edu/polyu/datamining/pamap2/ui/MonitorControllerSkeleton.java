@@ -79,6 +79,11 @@ public class MonitorControllerSkeleton {
   }
 
   @FXML
+  void select_subject_datafile(ActionEvent event) {
+
+  }
+
+  @FXML
   void select_training_datafile(ActionEvent event) {
 
   }

@@ -18,7 +18,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor._
-import hk.edu.polyu.datamining.pamap2.database.{Tables, DatabaseHelper}
+import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
 import hk.edu.polyu.datamining.pamap2.utils.FileUtils
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils.formatSize
@@ -124,6 +124,10 @@ class MonitorController extends MonitorControllerSkeleton {
     left_status.setText("")
   }
 
+  override def select_subject_datafile(event: ActionEvent) = {
+    select_datafile(FileType.subject)
+  }
+
   override def select_training_datafile(event: ActionEvent) = {
     select_datafile(FileType.training)
   }
@@ -191,7 +195,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => pendingFileItems.synchronized({
     val numberOfFile = pendingFileItems.size()
-    if (numberOfFile > 1) {
+    if (numberOfFile > 0) {
       setLeftStatus(s"finished $numberOfFileDone file(s)")
       // handle one now
       val fileItem = pendingFileItems.poll()
@@ -199,22 +203,40 @@ class MonitorController extends MonitorControllerSkeleton {
         return
       val (file, filetype) = fileItem
       val filename = file.getName
+      val subject = filename.split("\\.")(0)
       setFileProgressText(s"importing $filename")
       setImportProgress(0)
       val N = FileUtils.lineCount(file)
       var i = 0f
-      Source.fromFile(file).getLines()
-        .grouped(DatabaseHelper.BestInsertCount)
-        .foreach(lines => {
-          setImportProgress(i / N)
-          val rows = lines.map(ImportActor.processLine)
-          if (rows != null)
+      if (filetype.equals(FileType.subject)) {
+        // subject data
+        val titles = Source.fromFile(file).getLines().take(1).toIndexedSeq
+        Source.fromFile(file).getLines().drop(1)
+          .grouped(DatabaseHelper.BestInsertCount)
+          .foreach(lines => {
+            setImportProgress(i / N)
+            val rows = lines.map(line => ImportActor.processSubject(titles, line))
+            DatabaseHelper.tableInsertRows(Tables.Subject.name, rows)
+            i += lines.size
+          })
+      } else {
+        // training or testing data
+        Source.fromFile(file).getLines()
+          .grouped(DatabaseHelper.BestInsertCount)
+          .foreach(lines => {
+            setImportProgress(i / N)
+            val rows = lines.map(ImportActor.processLine).map(_.`with`(Tables.RawData.Field.subject.toString, subject))
+            filetype match {
+              case FileType.training => rows.map(_.`with`(Tables.RawData.Field.isTrain.toString, true))
+              case FileType.testing => rows.map(_.`with`(Tables.RawData.Field.isTest.toString, true))
+            }
             DatabaseHelper.tableInsertRows(Tables.RawData.name, rows)
-          i += lines.size
-        })
+            i += lines.size
+          })
+      }
       setImportProgress(1)
       setFileProgressText(s"finished $filename")
-      if (numberOfFile > 2)
+      if (numberOfFile > 1)
         handleNextFile(numberOfFileDone + 1)
       else
         setFileProgressText("all imported")

@@ -125,8 +125,6 @@
                                                 <Button mnemonicParsing="false" onAction="#select_testing_datafile"
                                                         text="Testing Data" GridPane.halignment="CENTER"
                                                         GridPane.rowIndex="1"/>
-                                                <Button mnemonicParsing="false" onAction="#select_training_datafile"
-                                                        text="Training Data" GridPane.halignment="CENTER"/>
                                                 <ProgressBar fx:id="import_file_progress" prefWidth="600.0"
                                                              progress="0.0" GridPane.halignment="CENTER"
                                                              GridPane.rowIndex="3" GridPane.valignment="CENTER"/>
@@ -135,6 +133,16 @@
                                                 <Button mnemonicParsing="false" onAction="#abort_import_datafile"
                                                         text="Abort" GridPane.halignment="CENTER"
                                                         GridPane.rowIndex="4"/>
+                                                <HBox alignment="CENTER" spacing="7.0">
+                                                    <children>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_subject_datafile"
+                                                                text="Subject Data"/>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_training_datafile"
+                                                                text="Training Data"/>
+                                                    </children>
+                                                </HBox>
                                             </children>
                                         </GridPane>
                                     </children>

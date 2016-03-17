@@ -71,22 +71,7 @@ class DispatchActor extends Actor with ActorLogging {
     )
   }
 
-  /* remove dead Compute Nodes */
-  def checkComputeNodes(): Unit = {
-    val margin = getMargin
-    //TODO add 'removed clusterSeedIds' from DatabaseHelper
-    val outdatedIds = nodeInfos.values.filter(_.genTime < margin).map(_.clusterSeedId).toIndexedSeq
-    workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
-    outdatedIds.foreach(nodeInfos.remove)
-    outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
-  }
-
   def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
-
-  @deprecated
-  def extractFromRaw(): Unit = {
-    DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
-  }
 
   def dispatch(task: Task, reassign: Boolean = false): Unit = {
     if (workers.isEmpty) {
@@ -105,5 +90,20 @@ class DispatchActor extends Actor with ActorLogging {
       worker._1 ! task
       worker._2.pendingTask += 1
     }
+  }
+
+  /* remove dead Compute Nodes */
+  def checkComputeNodes(): Unit = {
+    val margin = getMargin
+    //TODO add 'removed clusterSeedIds' from DatabaseHelper
+    val outdatedIds = nodeInfos.values.filter(_.genTime < margin).map(_.clusterSeedId).toIndexedSeq
+    workers.retain((_, record) => outdatedIds.contains(record.clusterSeedId))
+    outdatedIds.foreach(nodeInfos.remove)
+    outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
+  }
+
+  @deprecated
+  def extractFromRaw(): Unit = {
+    DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
   }
 }

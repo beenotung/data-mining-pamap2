@@ -7,6 +7,7 @@ import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
 
 import scala.language.postfixOps
+import scala.collection.JavaConverters._
 
 /**
   * Created by beenotung on 1/21/16.
@@ -17,9 +18,18 @@ object ImportActor {
   lazy val RawField = Tables.RawData.Field
   var lineOffset = 0
 
+  def processSubject(titles: IndexedSeq[String], line: String): MapObject = {
+    val map = r.hashMap()
+    val cols = line.split(",")
+    titles.indices.foreach(col => {
+      map.`with`(titles(col), cols(col))
+    })
+    map
+  }
+
   def processLine(line: String): MapObject = {
-    lineOffset += 1
-    println(s"processing line : $lineOffset")
+    //lineOffset += 1
+    //println(s"processing line : $lineOffset")
     val cols = line.split(" ")
     r.hashMap(RawField.timestamp.toString, toFloat(cols(0)))
       .`with`(RawField.activityId.toString, toByte(cols(1)))
@@ -51,7 +61,7 @@ object ImportActor {
 
   object FileType extends Enumeration {
     type FileType = Value
-    val training, testing = Value
+    val subject, training, testing = Value
   }
 
 }

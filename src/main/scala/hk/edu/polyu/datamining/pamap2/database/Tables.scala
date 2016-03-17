@@ -7,7 +7,7 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(Debug, ClusterSeed, Status, Task, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
+  val tableList = Seq(Debug, ClusterSeed, Status, Task, Subject, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
@@ -84,6 +84,7 @@ object Tables {
 
   }
 
+  /* mix training and testing data */
   object RawData extends Table {
     override val name: String = "raw_data"
     override val fields = Field.values.map(_.toString)
@@ -91,8 +92,19 @@ object Tables {
     object Field extends Enumeration {
       type Field = Value
       val subject, timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
-      val isTest = Value
+      val isTrain, isTest = Value
       val done = Value
+    }
+
+  }
+
+  object Subject extends Table {
+    override val name = "subject"
+    override val fields = Field.values.map(_.toString)
+
+    object Field extends Enumeration {
+      type Field = Value
+      val id, sex, age, height, weight, resting_HR, max_HR, dominant_hand = Value
     }
 
   }
