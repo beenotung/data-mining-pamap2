@@ -43,6 +43,7 @@ object StateActor {
 /**
   * this is design to be singleton
   */
+@deprecated
 class StateActor extends Actor with ActorLogging {
   var status: ActionStatusType = null
 

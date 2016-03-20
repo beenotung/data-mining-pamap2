@@ -53,26 +53,6 @@ class DispatchActor extends Actor with ActorLogging {
     tasks.foreach(task => dispatch(task, reassign = true))
   }
 
-  def mkClusterComputeInfo(): ClusterComputeInfo = {
-    val margin = getMargin
-    ClusterComputeInfo(
-      workers.values.filterNot(_.clusterSeedId == null)
-        .groupBy(_.clusterSeedId)
-        .flatMap(workerGroup => {
-          nodeInfos.get(workerGroup._1) match {
-            case None =>
-              log info s"skip this node : ${workerGroup._1}"
-              log info s"all nodes $nodeInfos"
-              None
-            case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
-          }
-        })
-        .toIndexedSeq
-    )
-  }
-
-  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
-
   def dispatch(task: Task, reassign: Boolean = false): Unit = {
     if (workers.isEmpty) {
       log warning "recevied task, but no worker"
@@ -92,6 +72,24 @@ class DispatchActor extends Actor with ActorLogging {
     }
   }
 
+  def mkClusterComputeInfo(): ClusterComputeInfo = {
+    val margin = getMargin
+    ClusterComputeInfo(
+      workers.values.filterNot(_.clusterSeedId == null)
+        .groupBy(_.clusterSeedId)
+        .flatMap(workerGroup => {
+          nodeInfos.get(workerGroup._1) match {
+            case None =>
+              log info s"skip this node : ${workerGroup._1}"
+              log info s"all nodes $nodeInfos"
+              None
+            case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
+          }
+        })
+        .toIndexedSeq
+    )
+  }
+
   /* remove dead Compute Nodes */
   def checkComputeNodes(): Unit = {
     val margin = getMargin
@@ -101,6 +99,8 @@ class DispatchActor extends Actor with ActorLogging {
     outdatedIds.foreach(nodeInfos.remove)
     outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
   }
+
+  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
 
   @deprecated
   def extractFromRaw(): Unit = {

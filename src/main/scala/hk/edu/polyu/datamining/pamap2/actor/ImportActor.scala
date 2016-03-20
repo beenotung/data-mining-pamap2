@@ -7,7 +7,6 @@ import hk.edu.polyu.datamining.pamap2.database.Tables
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
 
 import scala.language.postfixOps
-import scala.collection.JavaConverters._
 
 /**
   * Created by beenotung on 1/21/16.

@@ -12,8 +12,7 @@ import javafx.scene.{Parent, Scene}
 import javafx.stage.Stage
 import javafx.util.Duration
 
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{UnRegisterComputeNode, UnRegisterWorker}
-import hk.edu.polyu.datamining.pamap2.actor.SingletonActor.Dispatcher
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.UnRegisterComputeNode
 import hk.edu.polyu.datamining.pamap2.actor.UIActor
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.NodesDetailController._

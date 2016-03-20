@@ -4,7 +4,7 @@ package hk.edu.polyu.datamining.pamap2.math
   * Created by beenotung on 1/21/16.
   */
 
-import scala.math.{Pi, atan, pow, sqrt, toDegrees}
+import scala.math._
 
 object Convert {
 

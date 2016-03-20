@@ -125,15 +125,15 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def select_subject_datafile(event: ActionEvent) = {
-    select_datafile(FileType.subject)
+    select_datafile(FileType.subject, "csv")
   }
 
   override def select_training_datafile(event: ActionEvent) = {
-    select_datafile(FileType.training)
+    select_datafile(FileType.training, "dat")
   }
 
   override def select_testing_datafile(event: ActionEvent) = {
-    select_datafile(FileType.testing)
+    select_datafile(FileType.testing, "dat")
   }
 
   override def abort_import_datafile(event: ActionEvent) = {
@@ -176,11 +176,11 @@ class MonitorController extends MonitorControllerSkeleton {
 
   }
 
-  def select_datafile(fileType: FileType) = {
+  def select_datafile(fileType: FileType, extension: String = "dat") = {
     val fileChooser = new FileChooser()
     fileChooser.setTitle("Import File")
     fileChooser.getExtensionFilters.addAll(
-      new ExtensionFilter("Data Files", "*.dat")
+      new ExtensionFilter("Data Files", s"*.$extension")
     )
     fileChooser.showOpenMultipleDialog(MonitorApplication.getStage) match {
       case list: ju.List[File] if list != null =>
@@ -203,43 +203,51 @@ class MonitorController extends MonitorControllerSkeleton {
         return
       val (file, filetype) = fileItem
       val filename = file.getName
-      val subject = filename.split("\\.")(0)
-      setFileProgressText(s"importing $filename")
+      val (table, fileTypeField) = filetype match {
+        case FileType.subject => (Tables.Subject.name, "")
+        case FileType.training => (Tables.RawData.name, Tables.RawData.Field.isTrain.toString)
+        case FileType.testing => (Tables.RawData.name, Tables.RawData.Field.isTest.toString)
+      }
+      setFileProgressText(s"importing $filename into $table ${if (fileTypeField.length > 0) s"($fileTypeField)"}")
       setImportProgress(0)
       val N = FileUtils.lineCount(file)
       var i = 0f
       if (filetype.equals(FileType.subject)) {
         // subject data
-        val titles = Source.fromFile(file).getLines().take(1).toIndexedSeq
-        Source.fromFile(file).getLines().drop(1)
-          .grouped(DatabaseHelper.BestInsertCount)
+        val lines: Iterator[String] = Source.fromFile(file).getLines()
+        val titles = lines.take(1).toIndexedSeq.head.split(",")
+        lines.grouped(DatabaseHelper.BestInsertCount)
+          .takeWhile(_ => !aborted.get())
           .foreach(lines => {
             setImportProgress(i / N)
             val rows = lines.map(line => ImportActor.processSubject(titles, line))
-            DatabaseHelper.tableInsertRows(Tables.Subject.name, rows)
+            DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
             i += lines.size
           })
       } else {
         // training or testing data
+        val subject = filename.split("\\.")(0)
+        val subjectField = Tables.RawData.Field.subject.toString
         Source.fromFile(file).getLines()
           .grouped(DatabaseHelper.BestInsertCount)
+          .takeWhile(_ => !aborted.get())
           .foreach(lines => {
             setImportProgress(i / N)
-            val rows = lines.map(ImportActor.processLine).map(_.`with`(Tables.RawData.Field.subject.toString, subject))
-            filetype match {
-              case FileType.training => rows.map(_.`with`(Tables.RawData.Field.isTrain.toString, true))
-              case FileType.testing => rows.map(_.`with`(Tables.RawData.Field.isTest.toString, true))
-            }
-            DatabaseHelper.tableInsertRows(Tables.RawData.name, rows)
+            val rows = lines.map(ImportActor.processLine).map(_
+              .`with`(subjectField, subject)
+              .`with`(fileTypeField, true))
+            DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
             i += lines.size
           })
       }
       setImportProgress(1)
-      setFileProgressText(s"finished $filename")
+      setLeftStatus(s"finished $filename")
       if (numberOfFile > 1)
         handleNextFile(numberOfFileDone + 1)
-      else
+      else {
         setFileProgressText("all imported")
+        aborted.set(false)
+      }
     }
   }))
 

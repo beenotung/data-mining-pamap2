@@ -11,6 +11,7 @@ import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.gen.exc.ReqlDriverError
+import com.rethinkdb.model.OptArgs
 import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
@@ -31,6 +32,9 @@ object DatabaseHelper {
   lazy val shards = "shards"
   lazy val replicas = "replicas"
   lazy val BestInsertCount = 200
+  lazy val durability = "durability"
+  lazy val soft = "soft"
+  lazy val hard = "hard"
 
   /* db variables */
   val r = com.rethinkdb.RethinkDB.r
@@ -109,8 +113,8 @@ object DatabaseHelper {
     )
   }
 
-  def tableInsertRows[A](table: String, rows: java.util.List[A]): ju.HashMap[String, AnyRef] = {
-    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn)
+  def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] = {
+    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn, OptArgs.of(durability, if (softDurability) soft else hard))
   }
 
   def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] = {
@@ -272,13 +276,6 @@ object DatabaseHelper {
     ))
   }
 
-  def getTasksByWorkerId(workerId: String): Seq[Task] = {
-    //TODO
-    Seq.empty
-  }
-
-  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
-
   def run[A](fun: RethinkDB => ReqlAst): A = try {
     fun(r).run(conn)
   } catch {
@@ -286,6 +283,13 @@ object DatabaseHelper {
       conn.reconnect()
       fun(r).run(conn)
   }
+
+  def getTasksByWorkerId(workerId: String): Seq[Task] = {
+    //TODO
+    Seq.empty
+  }
+
+  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
 
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 

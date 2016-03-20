@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-bash ./run_db_seed.sh &
+rethinkdb --bind all &
 ./opt/sbt runLocalSeed
