@@ -210,7 +210,8 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def start_association_rule_mining(event: ActionEvent) = {
-
+    UIActor.dispatch(-*-)
+    UIActor.dispatch(ActionState.preProcess)
   }
 
   def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {

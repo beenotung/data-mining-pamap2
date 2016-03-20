@@ -14,9 +14,11 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
 }
 
 object Process {
-  val ExtractFromRaw = new Process("Extract from raw", true)
-  val ExtractSequence = new Process("Extract sequence", true)
-  val Learn = new Process("Mine rules", true)
-  val Test = new Process("Test rules", true)
-  val all: java.util.Collection[Process] = Seq(ExtractFromRaw, ExtractSequence, Learn, Test).asJava
+  lazy val ExtractItem = new Process("Extract item", true)
+  lazy val CountItem = new Process("Count item", true)
+  lazy val ExtractSequence = new Process("Extract sequence", true)
+  lazy val MineRule = new Process("Mine rule", true)
+  lazy val TestRule = new Process("Test rule", true)
+
+  lazy val all: java.util.Collection[Process] = Seq(ExtractItem, CountItem, ExtractSequence, MineRule, TestRule).asJava
 }

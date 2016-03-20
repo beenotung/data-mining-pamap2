@@ -39,10 +39,10 @@ object MessageProtocol {
 
   case class TaskCompleted(taskId: String)
 
-  /** this approach waste bandwidth on database */
-  @deprecated
+  @deprecated("meet bottleneck at database, holding too much data in ram")
   case class ExtractFromRaw(ids: Seq[String]) extends Task
 
+  @deprecated("meet bottleneck at database, holding too much data in ram")
   case class ProcessRawLines(filename: String, lines: ju.List[String], fileType: ImportActor.FileType.FileType) extends Task
 
   case object ReBindDispatcher
