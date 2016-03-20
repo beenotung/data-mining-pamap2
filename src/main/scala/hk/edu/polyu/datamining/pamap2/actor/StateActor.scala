@@ -58,8 +58,7 @@ class StateActor extends Actor with ActorLogging {
     //      log info "responded status"
     case NextStatus => self forward SetStatus(ActionState.next(status))
     case SetStatus(newStatus) => if (status == null || !status.equals(newStatus)) onStatusChanged(status, newStatus)
-    case msg => log info s"unsupported message : $msg"
-      ???
+    case msg => log warning s"unsupported message : $msg"
   }
 
   def onStatusChanged(oldStatus: ActionStatusType, newStatus: ActionStatusType) = {

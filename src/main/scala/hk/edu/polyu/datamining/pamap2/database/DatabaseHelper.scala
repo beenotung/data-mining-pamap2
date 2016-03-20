@@ -114,7 +114,7 @@ object DatabaseHelper {
   }
 
   def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] = {
-    r.table(Tables.RawData.name).insert(rows).run(DatabaseHelper.conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    r.table(table).insert(rows).run(DatabaseHelper.conn, OptArgs.of(durability, if (softDurability) soft else hard))
   }
 
   def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] = {

@@ -104,7 +104,7 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val id, sex, age, height, weight, resting_HR, max_HR, dominant_hand = Value
+      val subject_id, sex, age, height, weight, resting_HR, max_HR, dominant_hand = Value
     }
 
   }
