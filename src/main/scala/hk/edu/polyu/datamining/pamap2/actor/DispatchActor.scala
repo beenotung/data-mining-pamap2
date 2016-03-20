@@ -53,25 +53,6 @@ class DispatchActor extends Actor with ActorLogging {
     tasks.foreach(task => dispatch(task, reassign = true))
   }
 
-  def dispatch(task: Task, reassign: Boolean = false): Unit = {
-    if (workers.isEmpty) {
-      log warning "recevied task, but no worker"
-      pendingTask += task
-    } else {
-      // pick the less busy worker (min. pending task)
-      val worker = workers.minBy(_._2.pendingTask)
-      if (reassign) {
-        // reset create time and worker id
-        DatabaseHelper.reassignTask(task.id, worker._2.clusterSeedId, worker._2.workerId)
-      } else {
-        // stamp the task
-        task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId, worker._2.workerId)
-      }
-      worker._1 ! task
-      worker._2.pendingTask += 1
-    }
-  }
-
   def mkClusterComputeInfo(): ClusterComputeInfo = {
     val margin = getMargin
     ClusterComputeInfo(
@@ -105,5 +86,24 @@ class DispatchActor extends Actor with ActorLogging {
   @deprecated
   def extractFromRaw(): Unit = {
     DatabaseHelper.getRawDataFileIds().asScala.grouped(workers.size).foreach(ids => dispatch(new ExtractFromRaw(ids.toIndexedSeq)))
+  }
+
+  def dispatch(task: Task, reassign: Boolean = false): Unit = {
+    if (workers.isEmpty) {
+      log warning "recevied task, but no worker"
+      pendingTask += task
+    } else {
+      // pick the less busy worker (min. pending task)
+      val worker = workers.minBy(_._2.pendingTask)
+      if (reassign) {
+        // reset create time and worker id
+        DatabaseHelper.reassignTask(task.id, worker._2.clusterSeedId, worker._2.workerId)
+      } else {
+        // stamp the task
+        task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId, worker._2.workerId)
+      }
+      worker._1 ! task
+      worker._2.pendingTask += 1
+    }
   }
 }

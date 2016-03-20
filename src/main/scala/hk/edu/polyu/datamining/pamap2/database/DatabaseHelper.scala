@@ -87,6 +87,8 @@ object DatabaseHelper {
 
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
+  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
+
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
     //initTables(conn)
     val n = numberOfServer(conn) - offset
@@ -99,8 +101,6 @@ object DatabaseHelper {
 
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
-
-  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -267,6 +267,14 @@ object DatabaseHelper {
       .get(0)
   }
 
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      conn.reconnect()
+      fun(r).run(conn)
+  }
+
   def reassignTask(taskId: String, clusterId: String, workerId: String) = {
     val field = Tables.Task.Field
     run[Any](r => r.table(Tables.Task.name).get(taskId).update(
@@ -274,14 +282,6 @@ object DatabaseHelper {
         .`with`(field.clusterId.toString, clusterId)
         .`with`(field.createTime.toString, OffsetDateTime.now())
     ))
-  }
-
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
   }
 
   def getTasksByWorkerId(workerId: String): Seq[Task] = {
