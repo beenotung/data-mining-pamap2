@@ -8,7 +8,7 @@ import javafx.application.Platform
 import javafx.application.Platform.{runLater => runOnUIThread}
 import javafx.event.ActionEvent
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.{Alert, Labeled}
+import javafx.scene.control.{Alert, ButtonType, Labeled}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
@@ -125,15 +125,15 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def select_subject_datafile(event: ActionEvent) = {
-    select_datafile(FileType.subject, "csv")
+    select_datafile(FileType.subject, "csv", "Select Subject data file")
   }
 
   override def select_training_datafile(event: ActionEvent) = {
-    select_datafile(FileType.training, "dat")
+    select_datafile(FileType.training, "dat", "Select Traning data file")
   }
 
   override def select_testing_datafile(event: ActionEvent) = {
-    select_datafile(FileType.testing, "dat")
+    select_datafile(FileType.testing, "dat", "Select Testing data file")
   }
 
   override def abort_import_datafile(event: ActionEvent) = {
@@ -144,29 +144,66 @@ class MonitorController extends MonitorControllerSkeleton {
     NodesDetailController.start()
   }
 
-  override def refresh_dataset_count(event: ActionEvent) = {
+  override def reset_subject_train_test_data(event: ActionEvent) = {
+    val alert = new Alert(AlertType.CONFIRMATION)
+    alert.setTitle("Confirmation")
+    alert.setHeaderText("Reset subject profile, training data and testing data")
+    alert.setContentText("Are you sure to reset the data?")
+    alert.showAndWait().get() match {
+      case ButtonType.OK =>
+        refresh_dataset_count_progress setProgress -1
+        /* fork to do network stuff */
+        fork(runnable(() => {
+          DatabaseHelper.createTableDropIfExistResult(Tables.Subject.name)
+          runOnUIThread(() => {
+            subject_count setText 0.toString
+            refresh_dataset_count_progress setProgress 0.5
+          })
+          DatabaseHelper.createTableDropIfExistResult(Tables.RawData.name)
+          runOnUIThread(() => {
+            training_data_count setText 0.toString
+            testing_data_count setText 0.toString
+            refresh_dataset_count_progress setProgress 1
+          })
+        }))
+      case _ =>
+    }
+  }
+
+  override def update_dataset_count(event: ActionEvent) = {
     val msg: String = "refreshing dataset count"
     println(msg)
     left_status setText msg
+    subject_count setText "loading"
     training_data_count setText "loading"
     testing_data_count setText "loading"
     refresh_dataset_count_progress.setProgress(-1)
+
+    /* fork to do network stuff */
     fork(() => {
-      /* get content from database */
+      /*  get content from database  */
+
+      /* get subject count */
+      val subjectCount: Long = DatabaseHelper.run(_.table(Tables.Subject.name).count())
+      runOnUIThread(() => {
+        subject_count.setText(subjectCount.toString)
+        refresh_dataset_count_progress setProgress 1d / 3
+      })
+
       val table = Tables.RawData
+      /* get train count */
       val trainCount: Long = DatabaseHelper.run(_.table(table.name).without(table.Field.isTest.toString).count())
       runOnUIThread(() => {
-        refresh_dataset_count_progress setProgress 0.5
+        training_data_count.setText(trainCount.toString)
+        refresh_dataset_count_progress setProgress 2d / 3
       })
+
+      /* get test count */
       val testCount: Long = DatabaseHelper.run(_.table(table.name).withFields(table.Field.isTest.toString).count())
-      println(s"result $trainCount, $testCount")
       runOnUIThread(() => {
         /* show content to ui */
-        training_data_count.setText(trainCount.toString)
         testing_data_count.setText(testCount.toString)
-        val msg: String = "refreshed dateset count"
-        println(msg)
-        left_status setText msg
+        left_status setText "refreshed dateset count"
         refresh_dataset_count_progress setProgress 1
       })
     })
@@ -176,9 +213,9 @@ class MonitorController extends MonitorControllerSkeleton {
 
   }
 
-  def select_datafile(fileType: FileType, extension: String = "dat") = {
+  def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {
     val fileChooser = new FileChooser()
-    fileChooser.setTitle("Import File")
+    fileChooser.setTitle(title)
     fileChooser.getExtensionFilters.addAll(
       new ExtensionFilter("Data Files", s"*.$extension")
     )

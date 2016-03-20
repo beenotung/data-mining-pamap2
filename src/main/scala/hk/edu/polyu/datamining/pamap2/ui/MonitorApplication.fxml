@@ -159,18 +159,33 @@
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <Label text="Training Data"/>
+                                                <Label text="Training Data" GridPane.rowIndex="1"/>
                                                 <Label fx:id="training_data_count" text="click refresh to load"
-                                                       GridPane.columnIndex="1"/>
-                                                <Label text="Testing Data" GridPane.rowIndex="1"/>
-                                                <Label fx:id="testing_data_count" text="click refresh to load"
                                                        GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                                                <Button mnemonicParsing="false" onAction="#refresh_dataset_count"
-                                                        text="Refresh" GridPane.rowIndex="2"/>
-                                                <ProgressIndicator fx:id="refresh_dataset_count_progress" progress="1.0"
-                                                                   GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                <Label text="Testing Data" GridPane.rowIndex="2"/>
+                                                <Label fx:id="testing_data_count" text="click refresh to load"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                <Label text="Subject Profile"/>
+                                                <Label fx:id="subject_count" text="click refresh to load"
+                                                       GridPane.columnIndex="1"/>
+                                                <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                                    <children>
+                                                        <ProgressIndicator fx:id="refresh_dataset_count_progress"
+                                                                           progress="1.0"/>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#update_dataset_count" text="Refresh"/>
+                                                    </children>
+                                                    <padding>
+                                                        <Insets top="7.0"/>
+                                                    </padding>
+                                                </HBox>
+                                                <Button mnemonicParsing="false"
+                                                        onAction="#reset_subject_train_test_data" text="Reset"
+                                                        GridPane.rowIndex="3"/>
                                             </children>
                                         </GridPane>
                                     </children>

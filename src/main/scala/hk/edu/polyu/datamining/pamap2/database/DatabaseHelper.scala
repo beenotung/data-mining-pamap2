@@ -102,7 +102,7 @@ object DatabaseHelper {
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
 
-  def createTableDropIfExistResult(tableName: String): ju.HashMap[String, AnyRef] = {
+  def createTableDropIfExistResult(tableName: String): ju.List[ju.HashMap[String, AnyRef]] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
   }
 
@@ -267,14 +267,6 @@ object DatabaseHelper {
       .get(0)
   }
 
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
-  }
-
   def reassignTask(taskId: String, clusterId: String, workerId: String) = {
     val field = Tables.Task.Field
     run[Any](r => r.table(Tables.Task.name).get(taskId).update(
@@ -291,6 +283,7 @@ object DatabaseHelper {
 
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
 
+  /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
   @deprecated
@@ -321,5 +314,13 @@ object DatabaseHelper {
     } catch {
       case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
     }
+  }
+
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      conn.reconnect()
+      fun(r).run(conn)
   }
 }

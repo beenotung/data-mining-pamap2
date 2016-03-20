@@ -39,6 +39,9 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="file_progress_text"
   protected Label file_progress_text; // Value injected by FXMLLoader
 
+  @FXML // fx:id="subject_count"
+  protected Label subject_count; // Value injected by FXMLLoader
+
   @FXML // fx:id="training_data_count"
   protected Label training_data_count; // Value injected by FXMLLoader
 
@@ -69,7 +72,12 @@ public class MonitorControllerSkeleton {
   }
 
   @FXML
-  void refresh_dataset_count(ActionEvent event) {
+  void reset_subject_train_test_data(ActionEvent event) {
+
+  }
+
+  @FXML
+  void update_dataset_count(ActionEvent event) {
 
   }
 
@@ -113,6 +121,7 @@ public class MonitorControllerSkeleton {
     assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert file_progress_text != null : "fx:id=\"file_progress_text\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert subject_count != null : "fx:id=\"subject_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert training_data_count != null : "fx:id=\"training_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert testing_data_count != null : "fx:id=\"testing_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert refresh_dataset_count_progress != null : "fx:id=\"refresh_dataset_count_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
