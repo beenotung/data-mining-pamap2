@@ -51,6 +51,7 @@ object MessageProtocol {
 
   case object RequestNodeInfo extends Request
 
+  case object StartARM
 
 }
 

@@ -16,7 +16,7 @@ import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo, StartARM}
 import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
@@ -210,8 +210,7 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def start_association_rule_mining(event: ActionEvent) = {
-    UIActor.dispatch(-*-)
-    UIActor.dispatch(ActionState.preProcess)
+    UIActor.dispatch(StartARM)
   }
 
   def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {

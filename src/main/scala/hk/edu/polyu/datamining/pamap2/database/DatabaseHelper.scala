@@ -14,6 +14,8 @@ import com.rethinkdb.gen.exc.ReqlDriverError
 import com.rethinkdb.model.OptArgs
 import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
+import hk.edu.polyu.datamining.pamap2.actor.ActionState
+import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
@@ -35,6 +37,9 @@ object DatabaseHelper {
   lazy val durability = "durability"
   lazy val soft = "soft"
   lazy val hard = "hard"
+
+  /* self defined db constants */
+  lazy val value = "value"
 
   /* db variables */
   val r = com.rethinkdb.RethinkDB.r
@@ -151,24 +156,29 @@ object DatabaseHelper {
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }
 
-  def hasInit: Boolean = {
-    val tableName: String = Tables.Status.name
-    val fieldName: String = Tables.Status.Field.actionStatus.toString
-    /* check if database exist */
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist =>
+  def getActionStatus: ActionStatusType = ActionState.withName(getValue[String](
+    tablename = Tables.Status.name,
+    idValue = ActionState.name,
+    defaultValue = ActionState.init.toString
+  ).run(conn))
+
+  def getValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, defaultValue: A): ReqlAst =
+    r.branch(
+      // db exist
+      r.dbList().contains(tablename),
       r.branch(
-        dbExist,
-        /* check if table exist */
-        r.db(dbname).tableList().contains(tableName).do_(reqlFunction1(tableExist => r.branch(
-          tableExist,
-          /* check if field exist */
-          r.db(dbname).table(tableName).withFields(fieldName).count().ge(1),
-          r expr false
-        ))),
-        r expr false
-      ))
-    ).run(conn)
-  }
+        // table exist
+        r.db(dbname).tableList().contains(tablename),
+        r.branch(
+          // record exist
+          r.db(dbname).table(tablename).contains(reqlFunction1(_.bracket(id).eq(idValue))),
+          r db dbname table tablename get idValue bracket fieldname,
+          r expr defaultValue
+        ),
+        r expr defaultValue
+      ),
+      r expr defaultValue
+    )
 
   def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): String = {
     val tableName = Tables.ClusterSeed.name
@@ -230,16 +240,16 @@ object DatabaseHelper {
         r.tableCreate(tableName)
       )))
 
-  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
-    createDatabaseIfNotExist(dbname).run(conn)
-  }
-
   def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
     r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
       dbExist,
       r.hashMap("created", 0),
       r.dbCreate(dbname)
     )))
+  }
+
+  def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
+    createDatabaseIfNotExist(dbname).run(conn)
   }
 
   /** this approach generate large network traffic demand */
@@ -265,6 +275,14 @@ object DatabaseHelper {
         .`with`(field.createTime.toString, OffsetDateTime.now())
     ).getField(generated_keys))
       .get(0)
+  }
+
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      conn.reconnect()
+      fun(r).run(conn)
   }
 
   def reassignTask(taskId: String, clusterId: String, workerId: String) = {
@@ -314,13 +332,5 @@ object DatabaseHelper {
     } catch {
       case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
     }
-  }
-
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
   }
 }

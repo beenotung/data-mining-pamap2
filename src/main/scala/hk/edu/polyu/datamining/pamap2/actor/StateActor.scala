@@ -10,6 +10,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   */
 object ActionState extends Enumeration {
   type ActionStatusType = Value
+  val name = "ActionState"
   val checkStatus, reset, init, importing, imported, preProcess, learning, testing, finished = Value
 
   def next(actionStatusType: ActionStatusType): ActionStatusType = actionStatusType match {
@@ -64,7 +65,7 @@ class StateActor extends Actor with ActorLogging {
   def onStatusChanged(oldStatus: ActionStatusType, newStatus: ActionStatusType) = {
     status = newStatus
     val nextMessage: Option[StateActor.Message] = newStatus match {
-      case ActionState.checkStatus => Some(SetStatus(findCurrentActionStatus))
+      case ActionState.checkStatus => Some(SetStatus(DatabaseHelper.getActionStatus))
       case ActionState.reset => doReset()
         Some(ResponseStatus(ActionState.init))
       case ActionState.init => doInit()
@@ -83,13 +84,6 @@ class StateActor extends Actor with ActorLogging {
       case Some(message) => self ! message
       case None =>
     }
-  }
-
-  def findCurrentActionStatus: ActionStatusType = {
-    if (DatabaseHelper.hasInit)
-      ActionState.importing
-    else
-      ActionState.init
   }
 
   def doReset() = {
