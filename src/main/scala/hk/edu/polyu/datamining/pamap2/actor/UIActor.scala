@@ -23,12 +23,12 @@ object UIActor {
     UIActor ! RequestClusterComputeInfo
   }
 
+  private[actor]
+  def !(msg: Any) = instance.self ! msg
+
   def onImportedRawFile(): Unit = {
     UIActor ! ExtractFromRaw
   }
-
-  private[actor]
-  def !(msg: Any) = instance.self ! msg
 
   def dispatch(msg: Any): Unit = {
     SingletonActor.Dispatcher.proxy(instance.context.system) ! msg
@@ -61,8 +61,6 @@ class UIActor extends Actor with ActorLogging {
   def cluster = Cluster(context.system)
 
   override def receive: Receive = {
-    case StateActor.AskStatus => SingletonActor.StateHolder.proxy ! StateActor.AskStatus
-    //      log info "asking status"
     case ResponseStatus(status) => MonitorController.receivedClusterStatus(status)
     //      log info "received status"
     case RequestClusterComputeInfo => SingletonActor.Dispatcher.proxy ! RequestClusterComputeInfo

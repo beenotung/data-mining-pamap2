@@ -47,7 +47,6 @@ object Main extends App {
     system.log info s"ActorSystem ${system.name} started successfully"
 
     /* set singletons */
-    SingletonActor.StateHolder.init(system)
     SingletonActor.Dispatcher.init(system)
 
     if (cluster.selfRoles.contains("seed")) {

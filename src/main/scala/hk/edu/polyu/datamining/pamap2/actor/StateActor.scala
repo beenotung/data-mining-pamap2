@@ -1,21 +1,19 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor.{Actor, ActorLogging}
+import com.sun.istack.internal.NotNull
 import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.StateActor.{AskStatus, NextStatus, ResponseStatus, SetStatus}
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
 /**
   * Created by beenotung on 1/21/16.
+  * representing the status of dispatch actor
   */
 object ActionState extends Enumeration {
   type ActionStatusType = Value
   val name = "ActionState"
-  val checkStatus, reset, init, importing, imported, preProcess, learning, testing, finished = Value
+  val reset, init, importing, imported, preProcess, learning, testing, finished = Value
 
-  def next(actionStatusType: ActionStatusType): ActionStatusType = actionStatusType match {
-    case null => checkStatus
-    case `checkStatus` => init
+  @deprecated
+  def next(actionStatusType: ActionStatusType@NotNull): ActionStatusType = actionStatusType match {
     case `init` => importing
     case `importing` => imported
     case `imported` => preProcess
@@ -39,67 +37,4 @@ object StateActor {
   /** @deprecated */
   case object NextStatus extends Message
 
-}
-
-/**
-  * this is design to be singleton
-  */
-@deprecated
-class StateActor extends Actor with ActorLogging {
-  var status: ActionStatusType = null
-
-  override def preStart(): Unit = {
-    log info s"Starting State Actor"
-    //log info s"The path of this ${getClass.getSimpleName} is ${self.path}"
-    self ! SetStatus(ActionState.checkStatus)
-  }
-
-  override def receive: Receive = {
-    case AskStatus => sender ! ResponseStatus(status)
-    //      log info "responded status"
-    case NextStatus => self forward SetStatus(ActionState.next(status))
-    case SetStatus(newStatus) => if (status == null || !status.equals(newStatus)) onStatusChanged(status, newStatus)
-    case msg => log warning s"unsupported message : $msg"
-  }
-
-  def onStatusChanged(oldStatus: ActionStatusType, newStatus: ActionStatusType) = {
-    status = newStatus
-    val nextMessage: Option[StateActor.Message] = newStatus match {
-      case ActionState.checkStatus => Some(SetStatus(DatabaseHelper.getActionStatus))
-      case ActionState.reset => doReset()
-        Some(ResponseStatus(ActionState.init))
-      case ActionState.init => doInit()
-        Some(NextStatus)
-      case ActionState.importing => None
-      case ActionState.imported => Some(NextStatus)
-      case ActionState.preProcess => doPreProcess()
-        ???
-      case ActionState.learning => doLearning()
-        ???
-      case ActionState.testing => doTesting()
-        ???
-      case _ => None
-    }
-    nextMessage match {
-      case Some(message) => self ! message
-      case None =>
-    }
-  }
-
-  def doReset() = {
-    DatabaseHelper.resetTables(ActionState.init.toString, ActionState.importing.toString)
-  }
-
-  def doInit() = {
-    DatabaseHelper.initTables()
-  }
-
-  def doPreProcess() = ???
-
-  def doLearning() = ???
-
-  def doTesting() = ???
-
-  def doImport() = {
-  }
 }

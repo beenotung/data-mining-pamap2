@@ -32,12 +32,6 @@ object SingletonActor {
       ))
   }
 
-  case object StateHolder extends SingletonActorType {
-    override val name: String = "state-holder"
-
-    override val actorProps: Props = Props[StateActor]
-  }
-
   case object Dispatcher extends SingletonActorType {
     override val name: String = "task-dispatcher"
 
