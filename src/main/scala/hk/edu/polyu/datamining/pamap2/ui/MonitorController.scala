@@ -272,7 +272,7 @@ class MonitorController extends MonitorControllerSkeleton {
             setImportProgress(i / N)
             val rows = lines.map(ImportActor.processLine).map(_
               .`with`(subjectField, subject)
-              .`with`(fileTypeField, true))
+              .`with`(fileTypeField.toString, true))
             DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
             i += lines.size
           })

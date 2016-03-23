@@ -26,10 +26,6 @@ object UIActor {
   private[actor]
   def !(msg: Any) = instance.self ! msg
 
-  def onImportedRawFile(): Unit = {
-    UIActor ! ExtractFromRaw
-  }
-
   def dispatch(msg: Any): Unit = {
     SingletonActor.Dispatcher.proxy(instance.context.system) ! msg
   }
@@ -67,8 +63,6 @@ class UIActor extends Actor with ActorLogging {
     //      log info "asking cluster info"
     case ClusterComputeInfo(nodeInfos) => MonitorController.receivedNodeInfos(nodeInfos)
     //      log info "received cluster info"
-    case ExtractFromRaw => SingletonActor.Dispatcher.proxy ! ExtractFromRaw
-      log info "sent extract-from-raw to dispatcher"
     case msg =>
       log error s"unsupported message : $msg"
       ???

@@ -1,19 +1,32 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
+import java.{util => ju}
+
 import akka.actor.{Actor, ActorLogging, ActorRef}
+import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
+import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 /**
   * Created by beenotung on 2/18/16.
   */
+object DispatchActor {
+  lazy val MaxTask = Main.config.getInt("algorithm.task.max")
+
+  case class WorkerProfile(actorRef: ActorRef, workerRecord: WorkerRecord)
+
+  case class WorkerAddress(clusterSeedId: String, workerId: String)
+
+}
+
 class DispatchActor extends Actor with ActorLogging {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
-  val pendingTask = mutable.ListBuffer.empty[Task]
 
   override def preStart(): Unit = {
     log info "starting Task-Dispatcher"
@@ -27,7 +40,8 @@ class DispatchActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
-    case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId)))
+    case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId, 0, 0)))
+    //TODO get worker record from database
     case UnRegisterWorker(clusterSeedId) => workers.retain((ref, record) => ref.equals(sender()))
       log warning "removed worker"
     case UnRegisterComputeNode(clusterSeedId) => unregisterComputeNode(clusterSeedId)
@@ -40,8 +54,9 @@ class DispatchActor extends Actor with ActorLogging {
         idValue = ActionState.name,
         newVal = ActionState.preProcess.toString
       )
-      findAndDispatchTasks(ActionState.preProcess)
-    case task: MessageProtocol.Task => dispatch(task)
+      findAndDispatchNewTasks(ActionState.preProcess)
+    case task: MessageProtocol.Task => handleTask(Seq(task))
+    case TaskCompleted(taskId) => cleanTasks()
     //case msg => log error s"Unsupported msg : $msg"
   }
 
@@ -56,7 +71,7 @@ class DispatchActor extends Actor with ActorLogging {
   def unregisterWorkers(workerIds: IndexedSeq[String]) = {
     val tasks: Seq[Task] = workerIds.flatMap(workerId => DatabaseHelper.getTasksByWorkerId(workerId))
     workers.retain((ref, record) => !workerIds.contains(record.workerId))
-    tasks.foreach(task => dispatch(task, reassign = true))
+    handleTask(tasks)
   }
 
   def mkClusterComputeInfo(): ClusterComputeInfo = {
@@ -77,36 +92,85 @@ class DispatchActor extends Actor with ActorLogging {
     )
   }
 
-  def findAndDispatchTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus) = {
-    findTask(actionState).foreach(t => dispatch(t))
+  def findAndDispatchNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus) = {
+    handleTask(findNewTasks(actionState))
   }
 
-  def dispatch(task: Task, reassign: Boolean = false): Unit = {
-    if (workers.isEmpty) {
-      log warning "recevied task, but no worker"
-      pendingTask += task
-    } else {
-      // pick the less busy worker (min. pending task)
-      val worker = workers.minBy(_._2.pendingTask)
-      if (reassign) {
-        // reset create time and worker id
-        DatabaseHelper.reassignTask(task.id, worker._2.clusterSeedId, worker._2.workerId)
+  def handleTask(tasks: Seq[Task]) = {
+    // dispatch or store in pending
+    val workerPool = workers.filter(_._2.pendingTask < MaxTask)
+    val pendingTasks = mutable.ListBuffer.empty[Task]
+    tasks.foreach(task => {
+      val (actorRef, record) = workerPool.minBy(_._2.pendingTask)
+      if (record.pendingTask < MaxTask) {
+        record.pendingTask += 1
+        if (task.id == null) {
+          DatabaseHelper.addNewTask(task, record.clusterSeedId, record.workerId)
+        } else {
+          DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
+        }
+        actorRef ! task
       } else {
-        // stamp the task
-        task.id = DatabaseHelper.addNewTask(task, worker._2.clusterSeedId, worker._2.workerId)
+        pendingTasks += task
       }
-      worker._1 ! task
-      worker._2.pendingTask += 1
-    }
+    })
+    addPendingTasks(pendingTasks)
   }
 
-  def findTask(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
+
+  def cleanTasks() = {
+    val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
+    handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
+  }
+
+  def findNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
     actionState match {
       case ActionState.preProcess =>
+        // resolve task from database
+        DatabaseHelper.run(r => {
+          r.table(Tables.RawData.name).without(Tables.RawData.Field)
+        })
         Seq.empty
       case _ => log warning s"findTask on $actionState is not implemened"
         Seq.empty
     }
+  }
+
+  def getPendingTasks(limit: Long = -1): Seq[Task] = {
+    val field = Tables.Task.Field
+    val result: Cursor[ju.Map[String, AnyRef]] = DatabaseHelper.run(r => {
+      val query = r.table(Tables.Task.name).filter(r.hashMap(field.pending.toString, true))
+      if (limit > 0)
+        query.limit(limit)
+      query
+    })
+    result.iterator().asScala.map(record => {
+      ActionState.withName(record.get(field.taskType.toString).toString) match {
+        case ActionState.preProcess => PreProcessTask.fromMap(record)
+      }
+    }).toIndexedSeq
+  }
+
+  def numberOfPendingTask: Long =
+    DatabaseHelper.run(r => r.table(Tables.Task.name).filter(r.hashMap(Tables.Task.Field.pending.toString, true)).count())
+
+
+  def addPendingTasks(tasks: Seq[Task]) = {
+    /*
+    * 1. save new tasks
+    * 2. update old tasks
+    * */
+    val table = Tables.Task.name
+    val field = Tables.Task.Field
+    val (newTasks, oldTasks) = tasks.partition(_.id == null)
+    /* 1. save new tasks */
+    DatabaseHelper.tableInsertRows(table, newTasks.asJava)
+    /* 2. update old tasks */
+    DatabaseHelper.run[ju.HashMap[String, AnyRef]](r => {
+      val ids = r.args(oldTasks.map(_.id).asJava)
+      val row = r.hashMap(field.pending.toString, true)
+      r.table(table).getAll(ids).update(row)
+    })
   }
 
   /* remove dead Compute Nodes */

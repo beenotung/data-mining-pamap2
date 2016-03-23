@@ -92,8 +92,6 @@ object DatabaseHelper {
 
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
-  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
-
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
     //initTables(conn)
     val n = numberOfServer(conn) - offset
@@ -106,6 +104,8 @@ object DatabaseHelper {
 
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
+
+  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.List[ju.HashMap[String, AnyRef]] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -192,24 +192,6 @@ object DatabaseHelper {
     createDatabaseIfNotExist(dbname).run(conn)
   }
 
-  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
-    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
-      dbExist,
-      r.hashMap("created", 0),
-      r.dbCreate(dbname)
-    )))
-  }
-
-  def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
-
-  def createTableIfNotExist(tableName: String, dbname: String = dbname): ReqlExpr =
-    r.tableList().contains(tableName)
-      .do_(reqlFunction1(tableExist => r.branch(
-        tableExist,
-        r.hashMap("created", 0),
-        r.tableCreate(tableName)
-      )))
-
   def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): String = {
     val tableName = Tables.ClusterSeed.name
     val hostField = Tables.ClusterSeed.Field.host.toString
@@ -246,6 +228,14 @@ object DatabaseHelper {
       .iterator().asScala.map(_.get(id)).toIndexedSeq
   }
 
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      conn.reconnect()
+      fun(r).run(conn)
+  }
+
   /**
     * create database if not exist
     * create tables if not exist
@@ -260,6 +250,24 @@ object DatabaseHelper {
     println("check table : finished")
   }
 
+  def createDatabaseIfNotExist(dbname: String): ReqlExpr = {
+    r.dbList().contains(dbname).do_(reqlFunction1(dbExist => r.branch(
+      dbExist,
+      r.hashMap("created", 0),
+      r.dbCreate(dbname)
+    )))
+  }
+
+  def createTableIfNotExistResult(tableName: String, conn: Connection = conn): ju.HashMap[String, AnyVal] = createTableIfNotExist(tableName).run(conn)
+
+  def createTableIfNotExist(tableName: String, dbname: String = dbname): ReqlExpr =
+    r.tableList().contains(tableName)
+      .do_(reqlFunction1(tableExist => r.branch(
+        tableExist,
+        r.hashMap("created", 0),
+        r.tableCreate(tableName)
+      )))
+
   /** this approach generate large network traffic demand */
   @deprecated
   def addRawDataFile(filename: String, lines: ju.List[String], fileType: FileType): ju.HashMap[String, AnyRef] = {
@@ -273,15 +281,17 @@ object DatabaseHelper {
     r.table(RawDataFile.name).insert(row).run(conn)
   }
 
-  def addNewTask(task: Task, clusterId: String, workerId: String): String = {
+  def addNewTask(task: Task, clusterId: String, workerId: String, pending: Boolean = false): String = {
     val field = Tables.Task.Field
     //TODO add more detail about the task
-    run[ju.List[String]](r => r.table(Tables.Task.name).insert(
-      r.hashMap(field.taskType.toString, task.getClass.getName)
-        .`with`(field.workerId.toString, workerId)
-        .`with`(field.clusterId.toString, clusterId)
-        .`with`(field.createTime.toString, OffsetDateTime.now())
-    ).getField(generated_keys))
+    val row = r.hashMap(field.taskType.toString, task.getClass.getName)
+      .`with`(field.workerId.toString, workerId)
+      .`with`(field.clusterId.toString, clusterId)
+      .`with`(field.createTime.toString, OffsetDateTime.now())
+    if (pending)
+      row.`with`(field.pending.toString, true)
+    run[ju.List[String]](r => r.table(Tables.Task.name).insert(row)
+      .getField(generated_keys))
       .get(0)
   }
 
@@ -294,20 +304,12 @@ object DatabaseHelper {
     ))
   }
 
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
-  }
-
   def getTasksByWorkerId(workerId: String): Seq[Task] = {
     //TODO
     Seq.empty
   }
 
-  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime, OffsetDateTime.now())))
+  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime.toString, OffsetDateTime.now())))
 
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)

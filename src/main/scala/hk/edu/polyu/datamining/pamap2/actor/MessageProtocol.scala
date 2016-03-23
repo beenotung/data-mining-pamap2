@@ -3,6 +3,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 import java.{util => ju}
 
 import akka.actor.ActorSystem
+import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
@@ -16,18 +17,21 @@ object MessageProtocol {
   sealed trait DispatchActorProtocol
 
   sealed trait Task extends Comparable[Task] {
+    val actionState: ActionState.ActionStatusType
     var id: String = null
 
     override def compareTo(o: Task) = id.compareTo(o.id)
+
+    def fromMap(map: ju.Map[String, AnyRef]): Task
   }
 
-  case class NodeInfo(val processor: Int, val freeMemory: Long, val totalMemory: Long, val maxMemory: Long, val upTime: Long, val startTime: Long, val clusterSeedId: String, val genTime: Long) extends Comparable[NodeInfo] {
+  case class NodeInfo(processor: Int, freeMemory: Long, totalMemory: Long, maxMemory: Long, upTime: Long, startTime: Long, clusterSeedId: String, genTime: Long) extends Comparable[NodeInfo] {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
   }
 
-  case class WorkerRecord(val clusterSeedId: String, workerId: String, var pendingTask: Int = 0, var completedTask: Int = 0)
+  case class WorkerRecord(clusterSeedId: String, workerId: String, var pendingTask: Long, var completedTask: Long)
 
-  case class ComputeNodeInfo(val nodeInfo: NodeInfo, val workerRecords: Seq[WorkerRecord])
+  case class ComputeNodeInfo(nodeInfo: NodeInfo, workerRecords: Seq[WorkerRecord])
 
   case class ClusterComputeInfo(nodeInfo: Seq[ComputeNodeInfo])
 
@@ -39,11 +43,17 @@ object MessageProtocol {
 
   case class TaskCompleted(taskId: String)
 
-  @deprecated("meet bottleneck at database, holding too much data in ram")
-  case class ExtractFromRaw(ids: Seq[String]) extends Task
+  //  @deprecated("meet bottleneck at database, holding too much data in ram")
+  //  case class ExtractFromRaw(ids: Seq[String]) extends Task
 
-  @deprecated("meet bottleneck at database, holding too much data in ram")
-  case class ProcessRawLines(filename: String, lines: ju.List[String], fileType: ImportActor.FileType.FileType) extends Task
+  //  @deprecated("meet bottleneck at database, holding too much data in ram")
+  //  case class ProcessRawLines(filename: String, lines: ju.List[String], fileType: ImportActor.FileType.FileType) extends Task
+
+  case class PreProcessTask(skip: Long, limit: Long) extends Task {
+    override val actionState: ActionStatusType = PreProcessTask.actionState
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = PreProcessTask.fromMap(map)
+  }
 
   case object ReBindDispatcher
 
@@ -52,6 +62,18 @@ object MessageProtocol {
   case object RequestNodeInfo extends Request
 
   case object StartARM
+
+  object PreProcessTask extends Task {
+    override val actionState: ActionStatusType = ActionState.preProcess
+    val Skip = "skip"
+    val Limit = "limit"
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = new PreProcessTask(
+      //TODO test if need to parse from string
+      skip = map.get(Skip).asInstanceOf,
+      limit = map.get(Limit).asInstanceOf
+    )
+  }
 
 }
 
