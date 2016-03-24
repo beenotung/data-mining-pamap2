@@ -2,6 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.cluster.{Cluster, MemberStatus}
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
+import hk.edu.polyu.datamining.pamap2.actor.UIActor.DispatchMessage
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
@@ -17,11 +18,14 @@ object UIActor {
   def members = instance.cluster.state.members.filter(_.status == MemberStatus.Up)
 
   def dispatch(msg: Any): Unit = {
-    SingletonActor.Dispatcher.proxy(instance.context.system) ! msg
+    instance.self ! DispatchMessage(msg)
   }
 
   private[actor]
   def !(msg: Any) = instance.self ! msg
+
+  private case class DispatchMessage(msg: Any)
+
 }
 
 class UIActor extends CommonActor {
@@ -50,10 +54,11 @@ class UIActor extends CommonActor {
   def cluster = Cluster(context.system)
 
   override def receive: Receive = {
+    case DispatchMessage(msg) => SingletonActor.Dispatcher.proxy ! msg
     case RequestClusterComputeInfo => SingletonActor.Dispatcher.proxy ! RequestClusterComputeInfo
     //      log info "asking cluster info"
-    case ClusterComputeInfo(nodeInfos) => MonitorController.receivedNodeInfos(nodeInfos)
-    //      log info "received cluster info"
+    case ResponseClusterComputeInfo(clusterComputeInfo) => MonitorController.receivedNodeInfos(clusterComputeInfo)
+    //      log info "received cluster compute info"
     case msg =>
       showError(s"unsupported message : $msg")
   }

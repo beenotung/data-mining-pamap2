@@ -46,7 +46,8 @@ class DispatchActor extends CommonActor {
       log warning "removed worker"
     case UnRegisterComputeNode(clusterSeedId) => unregisterComputeNode(clusterSeedId)
       log warning "removed compute node"
-    case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
+    case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
+    //      log info s"responsed cluster compute info, sender:$sender"
     case StartARM =>
       DatabaseHelper.setActionStatus(ActionState.preProcess)
       findAndDispatchNewTasks(ActionState.preProcess)
@@ -69,22 +70,21 @@ class DispatchActor extends CommonActor {
     handleTask(tasks)
   }
 
-  def mkClusterComputeInfo(): ClusterComputeInfo = {
+  def mkClusterComputeInfo: ClusterComputeInfo = {
+    //    log info "making cluster compute info"
     val margin = getMargin
-    ClusterComputeInfo(
-      workers.values.filterNot(_.clusterSeedId == null)
-        .groupBy(_.clusterSeedId)
-        .flatMap(workerGroup => {
-          nodeInfos.get(workerGroup._1) match {
-            case None =>
-              log info s"skip this node : ${workerGroup._1}"
-              log info s"all nodes $nodeInfos"
-              None
-            case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
-          }
-        })
-        .toIndexedSeq
-    )
+    workers.values.filterNot(_.clusterSeedId == null)
+      .groupBy(_.clusterSeedId)
+      .flatMap(workerGroup => {
+        nodeInfos.get(workerGroup._1) match {
+          case None =>
+            log info s"skip this node : ${workerGroup._1}"
+            log info s"all nodes $nodeInfos"
+            None
+          case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
+        }
+      })
+      .toIndexedSeq
   }
 
   def findAndDispatchNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus) = {

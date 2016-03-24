@@ -19,9 +19,9 @@ import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo,
 import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
-import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Log}
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils.formatSize
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Log}
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -33,19 +33,28 @@ object MonitorController {
   val aborted = new AtomicBoolean(false)
   val autoUpdate = Main.config.getBoolean("ui.autoupdate.enable")
   val interval = Main.config.getInt("ui.autoupdate.interval")
-  var clusterComputeInfo: ClusterComputeInfo = ClusterComputeInfo(Seq.empty)
+  var clusterComputeInfo: ClusterComputeInfo = IndexedSeq.empty
   var computeNodeInfos = Seq.empty[ComputeNodeInfo]
   private[ui] var instance: MonitorController = null
 
   def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
-    Log.log("received nodeinfos")
+    //    Log.info("received nodeinfos")
     computeNodeInfos = newVals
     runOnUIThread(() => instance.updated_computeNodeInfos())
+    //TODO use UIActor scheduler
     if (autoUpdate)
       fork(() => {
-        Log.log("request nodeinfos again")
         Thread.sleep(interval)
-        instance.update_cluster_info(new ActionEvent())
+        /* ask for cluster status */
+        //println("asking cluster status from actor system")
+        UIActor.dispatch(RequestClusterComputeInfo)
+        /* get staus from database */
+        //println("asking action status from database")
+        val status = DatabaseHelper.getActionStatus
+        //println(s"recevied action status : $status")
+        runOnUIThread(() => {
+          instance.cluster_status.setText(status.toString)
+        })
       })
   }
 
@@ -79,7 +88,7 @@ class MonitorController extends MonitorControllerSkeleton {
   //  var handlingFile = new AtomicBoolean(false)
 
   def setUIStatus(msg: String) = {
-    println(msg)
+    Log.info(msg)
     left_status.setText(msg)
   }
 
@@ -99,7 +108,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def update_cluster_info(event: ActionEvent) = {
     val msg: String = "getting cluster status"
-    println(msg)
+    //println(msg)
     cluster_status.setText(msg)
     /* set ui to loading */
     val loading = "loading"
@@ -110,12 +119,12 @@ class MonitorController extends MonitorControllerSkeleton {
     text_number_of_completed_task setText loading
     fork(() => {
       /* ask for cluster status */
-      println("asking cluster status from actor system")
+      //println("asking cluster status from actor system")
       UIActor.dispatch(RequestClusterComputeInfo)
       /* get staus from database */
-      println("asking action status from database")
+      //println("asking action status from database")
       val status = DatabaseHelper.getActionStatus
-      println(s"recevied action status : $status")
+      //println(s"recevied action status : $status")
       runOnUIThread(() => {
         cluster_status.setText(status.toString)
       })
@@ -184,7 +193,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def update_dataset_count(event: ActionEvent) = {
     val msg: String = "refreshing dataset count"
-    println(msg)
+    //println(msg)
     left_status setText msg
     subject_count setText "loading"
     training_data_count setText "loading"
@@ -244,7 +253,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => {
     if (numberOfFileDone == 0) {
-      println("set action status to importing")
+      //println("set action status to importing")
       DatabaseHelper.setActionStatus(ActionState.importing)
     }
     pendingFileItems.synchronized({
@@ -299,7 +308,7 @@ class MonitorController extends MonitorControllerSkeleton {
         if (numberOfFile > 1)
           handleNextFile(numberOfFileDone + 1)
         else {
-          println("set action status to imported")
+          //println("set action status to imported")
           DatabaseHelper.setActionStatus(ActionState.imported)
           setFileProgressText("all imported")
           aborted.set(false)

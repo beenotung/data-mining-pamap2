@@ -12,6 +12,8 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
   */
 object MessageProtocol {
 
+  type ClusterComputeInfo = IndexedSeq[ComputeNodeInfo]
+
   sealed trait Request
 
   sealed trait Response
@@ -35,8 +37,6 @@ object MessageProtocol {
 
   case class ComputeNodeInfo(nodeInfo: NodeInfo, workerRecords: Seq[WorkerRecord])
 
-  case class ClusterComputeInfo(nodeInfo: Seq[ComputeNodeInfo])
-
   case class RegisterWorker(clusterSeedId: String, workerId: String) extends DispatchActorProtocol
 
   case class UnRegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
@@ -56,6 +56,8 @@ object MessageProtocol {
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = PreProcessTask.fromMap(map)
   }
+
+  case class ResponseClusterComputeInfo(clusterComputeInfo: ClusterComputeInfo)
 
   case object ReBindDispatcher
 
