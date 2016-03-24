@@ -92,6 +92,8 @@ object DatabaseHelper {
 
   def maxReplicas(conn: Connection = conn) = updateReplicas(conn, 0)
 
+  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
+
   def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
     //initTables(conn)
     val n = numberOfServer(conn) - offset
@@ -104,8 +106,6 @@ object DatabaseHelper {
 
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
-
-  def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
   def createTableDropIfExistResult(tableName: String): ju.List[ju.HashMap[String, AnyRef]] = {
     r.do_(createTableDropIfExist(tableName)).run(conn)
@@ -167,14 +167,14 @@ object DatabaseHelper {
   def getValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, defaultValue: A): ReqlAst =
     r.branch(
       // db exist
-      r.dbList().contains(tablename),
+      r.dbList().contains(dbname),
       r.branch(
         // table exist
         r.db(dbname).tableList().contains(tablename),
         r.branch(
           // record exist
           r.db(dbname).table(tablename).contains(reqlFunction1(_.bracket(id).eq(idValue))),
-          r db dbname table tablename get idValue bracket fieldname,
+          r.db(dbname).table(tablename).get(idValue).bracket(fieldname),
           r expr defaultValue
         ),
         r expr defaultValue
@@ -182,10 +182,19 @@ object DatabaseHelper {
       r expr defaultValue
     )
 
+  def setActionStatus(actionStatusType: ActionStatusType) = setValue(
+    tablename = Tables.Status.name,
+    idValue = ActionState.name,
+    newVal = actionStatusType.toString
+  )
+
   def setValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, newVal: A): ju.HashMap[String, AnyRef] = {
     createDatabaseIfNotExistResult(dbname)
     createTableIfNotExistResult(tablename)
-    run(_.table(tablename).get(idValue).update(r.hashMap(value, newVal)))
+    run(r => {
+      println(s"set value of $idValue in table $tablename $fieldname:$newVal")
+      r.table(tablename).get(idValue).replace(r.hashMap(id, idValue).`with`(fieldname, newVal))
+    })
   }
 
   def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
@@ -226,14 +235,6 @@ object DatabaseHelper {
   def findClusterSeedIds = {
     run[Cursor[ju.Map[String, String]]](r => r.table(Tables.ClusterSeed.name).withFields(id))
       .iterator().asScala.map(_.get(id)).toIndexedSeq
-  }
-
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
   }
 
   /**
@@ -337,5 +338,13 @@ object DatabaseHelper {
     } catch {
       case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
     }
+  }
+
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      conn.reconnect()
+      fun(r).run(conn)
   }
 }

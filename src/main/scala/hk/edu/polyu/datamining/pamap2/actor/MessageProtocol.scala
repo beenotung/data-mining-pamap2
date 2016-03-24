@@ -14,6 +14,8 @@ object MessageProtocol {
 
   sealed trait Request
 
+  sealed trait Response
+
   sealed trait DispatchActorProtocol
 
   sealed trait Task extends Comparable[Task] {

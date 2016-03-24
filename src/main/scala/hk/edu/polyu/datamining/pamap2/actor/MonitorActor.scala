@@ -1,6 +1,5 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import akka.actor._
 import akka.cluster.ClusterEvent._
 import akka.cluster._
 
@@ -31,7 +30,7 @@ object MonitorActor {
 object MonitorActorProtocol {
 }
 
-class MonitorActor extends Actor with ActorLogging {
+class MonitorActor extends CommonActor {
 
   val cluster = Cluster(context.system)
 

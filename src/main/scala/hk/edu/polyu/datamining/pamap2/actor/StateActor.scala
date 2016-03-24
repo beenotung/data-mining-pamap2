@@ -24,7 +24,7 @@ object ActionState extends Enumeration {
   }
 }
 
-object StateActor {
+object StateHelper {
 
   sealed trait Message
 

@@ -23,7 +23,7 @@ object ComputeActor {
   }
 }
 
-class ComputeActor extends Actor with ActorLogging {
+class ComputeActor extends CommonActor {
   val workers = mutable.Set.empty[ActorRef]
 
   override def preStart = {

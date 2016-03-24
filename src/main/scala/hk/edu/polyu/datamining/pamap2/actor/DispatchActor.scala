@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import java.{util => ju}
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.ActorRef
 import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
@@ -24,7 +24,7 @@ object DispatchActor {
 
 }
 
-class DispatchActor extends Actor with ActorLogging {
+class DispatchActor extends CommonActor {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
 
@@ -48,12 +48,7 @@ class DispatchActor extends Actor with ActorLogging {
       log warning "removed compute node"
     case RequestClusterComputeInfo => sender() ! mkClusterComputeInfo()
     case StartARM =>
-      //TODO
-      DatabaseHelper.setValue(
-        tablename = Tables.Status.name,
-        idValue = ActionState.name,
-        newVal = ActionState.preProcess.toString
-      )
+      DatabaseHelper.setActionStatus(ActionState.preProcess)
       findAndDispatchNewTasks(ActionState.preProcess)
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
@@ -126,7 +121,7 @@ class DispatchActor extends Actor with ActorLogging {
   def findNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
     actionState match {
       case ActionState.preProcess =>
-        // resolve task from database
+        //TODO resolve task from database
         DatabaseHelper.run(r => {
           r.table(Tables.RawData.name).without(Tables.RawData.Field)
         })

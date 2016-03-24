@@ -13,14 +13,13 @@ import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
 import hk.edu.polyu.datamining.pamap2.Main
-import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo, StartARM}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo, RequestClusterComputeInfo, StartARM}
 import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
-import hk.edu.polyu.datamining.pamap2.utils.FileUtils
+import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Log}
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils.formatSize
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 
@@ -39,12 +38,14 @@ object MonitorController {
   private[ui] var instance: MonitorController = null
 
   def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
+    Log.log("received nodeinfos")
     computeNodeInfos = newVals
     runOnUIThread(() => instance.updated_computeNodeInfos())
     if (autoUpdate)
       fork(() => {
+        Log.log("request nodeinfos again")
         Thread.sleep(interval)
-        UIActor.requestUpdate()
+        instance.update_cluster_info(new ActionEvent())
       })
   }
 
@@ -61,10 +62,6 @@ object MonitorController {
 
   def restarted(reason: String) = Platform runLater (() => {
     instance.promptRestarted(reason)
-  })
-
-  def receivedClusterStatus(status: ActionStatusType): Unit = Platform runLater (() => {
-    instance.updated_cluster_status(status)
   })
 
   def setFileProgressText(value: String) = Platform runLater (() => {
@@ -111,8 +108,18 @@ class MonitorController extends MonitorControllerSkeleton {
     text_cluster_memory setText loading
     text_number_of_pending_task setText loading
     text_number_of_completed_task setText loading
-    /* ask for cluster status */
-    UIActor.requestUpdate()
+    fork(() => {
+      /* ask for cluster status */
+      println("asking cluster status from actor system")
+      UIActor.dispatch(RequestClusterComputeInfo)
+      /* get staus from database */
+      println("asking action status from database")
+      val status = DatabaseHelper.getActionStatus
+      println(s"recevied action status : $status")
+      runOnUIThread(() => {
+        cluster_status.setText(status.toString)
+      })
+    })
   }
 
   def promptRestarted(reason: String): Unit = {
@@ -154,10 +161,15 @@ class MonitorController extends MonitorControllerSkeleton {
         refresh_dataset_count_progress setProgress -1
         /* fork to do network stuff */
         fork(runnable(() => {
+          DatabaseHelper.setActionStatus(ActionState.init)
+          runOnUIThread(() => {
+            cluster_status setText ActionState.init.toString
+            refresh_dataset_count_progress setProgress 0.3
+          })
           DatabaseHelper.createTableDropIfExistResult(Tables.Subject.name)
           runOnUIThread(() => {
             subject_count setText 0.toString
-            refresh_dataset_count_progress setProgress 0.5
+            refresh_dataset_count_progress setProgress 0.6
           })
           DatabaseHelper.createTableDropIfExistResult(Tables.RawData.name)
           runOnUIThread(() => {
@@ -230,67 +242,71 @@ class MonitorController extends MonitorControllerSkeleton {
     }
   }
 
-  def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => pendingFileItems.synchronized({
-    val numberOfFile = pendingFileItems.size()
-    if (numberOfFile > 0) {
-      setLeftStatus(s"finished $numberOfFileDone file(s)")
-      // handle one now
-      val fileItem = pendingFileItems.poll()
-      if (fileItem == null)
-        return
-      val (file, filetype) = fileItem
-      val filename = file.getName
-      val (table, fileTypeField) = filetype match {
-        case FileType.subject => (Tables.Subject.name, "")
-        case FileType.training => (Tables.RawData.name, Tables.RawData.Field.isTrain.toString)
-        case FileType.testing => (Tables.RawData.name, Tables.RawData.Field.isTest.toString)
-      }
-      setFileProgressText(s"importing $filename into $table ${if (fileTypeField.length > 0) s"($fileTypeField)"}")
-      setImportProgress(0)
-      val N = FileUtils.lineCount(file)
-      var i = 0f
-      if (filetype.equals(FileType.subject)) {
-        // subject data
-        val lines: Iterator[String] = Source.fromFile(file).getLines()
-        val titles = lines.take(1).toIndexedSeq.head.split(",")
-        lines.grouped(DatabaseHelper.BestInsertCount)
-          .takeWhile(_ => !aborted.get())
-          .foreach(lines => {
-            setImportProgress(i / N)
-            val rows = lines.map(line => ImportActor.processSubject(titles, line))
-            DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
-            i += lines.size
-          })
-      } else {
-        // training or testing data
-        val subject = filename.split("\\.")(0)
-        val subjectField = Tables.RawData.Field.subject.toString
-        Source.fromFile(file).getLines()
-          .grouped(DatabaseHelper.BestInsertCount)
-          .takeWhile(_ => !aborted.get())
-          .foreach(lines => {
-            setImportProgress(i / N)
-            val rows = lines.map(ImportActor.processLine).map(_
-              .`with`(subjectField, subject)
-              .`with`(fileTypeField.toString, true))
-            DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
-            i += lines.size
-          })
-      }
-      setImportProgress(1)
-      setLeftStatus(s"finished $filename")
-      if (numberOfFile > 1)
-        handleNextFile(numberOfFileDone + 1)
-      else {
-        setFileProgressText("all imported")
-        aborted.set(false)
-      }
+  def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => {
+    if (numberOfFileDone == 0) {
+      println("set action status to importing")
+      DatabaseHelper.setActionStatus(ActionState.importing)
     }
-  }))
-
-  def updated_cluster_status(statusType: ActionStatusType) = {
-    cluster_status.setText(statusType.toString)
-  }
+    pendingFileItems.synchronized({
+      val numberOfFile = pendingFileItems.size()
+      if (numberOfFile > 0) {
+        setLeftStatus(s"finished $numberOfFileDone file(s)")
+        // handle one now
+        val fileItem = pendingFileItems.poll()
+        if (fileItem == null)
+          return
+        val (file, filetype) = fileItem
+        val filename = file.getName
+        val (table, fileTypeField) = filetype match {
+          case FileType.subject => (Tables.Subject.name, "")
+          case FileType.training => (Tables.RawData.name, Tables.RawData.Field.isTrain.toString)
+          case FileType.testing => (Tables.RawData.name, Tables.RawData.Field.isTest.toString)
+        }
+        setFileProgressText(s"importing $filename into $table ${if (fileTypeField.length > 0) s"($fileTypeField)"}")
+        setImportProgress(0)
+        val N = FileUtils.lineCount(file)
+        var i = 0f
+        if (filetype.equals(FileType.subject)) {
+          // subject data
+          val lines: Iterator[String] = Source.fromFile(file).getLines()
+          val titles = lines.take(1).toIndexedSeq.head.split(",")
+          lines.grouped(DatabaseHelper.BestInsertCount)
+            .takeWhile(_ => !aborted.get())
+            .foreach(lines => {
+              setImportProgress(i / N)
+              val rows = lines.map(line => ImportActor.processSubject(titles, line))
+              DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
+              i += lines.size
+            })
+        } else {
+          // training or testing data
+          val subject = filename.split("\\.")(0)
+          val subjectField = Tables.RawData.Field.subject.toString
+          Source.fromFile(file).getLines()
+            .grouped(DatabaseHelper.BestInsertCount)
+            .takeWhile(_ => !aborted.get())
+            .foreach(lines => {
+              setImportProgress(i / N)
+              val rows = lines.map(ImportActor.processLine).map(_
+                .`with`(subjectField, subject)
+                .`with`(fileTypeField.toString, true))
+              DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
+              i += lines.size
+            })
+        }
+        setImportProgress(1)
+        setLeftStatus(s"finished $filename")
+        if (numberOfFile > 1)
+          handleNextFile(numberOfFileDone + 1)
+        else {
+          println("set action status to imported")
+          DatabaseHelper.setActionStatus(ActionState.imported)
+          setFileProgressText("all imported")
+          aborted.set(false)
+        }
+      }
+    })
+  })
 
   def updated_computeNodeInfos() = {
     if (computeNodeInfos.isEmpty) {
