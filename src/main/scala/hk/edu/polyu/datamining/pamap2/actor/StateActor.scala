@@ -1,15 +1,15 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import com.sun.istack.internal.NotNull
-import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
+import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 
 /**
   * Created by beenotung on 1/21/16.
   * representing the status of dispatch actor
   */
-object ActionState extends Enumeration {
+object ActionStatus extends Enumeration {
   type ActionStatusType = Value
-  val name = "ActionState"
+  val name = "ActionStatus"
   val reset, init, importing, imported, preProcess, learning, testing, finished = Value
 
   @deprecated

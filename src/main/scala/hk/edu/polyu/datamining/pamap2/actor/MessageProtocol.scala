@@ -3,7 +3,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 import java.{util => ju}
 
 import akka.actor.ActorSystem
-import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
+import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 
@@ -21,7 +21,7 @@ object MessageProtocol {
   sealed trait DispatchActorProtocol
 
   sealed trait Task extends Comparable[Task] {
-    val actionState: ActionState.ActionStatusType
+    val actionState: ActionStatus.ActionStatusType
     var id: String = null
 
     override def compareTo(o: Task) = id.compareTo(o.id)
@@ -68,7 +68,7 @@ object MessageProtocol {
   case object StartARM
 
   object PreProcessTask extends Task {
-    override val actionState: ActionStatusType = ActionState.preProcess
+    override val actionState: ActionStatusType = ActionStatus.preProcess
     val Skip = "skip"
     val Limit = "limit"
 

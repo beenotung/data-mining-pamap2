@@ -1,7 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
 import akka.cluster.{Cluster, MemberStatus}
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.ResponseClusterComputeInfo
 import hk.edu.polyu.datamining.pamap2.actor.UIActor.DispatchMessage
 import hk.edu.polyu.datamining.pamap2.ui.{MonitorApplication, MonitorController}
 import hk.edu.polyu.datamining.pamap2.utils.Lang
@@ -55,7 +55,7 @@ class UIActor extends CommonActor {
 
   override def receive: Receive = {
     case DispatchMessage(msg) => SingletonActor.Dispatcher.proxy ! msg
-    case RequestClusterComputeInfo => SingletonActor.Dispatcher.proxy ! RequestClusterComputeInfo
+    //    case RequestClusterComputeInfo => SingletonActor.Dispatcher.proxy ! RequestClusterComputeInfo
     //      log info "asking cluster info"
     case ResponseClusterComputeInfo(clusterComputeInfo) => MonitorController.receivedNodeInfos(clusterComputeInfo)
     //      log info "received cluster compute info"

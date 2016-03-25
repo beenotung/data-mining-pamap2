@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.ui
 
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.{util => ju}
 import javafx.application.Platform
 import javafx.application.Platform.{runLater => runOnUIThread}
@@ -12,10 +12,12 @@ import javafx.scene.control.{Alert, ButtonType, Labeled}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
+import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
+import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, ComputeNodeInfo, RequestClusterComputeInfo, StartARM}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ClusterComputeInfo, RequestClusterComputeInfo, StartARM}
 import hk.edu.polyu.datamining.pamap2.actor._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.ui.MonitorController._
@@ -31,30 +33,22 @@ import scala.io.Source
   */
 object MonitorController {
   val aborted = new AtomicBoolean(false)
-  val autoUpdate = Main.config.getBoolean("ui.autoupdate.enable")
+  //  val autoUpdate = Main.config.getBoolean("ui.autoupdate.enable")
   val interval = Main.config.getInt("ui.autoupdate.interval")
   var clusterComputeInfo: ClusterComputeInfo = IndexedSeq.empty
-  var computeNodeInfos = Seq.empty[ComputeNodeInfo]
   private[ui] var instance: MonitorController = null
 
-  def receivedNodeInfos(newVals: Seq[ComputeNodeInfo]) = {
+  def receivedNodeInfos(newVal: ClusterComputeInfo) = {
     //    Log.info("received nodeinfos")
-    computeNodeInfos = newVals
+    clusterComputeInfo = newVal
     runOnUIThread(() => instance.updated_computeNodeInfos())
+    NodesDetailController.updateList()
     //TODO use UIActor scheduler
-    if (autoUpdate)
+    if (instance.auto_update.isSelected)
       fork(() => {
         Thread.sleep(interval)
         /* ask for cluster status */
-        //println("asking cluster status from actor system")
         UIActor.dispatch(RequestClusterComputeInfo)
-        /* get staus from database */
-        //println("asking action status from database")
-        val status = DatabaseHelper.getActionStatus
-        //println(s"recevied action status : $status")
-        runOnUIThread(() => {
-          instance.cluster_status.setText(status.toString)
-        })
       })
   }
 
@@ -80,12 +74,17 @@ object MonitorController {
   def setImportProgress(value: Double) = runOnUIThread(() => {
     instance.import_file_progress.setProgress(value)
   })
+
+  def setActionStatus(actionStatusType: ActionStatusType) = {
+    fork(runnable(() => DatabaseHelper.setActionStatus(actionStatusType)))
+    runOnUIThread(() => instance.cluster_status.setText(actionStatusType.toString))
+  }
 }
 
 class MonitorController extends MonitorControllerSkeleton {
   instance = this
+  val cursorRef = new AtomicReference[Cursor[ju.Map[String, ju.Map[String, AnyRef]]]](null)
   var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType)]
-  //  var handlingFile = new AtomicBoolean(false)
 
   def setUIStatus(msg: String) = {
     Log.info(msg)
@@ -94,19 +93,18 @@ class MonitorController extends MonitorControllerSkeleton {
 
   override def customInit() = {
     /* get cluster status */
-    update_cluster_info(new ActionEvent())
+    update_cluster_status(new ActionEvent())
 
-    /* update general cluster info */
-    /*MonitorActor.addListener((event, members) => {
-      val n = members.count(_.status == MemberStatus.Up)
-      UIActor.requestUpdate()
-      runOnUIThread(() => {
-        btn_nodes.setText(n.toString)
-      })
-    })*/
+    /* get cluster compute info */
+    auto_update.setSelected(Main.config.getBoolean("ui.autoupdate.enable"))
+    auto_update_onChanged(new ActionEvent())
   }
 
-  override def update_cluster_info(event: ActionEvent) = {
+  override def auto_update_onChanged(event: ActionEvent) = {
+    UIActor.dispatch(RequestClusterComputeInfo)
+  }
+
+  override def update_cluster_status(event: ActionEvent) = {
     val msg: String = "getting cluster status"
     //println(msg)
     cluster_status.setText(msg)
@@ -119,15 +117,10 @@ class MonitorController extends MonitorControllerSkeleton {
     text_number_of_completed_task setText loading
     fork(() => {
       /* ask for cluster status */
-      //println("asking cluster status from actor system")
       UIActor.dispatch(RequestClusterComputeInfo)
       /* get staus from database */
-      //println("asking action status from database")
       val status = DatabaseHelper.getActionStatus
-      //println(s"recevied action status : $status")
-      runOnUIThread(() => {
-        cluster_status.setText(status.toString)
-      })
+      runOnUIThread(() => cluster_status setText status.toString)
     })
   }
 
@@ -170,15 +163,10 @@ class MonitorController extends MonitorControllerSkeleton {
         refresh_dataset_count_progress setProgress -1
         /* fork to do network stuff */
         fork(runnable(() => {
-          DatabaseHelper.setActionStatus(ActionState.init)
-          runOnUIThread(() => {
-            cluster_status setText ActionState.init.toString
-            refresh_dataset_count_progress setProgress 0.3
-          })
           DatabaseHelper.createTableDropIfExistResult(Tables.Subject.name)
           runOnUIThread(() => {
             subject_count setText 0.toString
-            refresh_dataset_count_progress setProgress 0.6
+            refresh_dataset_count_progress setProgress 0.5
           })
           DatabaseHelper.createTableDropIfExistResult(Tables.RawData.name)
           runOnUIThread(() => {
@@ -186,6 +174,7 @@ class MonitorController extends MonitorControllerSkeleton {
             testing_data_count setText 0.toString
             refresh_dataset_count_progress setProgress 1
           })
+          setActionStatus(ActionStatus.init)
         }))
       case _ =>
     }
@@ -254,7 +243,7 @@ class MonitorController extends MonitorControllerSkeleton {
   def handleNextFile(numberOfFileDone: Int = 0): Unit = fork(() => {
     if (numberOfFileDone == 0) {
       //println("set action status to importing")
-      DatabaseHelper.setActionStatus(ActionState.importing)
+      setActionStatus(ActionStatus.importing)
     }
     pendingFileItems.synchronized({
       val numberOfFile = pendingFileItems.size()
@@ -309,7 +298,7 @@ class MonitorController extends MonitorControllerSkeleton {
           handleNextFile(numberOfFileDone + 1)
         else {
           //println("set action status to imported")
-          DatabaseHelper.setActionStatus(ActionState.imported)
+          setActionStatus(ActionStatus.imported)
           setFileProgressText("all imported")
           aborted.set(false)
         }
@@ -318,7 +307,7 @@ class MonitorController extends MonitorControllerSkeleton {
   })
 
   def updated_computeNodeInfos() = {
-    if (computeNodeInfos.isEmpty) {
+    if (clusterComputeInfo.isEmpty) {
       def setText(x: Labeled) = {
         x setText "none"
       }
@@ -328,9 +317,9 @@ class MonitorController extends MonitorControllerSkeleton {
       setText(text_number_of_pending_task)
       setText(text_number_of_completed_task)
     } else {
-      btn_nodes setText computeNodeInfos.size.toString
-      val nodeInfos = computeNodeInfos.map(_.nodeInfo)
-      text_cluster_processor setText computeNodeInfos.map(_.workerRecords.length).sum.toString
+      btn_nodes setText clusterComputeInfo.size.toString
+      val nodeInfos = clusterComputeInfo.map(_.nodeInfo)
+      text_cluster_processor setText clusterComputeInfo.map(_.workerRecords.length).sum.toString
       text_cluster_memory setText {
         val total = nodeInfos.map(_.totalMemory).sum
         val free = nodeInfos.map(_.freeMemory).sum
@@ -339,7 +328,7 @@ class MonitorController extends MonitorControllerSkeleton {
         val usage = 100 * used / max
         s"${formatSize(used)} / ${formatSize(max)} ($usage%)"
       }
-      val workerRecords = computeNodeInfos.flatMap(_.workerRecords).toIndexedSeq
+      val workerRecords = clusterComputeInfo.flatMap(_.workerRecords).toIndexedSeq
       text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString
       text_number_of_completed_task setText workerRecords.map(_.completedTask).sum.toString
     }

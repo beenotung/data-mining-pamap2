@@ -18,7 +18,7 @@ import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.ui.NodesDetailController._
 import hk.edu.polyu.datamining.pamap2.utils.FormatUtils._
 import hk.edu.polyu.datamining.pamap2.utils.Lang
-import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.Lang.runnable
 
 import scala.collection.JavaConverters._
 
@@ -52,6 +52,8 @@ object NodesDetailController {
   def formatDuration(time: Long): String = {
     new Duration(time).toString
   }
+
+  def updateList() = runOnUIThread(runnable(() => if (instance != null) instance.updateList()))
 }
 
 class NodesDetailController extends NodesDetailControllerSkeleton {
@@ -62,7 +64,7 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
   }
 
   def updateList() = {
-    val nodes = MonitorController.computeNodeInfos.map { node => {
+    val nodes = MonitorController.clusterComputeInfo.map { node => {
       val nodeInfo = node.nodeInfo
       val name = {
         val (host, port, roles) = DatabaseHelper.getHostInfo(nodeInfo.clusterSeedId)
@@ -70,7 +72,8 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
       }
       val vbox = new VBox(NodesDetailController.spacing)
       vbox.getChildren.addAll(
-        new Label("_" * nodeInfo.clusterSeedId.length), {
+        new Label("_" * nodeInfo.clusterSeedId.length),
+        new Label(name), {
           val btn = new Button("remove")
           btn.setOnAction(Lang.eventHandler(event => Lang.fork(() => {
             DatabaseHelper.removeSeed(nodeInfo.clusterSeedId)
@@ -84,9 +87,6 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
           })))
           btn
         },
-        new Label({
-          name
-        }),
         new Label({
           val processorUsage = node.workerRecords.length + " / " + nodeInfo.processor
           val used: Long = nodeInfo.totalMemory - nodeInfo.freeMemory
@@ -108,13 +108,15 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
       vbox
     }
     }
-    messageLabel setText s"${MonitorController.computeNodeInfos.size} host(s)"
+    messageLabel setText s"${MonitorController.clusterComputeInfo.size} host(s)"
     detailsLabel setText " "
+    main_vbox.getChildren.clear()
     main_vbox.getChildren.addAll(nodes.asJavaCollection)
   }
 
   override def close_window(event: ActionEvent) = {
     stage.close()
     stage = null
+    instance = null
   }
 }

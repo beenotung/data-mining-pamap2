@@ -14,14 +14,14 @@ import com.rethinkdb.gen.exc.ReqlDriverError
 import com.rethinkdb.model.OptArgs
 import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
-import hk.edu.polyu.datamining.pamap2.actor.ActionState
-import hk.edu.polyu.datamining.pamap2.actor.ActionState.ActionStatusType
+import hk.edu.polyu.datamining.pamap2.actor.ActionStatus
+import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
 import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
-import hk.edu.polyu.datamining.pamap2.utils.Lang_
+import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
 import scala.collection.JavaConverters._
 
@@ -37,6 +37,9 @@ object DatabaseHelper {
   lazy val durability = "durability"
   lazy val soft = "soft"
   lazy val hard = "hard"
+  lazy val new_val = "new_val"
+  lazy val old_val = "old_val"
+  lazy val include_initial = "include_initial"
 
   /* self defined db constants */
   lazy val value = "value"
@@ -119,7 +122,7 @@ object DatabaseHelper {
   }
 
   def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] =
-    r.table(table).insert(rows).run(DatabaseHelper.conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    r.table(table).insert(rows).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
 
   def tableUpdate(tableName: String, idValue: String, value: com.rethinkdb.model.MapObject): ju.HashMap[String, AnyRef] =
     run(_.table(tableName).get(idValue).update(value))
@@ -158,11 +161,15 @@ object DatabaseHelper {
     r.table(statusTableName).update(r.hashMap(statusFieldName, nextStatus)).run(conn)
   }
 
-  def getActionStatus: ActionStatusType = ActionState.withName(getValue[String](
-    tablename = Tables.Status.name,
-    idValue = ActionState.name,
-    defaultValue = ActionState.init.toString
-  ).run(conn))
+  def getActionStatus: ActionStatusType = {
+    val value: Any = getValue(
+      tablename = Tables.Status.name,
+      idValue = ActionStatus.name,
+      defaultValue = ActionStatus.init.toString
+    ).run(conn)
+    val actionStatus = ActionStatus.withName(value.toString)
+    actionStatus
+  }
 
   def getValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, defaultValue: A): ReqlAst =
     r.branch(
@@ -182,9 +189,17 @@ object DatabaseHelper {
       r expr defaultValue
     )
 
+  def listenValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, includeInitial: Boolean = false, callback: A => Unit) = {
+    val cursor: Cursor[ju.Map[String, ju.Map[String, AnyRef]]] = r.db(dbname).table(tablename).get(idValue).changes().optArg(include_initial, includeInitial).run(conn)
+    cursor.forEach(Lang.consumer(feed => {
+      callback(feed.get(new_val).get(fieldname).asInstanceOf[A])
+    }))
+    cursor
+  }
+
   def setActionStatus(actionStatusType: ActionStatusType) = setValue(
     tablename = Tables.Status.name,
-    idValue = ActionState.name,
+    idValue = ActionStatus.name,
     newVal = actionStatusType.toString
   )
 
@@ -312,6 +327,15 @@ object DatabaseHelper {
 
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime.toString, OffsetDateTime.now())))
 
+  def run[A](fun: RethinkDB => ReqlAst): A = try {
+    fun(r).run(conn)
+  } catch {
+    case e: ReqlDriverError =>
+      Log.error("try to reconnect database", e)
+      conn.reconnect()
+      fun(r).run(conn)
+  }
+
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
@@ -338,13 +362,5 @@ object DatabaseHelper {
     } catch {
       case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
     }
-  }
-
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      conn.reconnect()
-      fun(r).run(conn)
   }
 }

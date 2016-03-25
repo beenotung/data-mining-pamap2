@@ -49,8 +49,8 @@ class DispatchActor extends CommonActor {
     case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
     //      log info s"responsed cluster compute info, sender:$sender"
     case StartARM =>
-      DatabaseHelper.setActionStatus(ActionState.preProcess)
-      findAndDispatchNewTasks(ActionState.preProcess)
+      DatabaseHelper.setActionStatus(ActionStatus.preProcess)
+      findAndDispatchNewTasks(ActionStatus.preProcess)
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
     //case msg => log error s"Unsupported msg : $msg"
@@ -87,7 +87,7 @@ class DispatchActor extends CommonActor {
       .toIndexedSeq
   }
 
-  def findAndDispatchNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus) = {
+  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus) = {
     handleTask(findNewTasks(actionState))
   }
 
@@ -118,9 +118,9 @@ class DispatchActor extends CommonActor {
     handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
   }
 
-  def findNewTasks(actionState: ActionState.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
+  def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
     actionState match {
-      case ActionState.preProcess =>
+      case ActionStatus.preProcess =>
         //TODO resolve task from database
         DatabaseHelper.run(r => {
           r.table(Tables.RawData.name).without(Tables.RawData.Field)
@@ -140,8 +140,8 @@ class DispatchActor extends CommonActor {
       query
     })
     result.iterator().asScala.map(record => {
-      ActionState.withName(record.get(field.taskType.toString).toString) match {
-        case ActionState.preProcess => PreProcessTask.fromMap(record)
+      ActionStatus.withName(record.get(field.taskType.toString).toString) match {
+        case ActionStatus.preProcess => PreProcessTask.fromMap(record)
       }
     }).toIndexedSeq
   }

@@ -76,6 +76,7 @@
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
                                                 <Label text="Nodes"/>
@@ -94,6 +95,9 @@
                                                 <Button fx:id="btn_nodes" mnemonicParsing="false"
                                                         onAction="#show_nodes_detail" text="loading"
                                                         GridPane.columnIndex="1"/>
+                                                <CheckBox fx:id="auto_update" mnemonicParsing="false"
+                                                          onAction="#auto_update_onChanged" text="auto update"
+                                                          GridPane.rowIndex="5"/>
                                             </children>
                                         </GridPane>
                                     </children>
@@ -176,8 +180,8 @@
                                                     <children>
                                                         <ProgressIndicator fx:id="refresh_dataset_count_progress"
                                                                            progress="1.0"/>
-                                                        <Button mnemonicParsing="false"
-                                                                onAction="#update_dataset_count" text="Refresh"/>
+                                                        <Button mnemonicParsing="false" onAction="#update_dataset_count"
+                                                                text="Refresh"/>
                                                     </children>
                                                     <padding>
                                                         <Insets top="7.0"/>
@@ -242,14 +246,6 @@
             </children>
         </AnchorPane>
         <BorderPane>
-            <right>
-                <Button fx:id="cluster_status" mnemonicParsing="false" onAction="#update_cluster_info"
-                        text="Cluster Status" BorderPane.alignment="CENTER">
-                    <BorderPane.margin>
-                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
-                    </BorderPane.margin>
-                </Button>
-            </right>
             <left>
                 <Label fx:id="left_status" text="ready" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
@@ -257,6 +253,14 @@
                     </BorderPane.margin>
                 </Label>
             </left>
+            <right>
+                <Button fx:id="cluster_status" mnemonicParsing="false" onAction="#update_cluster_status"
+                        text="Cluster Status" BorderPane.alignment="CENTER">
+                    <BorderPane.margin>
+                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
+                    </BorderPane.margin>
+                </Button>
+            </right>
         </BorderPane>
     </children>
 </VBox>
