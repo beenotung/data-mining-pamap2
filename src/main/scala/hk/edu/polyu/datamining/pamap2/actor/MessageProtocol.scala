@@ -65,7 +65,7 @@ object MessageProtocol {
 
   case object RequestNodeInfo extends Request
 
-  case object StartARM
+  case class StartARM(start: Double, end: Double, step: Double)
 
   object PreProcessTask extends Task {
     override val actionState: ActionStatusType = ActionStatus.preProcess

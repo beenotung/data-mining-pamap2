@@ -220,7 +220,14 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   override def start_association_rule_mining(event: ActionEvent) = {
-    UIActor.dispatch(StartARM)
+    try {
+      val start = min_support_start.getText.toDouble
+      val end = min_support_end.getText.toDouble
+      val step = min_support_step.getText.toDouble
+      UIActor.dispatch(StartARM(start, end, step))
+    } catch {
+      case e: NumberFormatException =>
+    }
   }
 
   def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {

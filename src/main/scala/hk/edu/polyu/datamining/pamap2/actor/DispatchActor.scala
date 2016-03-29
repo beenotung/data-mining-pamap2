@@ -48,9 +48,10 @@ class DispatchActor extends CommonActor {
       log warning "removed compute node"
     case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
     //      log info s"responsed cluster compute info, sender:$sender"
-    case StartARM =>
+    case StartARM(start,end,step) =>
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
       findAndDispatchNewTasks(ActionStatus.preProcess)
+      //TODO fire item count
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
     //case msg => log error s"Unsupported msg : $msg"
@@ -123,6 +124,7 @@ class DispatchActor extends CommonActor {
       case ActionStatus.preProcess =>
         //TODO resolve task from database
         DatabaseHelper.run(r => {
+          //TODO
           r.table(Tables.RawData.name).without(Tables.RawData.Field)
         })
         Seq.empty

@@ -224,7 +224,7 @@
                                                            GridPane.rowIndex="1"/>
                                                 <TextField fx:id="min_support_end" GridPane.columnIndex="1"
                                                            GridPane.rowIndex="2"/>
-                                                <TextField fx:id="min_support_start_step" GridPane.columnIndex="1"
+                                                <TextField fx:id="min_support_step" GridPane.columnIndex="1"
                                                            GridPane.rowIndex="3"/>
                                                 <Button mnemonicParsing="false"
                                                         onAction="#start_association_rule_mining" text="Start"
