@@ -201,18 +201,19 @@ class MonitorController extends MonitorControllerSkeleton {
       })
 
       val table = Tables.RawData
-      /* get train count */
-      val trainCount: Long = DatabaseHelper.run(_.table(table.name).without(table.Field.isTest.toString).count())
+      val field = Tables.RawData.Field
+      /* get test count */
+      val testCount: Long = DatabaseHelper.run(r => r.table(table.name).filter(r.hashMap(field.isTest.toString, true)).count())
       runOnUIThread(() => {
-        training_data_count.setText(trainCount.toString)
+        testing_data_count.setText(testCount.toString)
         refresh_dataset_count_progress setProgress 2d / 3
       })
 
-      /* get test count */
-      val testCount: Long = DatabaseHelper.run(_.table(table.name).withFields(table.Field.isTest.toString).count())
+      /* get train count */
+      val trainCount: Long = DatabaseHelper.run(_.table(table.name).count()).asInstanceOf[Long] - testCount
       runOnUIThread(() => {
         /* show content to ui */
-        testing_data_count.setText(testCount.toString)
+        training_data_count.setText(trainCount.toString)
         left_status setText "refreshed dateset count"
         refresh_dataset_count_progress setProgress 1
       })
