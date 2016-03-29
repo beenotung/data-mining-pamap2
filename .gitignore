@@ -388,5 +388,8 @@ Temporary Items
 # unused library
 lib/slf4j-1.7.13
 
-### RethinkDB cache
+## RethinkDB cache
 /**/rethinkdb_data
+
+## program log
+log.txt
