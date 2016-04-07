@@ -225,7 +225,8 @@ class MonitorController extends MonitorControllerSkeleton {
       val start = min_support_start.getText.toDouble
       val end = min_support_end.getText.toDouble
       val step = min_support_step.getText.toDouble
-      UIActor.dispatch(StartARM(start, end, step))
+      val percentage = percentage_training_data.getText.toDouble
+      UIActor.dispatch(StartARM(percentage, start, end, step))
     } catch {
       case e: NumberFormatException =>
     }

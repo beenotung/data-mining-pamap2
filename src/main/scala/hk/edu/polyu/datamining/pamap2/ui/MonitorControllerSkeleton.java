@@ -56,6 +56,9 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="min_support_end"
   protected TextField min_support_end; // Value injected by FXMLLoader
 
+  @FXML // fx:id="percentage_training_data"
+  protected TextField percentage_training_data; // Value injected by FXMLLoader
+
   @FXML // fx:id="min_support_step"
   protected TextField min_support_step; // Value injected by FXMLLoader
 
@@ -134,6 +137,7 @@ public class MonitorControllerSkeleton {
     assert refresh_dataset_count_progress != null : "fx:id=\"refresh_dataset_count_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start != null : "fx:id=\"min_support_start\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_end != null : "fx:id=\"min_support_end\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert percentage_training_data != null : "fx:id=\"percentage_training_data\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_step != null : "fx:id=\"min_support_step\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert left_status != null : "fx:id=\"left_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert auto_update != null : "fx:id=\"auto_update\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
