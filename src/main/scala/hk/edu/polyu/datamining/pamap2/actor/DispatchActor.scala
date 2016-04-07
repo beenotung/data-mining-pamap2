@@ -48,10 +48,20 @@ class DispatchActor extends CommonActor {
       log warning "removed compute node"
     case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
     //      log info s"responsed cluster compute info, sender:$sender"
-    case StartARM(start,end,step) =>
+    case StartARM(percentage, start, end, step) =>
+      //TODO working here
+      /*
+      * 1. label training data using the percentage
+      * 2. fire item extract on labeled data
+      * 3. fire item count
+      * 4. fire confidence, interest counting
+      * */
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
+      /* step 1. */
+      /* step 2. */
       findAndDispatchNewTasks(ActionStatus.preProcess)
-      //TODO fire item count
+      /* step 3. */
+      /* step 4. */
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
     //case msg => log error s"Unsupported msg : $msg"

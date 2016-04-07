@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-<VBox xmlns:fx="http://javafx.com/fxml/1" prefHeight="400.0" prefWidth="640.0"
-      xmlns="http://javafx.com/javafx/8.0.76-ea" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
+
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.76-ea"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
@@ -213,6 +217,8 @@
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
                                                 <Label text="Min. Support" GridPane.columnSpan="2147483647"
@@ -229,7 +235,13 @@
                                                 <Button mnemonicParsing="false"
                                                         onAction="#start_association_rule_mining" text="Start"
                                                         GridPane.columnSpan="2147483647" GridPane.halignment="CENTER"
-                                                        GridPane.rowIndex="4"/>
+                                                        GridPane.rowIndex="6"/>
+                                                <Label text="Sampling" GridPane.columnSpan="2147483647"
+                                                       GridPane.halignment="CENTER" GridPane.rowIndex="4"/>
+                                                <Label text="\% of training data (in full data set)"
+                                                       GridPane.halignment="CENTER" GridPane.rowIndex="5"/>
+                                                <TextField fx:id="percentage_training_data" GridPane.columnIndex="1"
+                                                           GridPane.rowIndex="5"/>
                                             </children>
                                         </GridPane>
                                     </children>
