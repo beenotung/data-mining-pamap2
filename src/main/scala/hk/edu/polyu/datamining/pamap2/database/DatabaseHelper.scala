@@ -377,6 +377,22 @@ object DatabaseHelper {
     }
   }
 
-  def markTrainSample(percentage: Double) =
-    DatabaseHelper_.markTrainSample_(Tables.RawData.name, Tables.RawData.Field.isTrain.toString, percentage)
+  def markTrainSample(percentage: Double) = {
+    //DatabaseHelper_.markTrainSample_(Tables.RawData.name, Tables.RawData.Field.isTrain.toString, percentage)
+    val t: String = Tables.RawData.name
+    val f: String = Tables.RawData.Field.isTrain.toString
+    /* 1. calculate count */
+    Log.debug("mark Train Sample (0/3)")
+    val totalCount: Long = DatabaseHelper.run(_.table(t).hasFields(f).count())
+    val count = Math.round(totalCount * {
+      if (percentage <= 1) percentage else percentage / 100d
+    })
+    /* 2. set all to false */
+    Log.debug("mark Train Sample (1/3)")
+    DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
+    /* 3. set some to true */
+    Log.debug("mark Train Sample (2/3)")
+    DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg("arrayLimit", count))
+    Log.debug("mark Train Sample (3/3)")
+  }
 }

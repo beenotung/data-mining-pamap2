@@ -1,5 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
+import java.util.concurrent.{Callable, FutureTask}
 import java.{util => ju}
 
 import akka.actor.ActorRef
@@ -8,7 +9,8 @@ import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, DatabaseHelper_, Tables}
-import hk.edu.polyu.datamining.pamap2.utils.Log
+import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -60,13 +62,17 @@ class DispatchActor extends CommonActor {
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
       /* step 1. */
       Log.info("start mark train sample")
-      DatabaseHelper.markTrainSample(percentage)
-      Log.info("finished mark train sample")
-
-      /* step 2. */
-      findAndDispatchNewTasks(ActionStatus.preProcess)
-      /* step 3. */
-      /* step 4. */
+      fork(() => {
+        DatabaseHelper.markTrainSample(percentage)
+        Log.info("finished mark train sample")
+        self ! function(() => {
+          /* step 2. */
+          findAndDispatchNewTasks(ActionStatus.preProcess)
+          /* step 3. */
+          /* step 4. */
+        })
+      })
+    case fun: Lang_.Function => fun.apply()
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
     //case msg => log error s"Unsupported msg : $msg"

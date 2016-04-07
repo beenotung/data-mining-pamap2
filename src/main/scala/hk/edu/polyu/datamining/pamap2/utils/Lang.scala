@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.utils
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{Callable, ConcurrentLinkedQueue}
 import java.util.function.{Consumer, Predicate}
 import javafx.event.EventHandler
 import javafx.util.Callback
@@ -39,6 +39,14 @@ object Lang {
     concurrentLinkedQueue.removeIf(new Predicate[Any] {
       override def test(t: Any): Boolean = true
     })
+  }
+
+  implicit def callable[A](fun: () => A): Callable[A] = new Callable[A] {
+    override def call(): A = fun()
+  }
+
+  implicit def function(fun: () => Unit): Lang_.Function = new Lang_.Function() {
+    override def apply(): Unit = fun()
   }
 
 
