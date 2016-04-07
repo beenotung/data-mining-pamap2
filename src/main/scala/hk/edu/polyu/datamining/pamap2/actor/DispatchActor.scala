@@ -8,6 +8,7 @@ import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, DatabaseHelper_, Tables}
+import hk.edu.polyu.datamining.pamap2.utils.Log
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -58,10 +59,12 @@ class DispatchActor extends CommonActor {
       * */
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
       /* step 1. */
+      Log.info("start mark train sample")
       DatabaseHelper.markTrainSample(percentage)
+      Log.info("finished mark train sample")
 
       /* step 2. */
-      findAndDispatchNewTasks(ActionStatus.preProcess)
+      //findAndDispatchNewTasks(ActionStatus.preProcess)
       /* step 3. */
       /* step 4. */
     case task: MessageProtocol.Task => handleTask(Seq(task))

@@ -1,12 +1,18 @@
 package hk.edu.polyu.datamining.pamap2.database;
 
+import com.rethinkdb.RethinkDB;
 import com.rethinkdb.gen.ast.Filter;
 import com.rethinkdb.gen.ast.Map;
+import com.rethinkdb.gen.ast.ReqlFunction1;
 import com.rethinkdb.net.Connection;
 import com.rethinkdb.net.Cursor;
 
+import javax.xml.crypto.Data;
 import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
+import static com.rethinkdb.RethinkDB.r;
 import static hk.edu.polyu.datamining.pamap2.database.DatabaseHelper.*;
 
 /**
@@ -20,7 +26,7 @@ public class DatabaseHelper_ {
   }
 
   public static Filter selectServers(String tag) {
-    return r().db(rethinkdb()).table(server_config())
+    return r.db(rethinkdb()).table(server_config())
         .filter(table -> table.getField(tags()).contains(tag));
   }
 
@@ -35,6 +41,10 @@ public class DatabaseHelper_ {
 
   public static void markTrainSample_(final String table, final String field, final double percentage) {
     final double threshold = (percentage <= 1) ? percentage : percentage / 100d;
-    r().table(table).hasFields(field).forEach(x -> x.update(r().hashMap(field, r().random().optArg("float", true).lt(threshold)))).run(conn);
+    DatabaseHelper.connSync(() ->
+        r.table(table).hasFields(field).update(
+            row -> r.hashMap(field, r.random().optArg("float", true).lt(threshold))
+        ).optArg("non_atomic", true).run(conn)
+    );
   }
 }

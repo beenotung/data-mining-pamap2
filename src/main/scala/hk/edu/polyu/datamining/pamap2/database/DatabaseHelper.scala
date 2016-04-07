@@ -344,6 +344,8 @@ object DatabaseHelper {
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
+  def connSync[A](f: Lang_.Producer[A]) = conn.synchronized(f.apply())
+
   def debug(key: String, value: Json): ju.HashMap[String, AnyRef] = {
     val table = Tables.Debug.name
     r.table(table).insert(r.hashMap(key, value)).run(conn)
