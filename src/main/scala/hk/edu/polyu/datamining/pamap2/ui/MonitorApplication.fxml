@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
 <VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.76-ea"
@@ -232,16 +246,16 @@
                                                            GridPane.rowIndex="2"/>
                                                 <TextField fx:id="min_support_step" GridPane.columnIndex="1"
                                                            GridPane.rowIndex="3"/>
-                                                <Button mnemonicParsing="false"
-                                                        onAction="#start_association_rule_mining" text="Start"
-                                                        GridPane.columnSpan="2147483647" GridPane.halignment="CENTER"
-                                                        GridPane.rowIndex="6"/>
                                                 <Label text="Sampling" GridPane.columnSpan="2147483647"
                                                        GridPane.halignment="CENTER" GridPane.rowIndex="4"/>
                                                 <Label text="\% of training data (in full data set)"
                                                        GridPane.halignment="CENTER" GridPane.rowIndex="5"/>
                                                 <TextField fx:id="percentage_training_data" GridPane.columnIndex="1"
                                                            GridPane.rowIndex="5"/>
+                                                <Button mnemonicParsing="false"
+                                                        onAction="#start_association_rule_mining" text="Start"
+                                                        GridPane.columnSpan="2147483647" GridPane.halignment="CENTER"
+                                                        GridPane.rowIndex="6"/>
                                             </children>
                                         </GridPane>
                                     </children>
