@@ -64,7 +64,7 @@ class DispatchActor extends CommonActor {
       Log.info("finished mark train sample")
 
       /* step 2. */
-      //findAndDispatchNewTasks(ActionStatus.preProcess)
+      findAndDispatchNewTasks(ActionStatus.preProcess)
       /* step 3. */
       /* step 4. */
     case task: MessageProtocol.Task => handleTask(Seq(task))
@@ -116,7 +116,7 @@ class DispatchActor extends CommonActor {
       if (record.pendingTask < MaxTask) {
         record.pendingTask += 1
         if (task.id == null) {
-          DatabaseHelper.addNewTask(task, record.clusterSeedId, record.workerId)
+          task.id = DatabaseHelper.addNewTask(task, record.clusterSeedId, record.workerId)
         } else {
           DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
         }
@@ -138,11 +138,20 @@ class DispatchActor extends CommonActor {
     actionState match {
       case ActionStatus.preProcess =>
         //TODO resolve task from database
-        DatabaseHelper.run(r => {
-          //TODO
-          r.table(Tables.RawData.name).without(Tables.RawData.Field)
-        })
-        Seq.empty
+        /*
+        * 1. get raw data count
+        * 2. create task (calculate offset and count pairs)
+        * 3. send task to workers
+        * */
+
+        /* 1. get raw data count */
+        val f = Tables.RawData.Field.isTrain.toString
+        val totalCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).count())
+        val pairCount: Long = Math.round(Math.ceil(1d * totalCount / DatabaseHelper.BestInsertCount))
+        (0L until pairCount).toStream.map(offset => MessageProtocol.PreProcessTask(
+          skip = offset * DatabaseHelper.BestInsertCount,
+          limit = Math.min(DatabaseHelper.BestInsertCount, totalCount - (offset * DatabaseHelper.BestInsertCount) - 1)
+        ))
       case _ => log warning s"findTask on $actionState is not implemened"
         Seq.empty
     }

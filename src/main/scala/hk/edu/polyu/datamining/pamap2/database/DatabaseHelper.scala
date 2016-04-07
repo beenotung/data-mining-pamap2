@@ -327,19 +327,25 @@ object DatabaseHelper {
     Seq.empty
   }
 
-  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = run(_.table(Task.name).get(taskId).update(r.hashMap(Task.Field.completeTime.toString, OffsetDateTime.now())))
+  def finishTask(taskId: String): ju.HashMap[String, AnyRef] =
+    run(r => r.table(Task.name).get(taskId).update(reqlFunction1(row => r.hashMap(Task.Field.completeTime.toString, OffsetDateTime.now()))))
 
-  def run[A](fun: RethinkDB => ReqlAst): A = try {
-    fun(r).run(conn)
-  } catch {
-    case e: ReqlDriverError =>
-      fork(runnable(() => {
-        throw e
-      }))
-      Log.error("try to reconnect database", e)
-      conn.reconnect()
+  def run[A](fun: RethinkDB => ReqlAst): A = conn.synchronized({
+    try {
+      assert(r != null)
+      assert(fun != null)
+      assert(conn != null)
       fun(r).run(conn)
-  }
+    } catch {
+      case e: ReqlDriverError =>
+        fork(runnable(() => {
+          throw e
+        }))
+        Log.error("try to reconnect database", e)
+        conn.reconnect()
+        fun(r).run(conn)
+    }
+  })
 
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
