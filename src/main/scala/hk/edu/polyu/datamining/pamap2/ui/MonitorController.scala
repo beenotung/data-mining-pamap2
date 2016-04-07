@@ -203,14 +203,14 @@ class MonitorController extends MonitorControllerSkeleton {
       val table = Tables.RawData
       val field = Tables.RawData.Field
       /* get test count */
-      val testCount: Long = DatabaseHelper.run(r => r.table(table.name).filter(r.hashMap(field.isTest.toString, true)).count())
+      val testCount: Long = DatabaseHelper.run(_.table(table.name).withFields(field.isTest.toString).count())
       runOnUIThread(() => {
         testing_data_count.setText(testCount.toString)
         refresh_dataset_count_progress setProgress 2d / 3
       })
 
       /* get train count */
-      val trainCount: Long = DatabaseHelper.run(_.table(table.name).count()).asInstanceOf[Long] - testCount
+      val trainCount: Long = DatabaseHelper.run(_.table(table.name).withFields(field.isTrain.toString).count())
       runOnUIThread(() => {
         /* show content to ui */
         training_data_count.setText(trainCount.toString)
@@ -226,9 +226,24 @@ class MonitorController extends MonitorControllerSkeleton {
       val end = min_support_end.getText.toDouble
       val step = min_support_step.getText.toDouble
       val percentage = percentage_training_data.getText.toDouble
-      UIActor.dispatch(StartARM(percentage, start, end, step))
+      val iterCount = Math.ceil((end - start) / step)
+      Log.info(s"start arm, found $iterCount iteration(s)")
+      if (iterCount <= 0) {
+        val alert = new Alert(AlertType.ERROR)
+        alert.setTitle("Error")
+        alert.setHeaderText("Invalid Parameter")
+        alert.setContentText(s"$iterCount iteration, wrong direction?")
+        alert.showAndWait()
+      }
+      else
+        UIActor.dispatch(StartARM(percentage, start, end, step))
     } catch {
       case e: NumberFormatException =>
+        val alert = new Alert(AlertType.ERROR)
+        alert.setTitle("Error")
+        alert.setHeaderText("Invalid Parameter")
+        alert.setContentText(s"please input real number\n$e")
+        alert.showAndWait()
     }
   }
 
