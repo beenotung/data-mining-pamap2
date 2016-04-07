@@ -52,7 +52,7 @@ object Log {
     log(x)
   }
 
-  def log(x: Any*) = if (isLog)
+  private def log(x: Any*) = if (isLog)
     if (x.length == 1)
       logStream.println(x.head)
     else
