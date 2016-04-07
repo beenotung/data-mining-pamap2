@@ -15,4 +15,8 @@ public class Lang_ {
   public interface ProducerConsumer<A, B> {
     B apply(A a);
   }
+
+  public interface Function {
+    void apply();
+  }
 }
