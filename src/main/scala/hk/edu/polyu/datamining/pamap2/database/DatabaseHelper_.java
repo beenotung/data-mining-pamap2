@@ -32,4 +32,9 @@ public class DatabaseHelper_ {
     Cursor result = selectServerIds(tag).run(conn);
     return result.toList();
   }
+
+  public static void markTrainSample_(final String table, final String field, final double percentage) {
+    final double threshold = (percentage <= 1) ? percentage : percentage / 100d;
+    r().table(table).hasFields(field).forEach(x -> x.update(r().hashMap(field, r().random().optArg("float", true).lt(threshold)))).run(conn);
+  }
 }

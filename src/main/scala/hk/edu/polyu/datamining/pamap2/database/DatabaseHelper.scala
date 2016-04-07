@@ -110,19 +110,21 @@ object DatabaseHelper {
   /*    util functions    */
   def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
 
-  def createTableDropIfExistResult(tableName: String): ju.List[ju.HashMap[String, AnyRef]] = {
-    r.do_(createTableDropIfExist(tableName)).run(conn)
+  def createTableDropIfExistResult(tableName: String) = {
+    run(_.db(dbname).tableDrop(tableName)).asInstanceOf[ju.Map[String, AnyRef]]
+    run(_.db(dbname).tableCreate(tableName)).asInstanceOf[ju.Map[String, AnyRef]]
   }
 
-  def createTableDropIfExist(tableName: String): java.util.List[_] = {
-    r.array(
-      r.db(dbname).tableDrop(tableName),
-      r.db(dbname).tableCreate(tableName)
-    )
+  def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] = conn.synchronized {
+    try {
+      r.table(table).insert(rows).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    } catch {
+      case e: ReqlDriverError =>
+        Log.error("try to reconnect database", e)
+        conn.reconnect()
+        r.table(table).insert(rows).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    }
   }
-
-  def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] =
-    r.table(table).insert(rows).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
 
   def tableUpdate(tableName: String, idValue: String, value: com.rethinkdb.model.MapObject): ju.HashMap[String, AnyRef] =
     run(_.table(tableName).get(idValue).update(value))
@@ -203,7 +205,7 @@ object DatabaseHelper {
     newVal = actionStatusType.toString
   )
 
-  def setValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, newVal: A): ju.HashMap[String, AnyRef] = {
+  def setValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, newVal: A): ju.HashMap[String, AnyRef] = conn.synchronized {
     createDatabaseIfNotExistResult(dbname)
     createTableIfNotExistResult(tablename)
     run(r => {
@@ -213,7 +215,7 @@ object DatabaseHelper {
   }
 
   def createDatabaseIfNotExistResult(dbname: String): ju.HashMap[String, AnyRef] = {
-    createDatabaseIfNotExist(dbname).run(conn)
+    run(_ => createDatabaseIfNotExist(dbname))
   }
 
   def addSeed(host: String, port: Int, roles: ju.List[String], config: Json): String = {
@@ -331,6 +333,9 @@ object DatabaseHelper {
     fun(r).run(conn)
   } catch {
     case e: ReqlDriverError =>
+      fork(runnable(() => {
+        throw e
+      }))
       Log.error("try to reconnect database", e)
       conn.reconnect()
       fun(r).run(conn)
@@ -363,4 +368,7 @@ object DatabaseHelper {
       case e: Exception => ("removed", -1L, new ju.ArrayList[String]())
     }
   }
+
+  def markTrainSample(percentage: Double) =
+    DatabaseHelper_.markTrainSample_(Tables.RawData.name, Tables.RawData.Field.isTrain.toString, percentage)
 }
