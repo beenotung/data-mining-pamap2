@@ -4,6 +4,7 @@ import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.actor.SingletonActor.Dispatcher
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
+import hk.edu.polyu.datamining.pamap2.utils.Log
 
 /**
   * Created by beenotung on 2/18/16.
@@ -14,10 +15,13 @@ class WorkerActor extends CommonActor {
   }
 
   override def receive: Receive = {
-    case task: Task => task match {
-      case PreProcessTask(skip, limit) =>
-      case msg => showError(s"unsupported message: $msg")
-    }
+    case task: Task =>
+      log.info(s"received task id: ${task.id}, $task")
+      task match {
+        case PreProcessTask(skip, limit) =>
+        case msg => showError(s"unsupported message: $msg")
+      }
+      log.info(s"finish task ${task.id}")
       DatabaseHelper.finishTask(task.id)
       Dispatcher.proxy ! TaskCompleted(task.id)
     case ReBindDispatcher => preStart()
