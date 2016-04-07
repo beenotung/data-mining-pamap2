@@ -393,3 +393,7 @@ lib/slf4j-1.7.13
 
 ## program log
 log.txt
+
+## training, testing data, real directory or symbolic link
+res/
+res
