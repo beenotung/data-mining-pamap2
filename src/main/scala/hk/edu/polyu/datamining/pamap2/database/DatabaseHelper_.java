@@ -39,6 +39,7 @@ public class DatabaseHelper_ {
     return result.toList();
   }
 
+  @Deprecated
   public static void markTrainSample_(final String table, final String field, final double percentage) {
     final double threshold = (percentage <= 1) ? percentage : percentage / 100d;
     DatabaseHelper.connSync(() ->

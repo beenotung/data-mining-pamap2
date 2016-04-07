@@ -2,7 +2,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.actor.SingletonActor.Dispatcher
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.Log
 
@@ -19,6 +19,9 @@ class WorkerActor extends CommonActor {
       log.info(s"received task id: ${task.id}, $task")
       task match {
         case PreProcessTask(skip, limit) =>
+          val f = Tables.RawData.Field.isTrain.toString
+//          val totalCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).sample()
+//          DatabaseHelper.run(r=>r.table(Tables.RawData.name).)
         case msg => showError(s"unsupported message: $msg")
       }
       log.info(s"finish task ${task.id}")
