@@ -7,7 +7,7 @@ import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
-import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
+import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, DatabaseHelper_, Tables}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -58,6 +58,8 @@ class DispatchActor extends CommonActor {
       * */
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
       /* step 1. */
+      DatabaseHelper.markTrainSample(percentage)
+
       /* step 2. */
       findAndDispatchNewTasks(ActionStatus.preProcess)
       /* step 3. */
