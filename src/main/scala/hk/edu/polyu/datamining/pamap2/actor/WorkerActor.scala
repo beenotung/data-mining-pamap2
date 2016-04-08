@@ -27,6 +27,8 @@ class WorkerActor extends CommonActor {
           cursor.forEach(consumer(row => {
             println(s"row=$row")
           }))
+//          val row=DatabaseHelper.run[Object](r=>r.table(Tables.RawData.name).filter(r.hashMap(f,true)).skip(skip).limit(limit))
+//          log.info(s"received $row")
         case msg => showError(s"unsupported message: $msg")
       }
       log.info(s"finish task ${task.id}")
