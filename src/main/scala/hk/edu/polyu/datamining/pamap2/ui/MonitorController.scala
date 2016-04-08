@@ -306,7 +306,7 @@ class MonitorController extends MonitorControllerSkeleton {
         } else {
           // training or testing data
           //TODO remove english, only keep number
-          val subject = filename.split("\\.")(0)
+          val subject = filename.split("\\.")(0).filter(c => c >= '0' && c <= '9')
           val subjectField = Tables.RawData.Field.subject.toString
           val activityBuffer = mutable.ListBuffer.empty[MapObject]
           val activity_f = Tables.RawData.Field.activityId.toString
