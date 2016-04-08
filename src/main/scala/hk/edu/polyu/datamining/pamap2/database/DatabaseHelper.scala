@@ -98,14 +98,17 @@ object DatabaseHelper {
 
   def leaveReplicas(conn: Connection = conn) = if (isUsingBackupHost) updateReplicas(conn, 1)
 
-  def updateReplicas(conn: Connection = conn, offset: Long): ju.HashMap[String, AnyRef] = {
+  def updateReplicas(conn: Connection = conn, offset: Long): Option[ju.HashMap[String, AnyRef]] = {
     //initTables(conn)
     val n = numberOfServer(conn) - offset
-    r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
-      .reconfigure()
-      .optArg(shards, 1)
-      .optArg(replicas, n)
-    )).run(conn)
+    if (n >= 1)
+      Some(r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
+        .reconfigure()
+        .optArg(shards, 1)
+        .optArg(replicas, n)
+      )).run(conn).asInstanceOf[ju.HashMap[String, AnyRef]])
+    else
+      None
   }
 
   /*    util functions    */
