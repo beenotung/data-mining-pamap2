@@ -73,6 +73,28 @@ public class Sequence {
     }
     return all_seq_sets;
   }
+  
+  public static ArrayList<ItemSets[]> reduceDuplicate(ArrayList<ItemSets[]> all_seq_sets){
+	for(int i=all_seq_sets.size()-2; i>=0; i--){
+	  ArrayList<ItemSets> now_itemsets = new ArrayList<ItemSets>();
+	  for(int j=0; j<all_seq_sets.get(i).length; j++){
+		for(int k=0; k<all_seq_sets.get(i+1).length; k++){
+		  if(all_seq_sets.get(i+1)[k].isContain(all_seq_sets.get(i)[j].getItemSets())){
+			break;
+		  }
+		  if(k==all_seq_sets.get(i+1).length-1){
+		    now_itemsets.add(all_seq_sets.get(i)[j]);
+		  }
+		}
+	  }
+	  ItemSets[] new_itemsets = new ItemSets[now_itemsets.size()];
+	  for(int k=0; k<now_itemsets.size(); k++){
+	    new_itemsets[k]=now_itemsets.get(k);
+	  }
+      all_seq_sets.set(i, new_itemsets);
+	}
+    return all_seq_sets;
+  }
 
   public static ArrayList<ItemSets> createFirstSeq(ItemSets[] activity) {
     ArrayList<ItemSets> one_seq_sets = new ArrayList<ItemSets>();

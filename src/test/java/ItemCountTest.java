@@ -8,16 +8,23 @@ import java.util.ArrayList;
  */
 public class ItemCountTest {
   private static String[][][] dataset1 = {
-      {
-          {"Buy Stock#1", "Buy Stock#2", "Buy Stock#3"},
-          {"Buy Stock#1"}
-      }
+    {
+      {"Buy Stock#1", "Buy Stock#2", "Buy Stock#3"},
+      {"Buy Stock#1"}
+    },
+    {
+      {"Buy Stock#3"},
+      {"Buy Stock#1"}
+    }
   };
   private static String[][][] dataset2 = {
-      {
-          {"Buy Stock#1", "Sell Stock#2", "Sell Stock#3"},
-          {"Buy Stock#1", "Buy Stock#2"}
-      }
+    {
+      {"Buy Stock#1", "Sell Stock#2", "Sell Stock#3"},
+      {"Buy Stock#1", "Buy Stock#2"}
+    },
+    {
+      {"Buy Stock#1", "Buy Stock#2"}
+    }
   };
 
   public static void main(String[] args) throws Exception {
@@ -91,5 +98,23 @@ public class ItemCountTest {
         System.out.println("no sequence can from in " + i + "-sequence");
       }
     }
+    
+    String str2="before duplicate\n";
+    for(int i=0; i<all_seq_sets.size(); i++){
+      for(int j=0; j<all_seq_sets.get(i).length; j++){
+        str2+=(i+1)+"-seq["+j+"]:"+all_seq_sets.get(i)[j].toString()+"\n";
+      }
+    }
+    System.out.println(str2);
+
+    all_seq_sets = Sequence.reduceDuplicate(all_seq_sets);
+    // *** final result *** //
+    String str="-----final result-----\n";
+    for(int i=0; i<all_seq_sets.size(); i++){
+      for(int j=0; j<all_seq_sets.get(i).length; j++){
+        str+=(i+1)+"-seq["+j+"]:"+all_seq_sets.get(i)[j].toString()+"\n";
+      }
+    }
+    System.out.println(str);
   }
 }
