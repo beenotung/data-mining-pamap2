@@ -190,7 +190,9 @@ class DispatchActor extends CommonActor {
     DatabaseHelper.run(r => r.table(Tables.Task.name).filter(r.hashMap(Tables.Task.Field.pending.toString, true)).count())
 
 
-  def addPendingTasks(tasks: Seq[Task]) = {
+  def addPendingTasks(tasks: Seq[Task]): Unit = {
+    if (tasks.isEmpty)
+      return
     Log.debug(s"added tasks to pending table $tasks")
     /*
     * 1. save new tasks
