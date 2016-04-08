@@ -155,10 +155,14 @@ class DispatchActor extends CommonActor {
         /* 1. get raw data count */
         val f = Tables.RawData.Field.isTrain.toString
         val totalCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).count())
-        val pairCount: Long = Math.round(Math.ceil(1d * totalCount / DatabaseHelper.BestInsertCount))
-        (0L until pairCount).toStream.map(offset => MessageProtocol.PreProcessTask(
-          skip = offset * DatabaseHelper.BestInsertCount,
-          limit = Math.min(DatabaseHelper.BestInsertCount, totalCount - (offset * DatabaseHelper.BestInsertCount) - 1)
+        //val pairCount: Long = Math.round(Math.ceil(1d * totalCount / DatabaseHelper.BestInsertCount))
+        //(0L until pairCount).toStream.map(offset => MessageProtocol.PreProcessTask(
+        //  skip = offset * DatabaseHelper.BestInsertCount,
+        //  limit = Math.min(DatabaseHelper.BestInsertCount, totalCount - (offset * DatabaseHelper.BestInsertCount) - 1)
+        //))
+        (0L until totalCount).toStream.map(offset => MessageProtocol.PreProcessTask(
+          skip = offset,
+          limit = 1
         ))
       case _ => log warning s"findTask on $actionState is not implemened"
         Seq.empty
