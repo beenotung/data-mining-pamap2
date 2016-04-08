@@ -26,6 +26,15 @@ object ImportActor {
     map
   }
 
+  def processActivitySlice(line: String): (Byte, MapObject) = {
+    val cols = line.split(" ")
+    (toByte(cols(1)), r.hashMap(RawField.timestamp.toString, toFloat(cols(0)))
+      .`with`(RawField.heartRate.toString, toShort(cols(2)))
+      .`with`(RawField.hand.toString, processIMU(cols, 3))
+      .`with`(RawField.chest.toString, processIMU(cols, 20))
+      .`with`(RawField.ankle.toString, processIMU(cols, 37)))
+  }
+
   def processLine(line: String): MapObject = {
     //lineOffset += 1
     //println(s"processing line : $lineOffset")
