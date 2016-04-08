@@ -120,32 +120,6 @@ public class HexmapDemo extends JPanel {
 
             double[][] umatrix = som.umatrix();
 
-            double[][][] map = som.map();
-            double[][] proximity = new double[m*n][m*n];
-            for (int i = 0; i < m*n; i++) {
-                for (int j = 0; j < m*n; j++) {
-                    proximity[i][j] = Math.distance(map[i/n][i%n], map[j/n][j%n]);
-                }
-            }
-
-            MDS mds = new MDS(proximity, 3);
-            double[][] coords = mds.getCoordinates();
-            double[][][] mdsgrid = new double[m][n][];
-            for (int i = 0; i < m*n; i++) {
-                mdsgrid[i/n][i%n] = mds.getCoordinates()[i];
-            }
-
-            SammonMapping sammon = new SammonMapping(proximity, coords);
-            double[][][] sammongrid = new double[m][n][];
-            for (int i = 0; i < m*n; i++) {
-                sammongrid[i/n][i%n] = sammon.getCoordinates()[i];
-            }
-
-            IsotonicMDS isomds = new IsotonicMDS(proximity, coords);
-            double[][][] isomdsgrid = new double[m][n][];
-            for (int i = 0; i < m*n; i++) {
-                isomdsgrid[i/n][i%n] = isomds.getCoordinates()[i];
-            }
             System.out.println(Arrays.deepToString(labels));
             System.out.println(Arrays.deepToString(umatrix));
 
@@ -154,17 +128,7 @@ public class HexmapDemo extends JPanel {
             frame.setLocationRelativeTo(null);
             frame.add(Hexmap.plot(labels, umatrix));
 
-            //PlotCanvas canvas = Surface.plot(mdsgrid);
-            //canvas.setTitle("MDS");
-            //frame.add(canvas);
 
-            //canvas = Surface.plot(isomdsgrid);
-            //canvas.setTitle("Isotonic MDS");
-            //frame.add(canvas);
-
-            //canvas = Surface.plot(sammongrid);
-            //canvas.setTitle("Sammon Mapping");
-            //frame.add(canvas);
             frame.setVisible(true);
         } catch (Exception ex) {
             System.err.println(ex);
