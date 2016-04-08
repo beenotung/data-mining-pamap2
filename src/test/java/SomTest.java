@@ -43,7 +43,7 @@ public class SomTest {
 
     AccelerationData[] startbase = new AccelerationData[9];
     for (int i=0; i<9; i++){
-      double[] default_array = {0.2*i, 0.2*i, 0.2*i};
+      double[] default_array = {1, 6, 5};
       AccelerationData default_set = new AccelerationData(default_array);
       startbase[i] = default_set;
     }
