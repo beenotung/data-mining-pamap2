@@ -116,6 +116,17 @@ object DatabaseHelper {
     run(_.db(dbname).tableCreate(tableName)).asInstanceOf[ju.Map[String, AnyRef]]
   }
 
+  def tableInsertRow[A](table: String, row: A, softDurability: Boolean = false): ju.HashMap[String, AnyRef] = conn.synchronized {
+    try {
+      r.table(table).insert(row).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    } catch {
+      case e: ReqlDriverError =>
+        Log.error("try to reconnect database", e)
+        conn.reconnect()
+        r.table(table).insert(row).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
+    }
+  }
+
   def tableInsertRows[A](table: String, rows: java.util.List[A], softDurability: Boolean = false): ju.HashMap[String, AnyRef] = conn.synchronized {
     try {
       r.table(table).insert(rows).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))

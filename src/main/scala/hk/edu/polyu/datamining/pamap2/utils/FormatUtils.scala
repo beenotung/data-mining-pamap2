@@ -22,10 +22,10 @@ object FormatUtils {
     case e: NumberFormatException => Short.MinValue
   }
 
-  def toByte(string: String): Byte = try {
+  def toByte(string: String, default: Byte = Byte.MinValue): Byte = try {
     string.toByte
   } catch {
-    case e: NumberFormatException => Byte.MinValue
+    case e: NumberFormatException => default
   }
 
   def formatSize(byte: Long): String = {

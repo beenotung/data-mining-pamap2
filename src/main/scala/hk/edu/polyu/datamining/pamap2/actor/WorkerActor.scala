@@ -5,6 +5,9 @@ import hk.edu.polyu.datamining.pamap2.actor.SingletonActor.Dispatcher
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.Log
+import java.{util => ju}
+
+import com.rethinkdb.net.Cursor
 
 /**
   * Created by beenotung on 2/18/16.
@@ -20,8 +23,10 @@ class WorkerActor extends CommonActor {
       task match {
         case PreProcessTask(skip, limit) =>
           val f = Tables.RawData.Field.isTrain.toString
-//          val totalCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).sample()
-//          DatabaseHelper.run(r=>r.table(Tables.RawData.name).)
+          val cursor: Cursor[ju.Map[String, AnyRef]] = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).skip(skip).limit(limit))
+          cursor.forEach(consumer(row => {
+            println(s"row=$row")
+          }))
         case msg => showError(s"unsupported message: $msg")
       }
       log.info(s"finish task ${task.id}")

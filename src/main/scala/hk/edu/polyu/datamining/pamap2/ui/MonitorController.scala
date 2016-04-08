@@ -12,6 +12,8 @@ import javafx.scene.control.{Alert, ButtonType, Labeled}
 import javafx.stage.FileChooser
 import javafx.stage.FileChooser.ExtensionFilter
 
+import com.rethinkdb.RethinkDB
+import com.rethinkdb.model.MapObject
 import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
@@ -26,6 +28,7 @@ import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Log}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.io.Source
 
 /**
@@ -302,19 +305,44 @@ class MonitorController extends MonitorControllerSkeleton {
             })
         } else {
           // training or testing data
+          //TODO remove english, only keep number
           val subject = filename.split("\\.")(0)
           val subjectField = Tables.RawData.Field.subject.toString
+          val activityBuffer = mutable.ListBuffer.empty[MapObject]
+          val activity_f = Tables.RawData.Field.activityId.toString
+          val subject_f = Tables.RawData.Field.subject.toString
+          val timeSequence_f = Tables.RawData.Field.timeSequence.toString
+          var lastActivityId: Byte = -1
           Source.fromFile(file).getLines()
-            .grouped(DatabaseHelper.BestInsertCount)
             .takeWhile(_ => !aborted.get())
-            .foreach(lines => {
-              setImportProgress(i / N)
-              val rows = lines.map(ImportActor.processLine).map(_
-                .`with`(subjectField, subject)
-                .`with`(fileTypeField.toString, true))
-              DatabaseHelper.tableInsertRows(table, rows, softDurability = true)
-              i += lines.size
+            .foreach(line => {
+              i += 1
+              val (activityId, activitySlice) = ImportActor.processActivitySlice(line)
+              if (activityId != 0)
+                if (lastActivityId == activityId) {
+                  activityBuffer += activitySlice
+                } else {
+                  setImportProgress(i / N)
+                  if (activityBuffer.nonEmpty) {
+                    /* insert to database */
+                    val row = RethinkDB.r.hashMap(activity_f, lastActivityId)
+                      .`with`(subject_f, subject)
+                      .`with`(fileTypeField.toString, true)
+                      .`with`(timeSequence_f, activityBuffer.toList.asJava)
+                    DatabaseHelper.tableInsertRow(table, row, softDurability = true)
+                  }
+                  activityBuffer.clear()
+                  lastActivityId = activityId
+                }
             })
+          if (activityBuffer.nonEmpty) {
+            val row = RethinkDB.r.hashMap(activity_f, lastActivityId)
+              .`with`(subject_f, subject)
+              .`with`(fileTypeField.toString, true)
+              .`with`(timeSequence_f, activityBuffer.toList.asJava)
+            DatabaseHelper.tableInsertRow(table, row, softDurability = true)
+            activityBuffer.clear()
+          }
         }
         setImportProgress(1)
         setLeftStatus(s"finished $filename")

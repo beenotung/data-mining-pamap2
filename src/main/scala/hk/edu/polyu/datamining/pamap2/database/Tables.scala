@@ -93,6 +93,7 @@ object Tables {
       type Field = Value
       val subject, timestamp, activityId, heartRate, hand, chest, ankle, skip = Value
       val isTrain, isTest = Value
+      val timeSequence = Value
       val done = Value
     }
 
