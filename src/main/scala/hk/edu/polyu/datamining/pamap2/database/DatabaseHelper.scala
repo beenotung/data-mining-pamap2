@@ -5,7 +5,8 @@ package hk.edu.polyu.datamining.pamap2.database
   */
 
 import java.time.OffsetDateTime
-import java.{lang => jl, util => ju}
+import java.util.NoSuchElementException
+import java.{ lang => jl, util => ju}
 
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
@@ -409,5 +410,15 @@ object DatabaseHelper {
     Log.debug("mark Train Sample (2/3)")
     DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg(return_changes, false))
     Log.debug("mark Train Sample (3/3)")
+  }
+
+  /* field : hand | ankle | chest */
+  @throws(classOf[NoSuchElementException])
+  def getIMU(field: String): Stream[ju.Map[String, AnyRef]] = {
+    val fs = Tables.RawData.Field
+    DatabaseHelper.run[Cursor[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
+      .getField(fs.timeSequence.toString)
+      .concatMap(reqlFunction1(row => row.getField(field)))
+    ).iterator().asScala.toStream
   }
 }
