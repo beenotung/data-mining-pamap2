@@ -329,7 +329,7 @@ class MonitorController extends MonitorControllerSkeleton {
                       .`with`(subject_f, subject)
                       .`with`(fileTypeField.toString, true)
                       .`with`(timeSequence_f, activityBuffer.toList.asJava)
-                    DatabaseHelper.tableInsertRow(table, row, softDurability = true)
+                    DatabaseHelper.tableInsertRow(table, row)//, softDurability = true)
                   }
                   activityBuffer.clear()
                   lastActivityId = activityId
@@ -340,7 +340,7 @@ class MonitorController extends MonitorControllerSkeleton {
               .`with`(subject_f, subject)
               .`with`(fileTypeField.toString, true)
               .`with`(timeSequence_f, activityBuffer.toList.asJava)
-            DatabaseHelper.tableInsertRow(table, row, softDurability = true)
+            DatabaseHelper.tableInsertRow(table, row)//, softDurability = true)
             activityBuffer.clear()
           }
         }
