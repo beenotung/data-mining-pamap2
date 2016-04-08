@@ -61,10 +61,10 @@ class DispatchActor extends CommonActor {
       * */
       DatabaseHelper.setActionStatus(ActionStatus.preProcess)
       /* step 1. */
-      Log.info("start mark train sample")
+      Log.debug("start mark train sample")
       fork(() => {
         DatabaseHelper.markTrainSample(percentage)
-        Log.info("finished mark train sample")
+        Log.debug("finished mark train sample")
         self ! function(() => {
           /* step 2. */
           findAndDispatchNewTasks(ActionStatus.preProcess)
@@ -116,6 +116,7 @@ class DispatchActor extends CommonActor {
   def handleTask(tasks: Seq[Task]) = {
     // dispatch or store in pending
     if (workers.isEmpty) {
+      Log.info("trying to send task, but no workers")
       addPendingTasks(tasks)
     } else {
       val pendingTasks = mutable.ListBuffer.empty[Task]
@@ -128,6 +129,7 @@ class DispatchActor extends CommonActor {
             DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
           }
           record.pendingTask += 1
+          Log.debug(s"sent task $task to $actorRef")
           actorRef ! task
         } else {
           pendingTasks += task
@@ -189,6 +191,7 @@ class DispatchActor extends CommonActor {
 
 
   def addPendingTasks(tasks: Seq[Task]) = {
+    Log.debug(s"added tasks to pending table $tasks")
     /*
     * 1. save new tasks
     * 2. update old tasks
