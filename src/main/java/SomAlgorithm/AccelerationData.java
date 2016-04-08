@@ -11,24 +11,24 @@ package SomAlgorithm;
  */
 
 public class AccelerationData {
-  //
+	//
   private double[] acceleration = new double[3];
   private double[] vectorToPolar = new double[3];
 
   public AccelerationData(double[] acceleration)
   {
-    this.acceleration = acceleration;
+	this.acceleration = acceleration;
   }
-  public double[] getAcceleration()
-  {
+  public double[] getAcceleration(){
 	return  acceleration;
   }
-  public double get(int i)
-  {
+  public double get(int i){
 	return acceleration[i];
   }
-  public String toString()
-  {
+  public void set(int i, double value){
+	this.acceleration[i] = value;
+  }
+  public String toString(){
 	String str;
 	str = "x: "+acceleration[0]+",y: "+acceleration[1]+",z: "+acceleration[2]+"\n";
 	str += "radius: "+vectorToPolar[0]+",theta: "+vectorToPolar[1]+",phi: "+vectorToPolar[2]+"\n";
