@@ -79,6 +79,7 @@ public class SOM {
         similest_index = i;
       }
     }
+    System.out.println("distance:"+diff_value);
     return similest_index;
   }
 }

@@ -1,14 +1,12 @@
 import SomAlgorithm.AccelerationData;
 import SomAlgorithm.SOM;
 
-import java.util.ArrayList;
-
 /**
  * Created by yungyunglui on 26/2/16.
  */
 public class SomTest {
 
-  private static double[][] dataset = {
+  public static double[][] dataset = {
             {-8.93218,3.44072,2.08847},
             {-8.86195,3.4388,1.93558},
             {-8.90455,3.32427,1.81987},
@@ -116,12 +114,12 @@ public class SomTest {
     SOM sample_SOM = new SOM(startbase, "hand_x");
     double result=1;
     for (int i=0; i<100; i++){
-      int random = (int)Math.random()*data.length;
+      int random = (int)(Math.random()*data.length);
       result = sample_SOM.addsample(data[random]);
       //System.out.println("sample:"+data.get(i).get(0)+"\n"+sample_SOM.toString());
     }
     while (result>0.01){
-      int random = (int)Math.random()*data.length;
+      int random = (int)(Math.random()*data.length);
       result = sample_SOM.addsample(data[random]);
       System.out.println("r:"+result);
     }
