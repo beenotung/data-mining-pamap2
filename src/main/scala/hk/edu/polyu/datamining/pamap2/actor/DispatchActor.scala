@@ -115,25 +115,27 @@ class DispatchActor extends CommonActor {
 
   def handleTask(tasks: Seq[Task]) = {
     // dispatch or store in pending
-    val workerPool = workers.filter(_._2.pendingTask < MaxTask)
-    val pendingTasks = mutable.ListBuffer.empty[Task]
-    tasks.foreach(task => {
-      val (actorRef, record) = workerPool.minBy(_._2.pendingTask)
-      if (record.pendingTask < MaxTask) {
-        record.pendingTask += 1
-        if (task.id == null) {
-          task.id = DatabaseHelper.addNewTask(task, record.clusterSeedId, record.workerId)
+    if (workers.isEmpty) {
+      addPendingTasks(tasks)
+    } else {
+      val pendingTasks = mutable.ListBuffer.empty[Task]
+      tasks.foreach(task => {
+        val (actorRef, record) = workers.minBy(_._2.pendingTask)
+        if (record.pendingTask < MaxTask) {
+          if (task.id == null) {
+            task.id = DatabaseHelper.addNewTask(task, record.clusterSeedId, record.workerId)
+          } else {
+            DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
+          }
+          record.pendingTask += 1
+          actorRef ! task
         } else {
-          DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
+          pendingTasks += task
         }
-        actorRef ! task
-      } else {
-        pendingTasks += task
-      }
-    })
-    addPendingTasks(pendingTasks)
+      })
+      addPendingTasks(pendingTasks.toIndexedSeq)
+    }
   }
-
 
   def cleanTasks() = {
     val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
@@ -190,14 +192,17 @@ class DispatchActor extends CommonActor {
     val table = Tables.Task.name
     val field = Tables.Task.Field
     val (newTasks, oldTasks) = tasks.partition(_.id == null)
+    //println(s"add pending tasks:\nall tasks:$tasks\nnew tasks:$newTasks\nold tasks:$oldTasks")
     /* 1. save new tasks */
-    DatabaseHelper.tableInsertRows(table, newTasks.asJava)
+    if (newTasks.nonEmpty)
+      DatabaseHelper.tableInsertRows(table, newTasks.asJava)
     /* 2. update old tasks */
-    DatabaseHelper.run[ju.HashMap[String, AnyRef]](r => {
-      val ids = r.args(oldTasks.map(_.id).asJava)
-      val row = r.hashMap(field.pending.toString, true)
-      r.table(table).getAll(ids).update(row)
-    })
+    if (oldTasks.nonEmpty)
+      DatabaseHelper.run[ju.HashMap[String, AnyRef]](r => {
+        val ids = r.args(oldTasks.map(_.id).asJava)
+        val row = r.hashMap(field.pending.toString, true)
+        r.table(table).getAll(ids).update(reqlFunction1(x => row))
+      })
   }
 
   /* remove dead Compute Nodes */

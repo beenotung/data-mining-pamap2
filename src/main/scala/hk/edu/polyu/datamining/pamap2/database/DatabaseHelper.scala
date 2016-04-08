@@ -40,6 +40,7 @@ object DatabaseHelper {
   lazy val new_val = "new_val"
   lazy val old_val = "old_val"
   lazy val include_initial = "include_initial"
+  lazy val return_changes = "return_changes"
 
   /* self defined db constants */
   lazy val value = "value"
@@ -306,8 +307,7 @@ object DatabaseHelper {
       .`with`(field.workerId.toString, workerId)
       .`with`(field.clusterId.toString, clusterId)
       .`with`(field.createTime.toString, OffsetDateTime.now())
-    if (pending)
-      row.`with`(field.pending.toString, true)
+      .`with`(field.pending.toString, pending)
     run[ju.List[String]](r => r.table(Tables.Task.name).insert(row)
       .getField(generated_keys))
       .get(0)
@@ -319,6 +319,7 @@ object DatabaseHelper {
       r.hashMap(field.workerId.toString, workerId)
         .`with`(field.clusterId.toString, clusterId)
         .`with`(field.createTime.toString, OffsetDateTime.now())
+        .`with`(field.pending.toString, false)
     ))
   }
 
@@ -392,7 +393,7 @@ object DatabaseHelper {
     DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
     /* 3. set some to true */
     Log.debug("mark Train Sample (2/3)")
-    DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg("arrayLimit", count))
+    DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg(return_changes, false))
     Log.debug("mark Train Sample (3/3)")
   }
 }
