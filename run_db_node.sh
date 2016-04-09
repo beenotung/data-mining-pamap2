@@ -8,4 +8,5 @@ rm -rf ./rethinkdb_data
 # rethinkdb --join 128.199.97.91:29015 --bind all
 
 # polyu
-rethinkdb --join 158.132.8.147:29015 --bind all
+rethinkdb --join 158.132.8.147:29015 --bind all --server-name $(ip addr | grep inet6 | tail -n 1 | awk '{print "pamap2_node_" $2}' | sed 's/\s//g' | sed 's/\///g' | sed 's/://g' )
+
