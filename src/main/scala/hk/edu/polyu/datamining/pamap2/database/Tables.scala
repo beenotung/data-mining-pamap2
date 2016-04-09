@@ -7,7 +7,7 @@ package hk.edu.polyu.datamining.pamap2.database
 //TODO to complete these tables
 object Tables {
 
-  val tableList = Seq(Debug, ClusterSeed, Status, Task, Subject, RawDataFile, RawData, TestingResult, ItemsetCount, AssociationRule)
+  val tableList = Seq(Debug, ClusterSeed, Status, Task, Subject, RawDataFile, RawData, TestingResult, SomImage, ItemsetCount, AssociationRule)
   val tableNames = tableList map (_.name)
 
   sealed trait Table {

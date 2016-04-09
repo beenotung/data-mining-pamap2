@@ -44,6 +44,8 @@ class DispatchActor extends CommonActor {
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
     case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId, 0, 0)))
+      Log.info(s"register worker $workerId")
+      cleanTasks()
     //TODO get worker record from database
     case UnRegisterWorker(clusterSeedId) => workers.retain((ref, record) => ref.equals(sender()))
       log warning "removed worker"
@@ -142,6 +144,7 @@ class DispatchActor extends CommonActor {
   }
 
   def cleanTasks() = {
+    Log.info("clean tasks")
     val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
     handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
   }
@@ -162,6 +165,7 @@ class DispatchActor extends CommonActor {
   }
 
   def getPendingTasks(limit: Long = -1): Seq[Task] = {
+    Log.debug(s"get pending task, limit:$limit")
     val field = Tables.Task.Field
     val result: Cursor[ju.Map[String, AnyRef]] = DatabaseHelper.run(r => {
       val query = r.table(Tables.Task.name).filter(r.hashMap(field.pending.toString, true))
@@ -170,10 +174,13 @@ class DispatchActor extends CommonActor {
       query
     })
     result.iterator().asScala.map(record => {
-      ActionStatus.withName(record.get(field.taskType.toString).toString) match {
+      val taskType = record.get(field.taskType.toString).toString
+      ActionStatus.withName(taskType) match {
         case ActionStatus.somProcess => SOMProcessTask.fromMap(record)
+        case _ => Log.error(s"unknown task type $taskType")
+          null
       }
-    }).toIndexedSeq
+    }).toIndexedSeq.filter(x => x != null)
   }
 
   def numberOfPendingTask: Long =
