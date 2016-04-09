@@ -63,7 +63,7 @@ class DispatchActor extends CommonActor {
       /* step 1. */
       Log.info("start mark train sample")
       fork(() => {
-        val count = DatabaseHelper.markTrainSample(percentage)
+        val count: Long = DatabaseHelper.markTrainSample(percentage)
         Log.info("finished mark train sample")
         self ! function(() => {
           /* step 2. */
@@ -111,7 +111,7 @@ class DispatchActor extends CommonActor {
       .toIndexedSeq
   }
 
-  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]) = {
+  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal]) = {
     handleTask(findNewTasks(actionState, param))
   }
 
@@ -151,7 +151,7 @@ class DispatchActor extends CommonActor {
       case ActionStatus.somProcess =>
         //TODO resolve task from database
         val fs = Tables.RawData.Field
-        val p = param.get(SOMProcessTask.Count).toString.toLong
+        val p = param.get(SOMProcessTask.Count).get.asInstanceOf[Long]
         Seq(SOMProcessTask(fs.hand.toString, p),
           SOMProcessTask(fs.ankle.toString, p),
           SOMProcessTask(fs.chest.toString, p)
