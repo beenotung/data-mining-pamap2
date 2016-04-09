@@ -51,7 +51,7 @@ class WorkerActor extends CommonActor {
     case task: Task =>
       log.info(s"received task id: ${task.id}, $task")
       task match {
-        case SOMProcessTask(bodyPart,count) =>
+        case SOMProcessTask(bodyPart, count) =>
           try {
             log.info(s"start building som on $bodyPart")
             val som = new Som(
@@ -59,8 +59,7 @@ class WorkerActor extends CommonActor {
               labelPrefix = bodyPart,
               initGrids = Som.randomGrids(WorkerActor.IMUWeights.length, WorkerActor.SomGridWidth, WorkerActor.SomGridHeight, -256d, 256d)
             )
-            DatabaseHelper.getIMU(bodyPart,count).foreach(row => {
-              //TODO build som
+            DatabaseHelper.getIMU(bodyPart, count).foreach(row => {
               som.addSample(WorkerActor.toIMUVector(row))
             })
             log.info(s"finish building som on $bodyPart, saving to database")
