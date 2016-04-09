@@ -70,6 +70,10 @@ class WorkerActor extends CommonActor {
             case e: NoSuchElementException =>
           }
         case ItemCountTask(bodyPart, offset) =>
+          DatabaseHelper.loadSom(bodyPart) match {
+            case None =>
+            case Some(som) =>
+          }
         //TODO working here
         //TODO add other task type
         case msg => showError(s"unsupported message: $msg")
@@ -86,5 +90,5 @@ class WorkerActor extends CommonActor {
     SingletonActor.Dispatcher.proxy ! MessageProtocol.RegisterWorker(DatabaseHelper.clusterSeedId, workerId)
   }
 
-  def workerId: String = DatabaseHelper.clusterSeedId + "@" + self.path.toStringWithAddress(self.path.address)
+  val workerId: String = DatabaseHelper.clusterSeedId + "@" + self.path.toStringWithAddress(self.path.address) + "_" + System.nanoTime()
 }

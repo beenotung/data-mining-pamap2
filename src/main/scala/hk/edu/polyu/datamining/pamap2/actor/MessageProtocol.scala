@@ -50,6 +50,7 @@ object MessageProtocol {
   case class TaskCompleted(taskId: String)
 
   case object DispatcherHeartBeat
+
   case object ComputeNodeHeartBeat
 
   //  @deprecated("meet bottleneck at database, holding too much data in ram")
