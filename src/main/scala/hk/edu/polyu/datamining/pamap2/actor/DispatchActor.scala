@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.util.concurrent.{Callable, FutureTask}
+import java.util.concurrent.{Callable, FutureTask, TimeUnit}
 import java.{util => ju}
 
 import akka.actor.ActorRef
@@ -14,6 +14,7 @@ import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 
 /**
   * Created by beenotung on 2/18/16.
@@ -34,6 +35,9 @@ class DispatchActor extends CommonActor {
   override def preStart(): Unit = {
     log info "starting Task-Dispatcher"
     //log info s"the path is ${self.path}"
+    //    system.scheduler.schedule(initialDelay = Duration.Zero,
+    //      interval = Duration(DispatchActor.ReportInterval, TimeUnit.MILLISECONDS),
+    //      receiver = self, message = DispatcherHeartBeat)
   }
 
   override def postStop() = {
@@ -43,6 +47,7 @@ class DispatchActor extends CommonActor {
 
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
+      sender() ! DispatcherHeartBeat
     case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId, 0, 0)))
       Log.info(s"register worker $workerId")
       cleanTasks()
@@ -82,7 +87,7 @@ class DispatchActor extends CommonActor {
       /* check if all som finished */
       val fs = Tables.Task.Field
       val currentActionType = DatabaseHelper.getActionStatus
-      val currentTypePendingTask = DatabaseHelper.run(r => r.table(Tables.Task.name)
+      val currentTypePendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
         .filter(r.hashMap(fs.taskType.toString, currentActionType.toString))
         .without(fs.completeTime.toString)
         .count()
@@ -245,5 +250,4 @@ class DispatchActor extends CommonActor {
     outdatedIds.foreach(id => self ! UnRegisterComputeNode(id))
   }
 
-  def getMargin: Long = System.currentTimeMillis - Main.config.getLong("clustering.report.timeout")
 }

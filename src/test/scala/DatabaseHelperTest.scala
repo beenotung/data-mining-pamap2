@@ -22,7 +22,7 @@ object DatabaseHelperTest extends App {
   val f = Tables.IMU.Field.temperature.toString
   var c = 0
   try {
-    val cursor = DatabaseHelper.getIMU(fs.hand.toString,1000L)
+    val cursor = DatabaseHelper.getIMU(fs.hand.toString,1000L,fs.isTrain.toString)
       .foreach(row => {
         c += 1
 //        println("temp:" + row.get(f))

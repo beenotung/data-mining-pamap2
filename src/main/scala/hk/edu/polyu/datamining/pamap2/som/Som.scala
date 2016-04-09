@@ -17,6 +17,14 @@ import scala.util.Random
   * reference : https://en.wikipedia.org/wiki/Self-organizing_map
   */
 object Som {
+
+  object NormType extends Enumeration {
+    type Field = Value
+    val none, sigmoid = Value
+  }
+
+  def sigmoid(x: Double) = 1d / (1d + Math.exp(-x))
+
   val alpha0 = 0.8
   val alphaDecreaseRatio = 0.99
   val distanceRatio = 0.5
@@ -72,7 +80,7 @@ object Som {
     ).flatten
 }
 
-class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid]) {
+class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid], normMode: NormType.Field = NormType.none) {
   val grids: Seq[Grid] = {
     val max = initGrids.flatten(_._3).max
     initGrids.map(x => (x._1, x._2, x._3.map(_ / max)))
@@ -100,19 +108,32 @@ class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid]) {
 
   var t = 0L
 
-  def addSample(sample: Vector) = {
+  def addSample(oriSample: Vector) = {
+    val sample = normMode match {
+      case NormType.sigmoid => oriSample.map(sigmoid)
+      case _ => oriSample
+    }
     t += 1
     val (closest, _) = findClosestGrid(sample)
     var change = 0d
     grids.foreach(grid => {
       val gridDistance = Som.gridDistance(closest, grid)
-      grid._3.indices.foreach(i => {
-        val w = grid._3(i)
-        var d = Math.pow(gridDistance, Som.distanceRatio) * thetaR * alpha * (sample(i) - w)
-        grid._3(i) = w + d
-        change += Math.abs(d)
+      normMode match {
+        case NormType.sigmoid =>
+          grid._3.indices.foreach(i => {
+            val w = grid._3(i)
+            val d = Math.pow(gridDistance, Som.distanceRatio) * thetaR * alpha * (sample(i) - w)
+            grid._3(i) = w + d
+            change += Math.abs(d)
+          })
+        case _ =>
+          grid._3.indices.foreach(i => {
+            val w = grid._3(i)
+            val d = Math.pow(gridDistance, Som.distanceRatio) * thetaR * alpha * (sample(i) - w)
+            grid._3(i) = w + d
+            change += Math.abs(d)
+          })
       }
-      )
     })
     alpha *= Som.alphaDecreaseRatio
     thetaR *= Som.distanceDecreaseRatio
@@ -123,8 +144,12 @@ class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid]) {
     grids.map(grid => (grid, Som.similarMeasure(normWeights, a, grid._3)))
       .minBy(_._2)
 
-  def getLabel(a: Vector): (String, Double) = {
-    val (grid, distance) = findClosestGrid(a)
+  def getLabel(oriXs: Vector): (String, Double) = {
+    val xs = normMode match {
+      case NormType.sigmoid => oriXs.map(sigmoid)
+      case _ => oriXs
+    }
+    val (grid, distance) = findClosestGrid(xs)
     (s"$labelPrefix:${grid._1},${grid._2}", Math.sqrt(distance))
   }
 }

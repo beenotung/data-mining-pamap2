@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.{util, util => ju}
+import java.{util => ju}
 
 import akka.actor.ActorSystem
 import com.rethinkdb.RethinkDB.r
@@ -49,6 +49,9 @@ object MessageProtocol {
 
   case class TaskCompleted(taskId: String)
 
+  case object DispatcherHeartBeat
+  case object ComputeNodeHeartBeat
+
   //  @deprecated("meet bottleneck at database, holding too much data in ram")
   //  case class ExtractFromRaw(ids: Seq[String]) extends Task
 
@@ -87,7 +90,7 @@ object MessageProtocol {
   }
 
   object ItemCountTask {
-    def fromMap(map: util.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
+    def fromMap(map: ju.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
       map.get(SOMProcessTask.BodyPart).asInstanceOf,
       map.get(Offset).asInstanceOf
     )
@@ -101,7 +104,7 @@ object MessageProtocol {
     override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
       .`with`(ItemCountTask.Offset, offset)
 
-    override def fromMap(map: util.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
   }
 
 }
