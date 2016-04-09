@@ -23,4 +23,19 @@ class GraphFactory {
     frame.add(Hexmap.plot(labels, data))
   }
 
+  /**
+    * HexMapForSOM
+    * Generate HexMap for SOM
+    *
+    * @param data e.g. [[1.7605168240755225, 2.265691955364412,...]]
+    * @return
+    */
+  def HexMapForSOM(data: Array[Array[Double]])={
+    val frame: JFrame = new JFrame("Hexmap")
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    frame.setLocationRelativeTo(null)
+    frame.add(Hexmap.plot(data))
+  }
+
+
 }
