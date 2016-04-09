@@ -331,8 +331,9 @@ class MonitorController extends MonitorControllerSkeleton {
                       .`with`(timeSequence_f, activityBuffer.toList.asJava)
                     DatabaseHelper.tableInsertRow(table, row) //, softDurability = true)
                   }
-                  activityBuffer.clear()
                   lastActivityId = activityId
+                  activityBuffer.clear()
+                  activityBuffer += activitySlice
                 }
             })
           if (activityBuffer.nonEmpty) {
