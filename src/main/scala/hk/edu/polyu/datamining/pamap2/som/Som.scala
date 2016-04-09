@@ -150,6 +150,6 @@ class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid], normMo
       case _ => oriXs
     }
     val (grid, distance) = findClosestGrid(xs)
-    (s"$labelPrefix:${grid._1},${grid._2}", Math.sqrt(distance))
+    (s"$labelPrefix:${grid._1},${grid._2}|", Math.sqrt(distance))
   }
 }

@@ -83,8 +83,7 @@ class DispatchActor extends CommonActor {
       })
     case fun: Lang_.Function => fun.apply()
     case task: MessageProtocol.Task => handleTask(Seq(task))
-    case TaskCompleted(taskId) => cleanTasks()
-      /* check if all som finished */
+    case TaskCompleted(taskId) =>
       val fs = Tables.Task.Field
       val currentActionType = DatabaseHelper.getActionStatus
       val currentTypePendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
@@ -97,7 +96,8 @@ class DispatchActor extends CommonActor {
           /* start arm : 3. fire item count */
           findAndDispatchNewTasks(ActionStatus.itemCount)
         case _ => Log.info("all task finished?")
-      }
+      } else
+        cleanTasks()
   }
 
   def unregisterComputeNode(clusterSeedId: String) = {

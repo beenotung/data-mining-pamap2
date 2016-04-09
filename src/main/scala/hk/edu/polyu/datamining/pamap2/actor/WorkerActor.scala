@@ -73,6 +73,20 @@ class WorkerActor extends CommonActor {
           DatabaseHelper.loadSom(bodyPart) match {
             case None =>
             case Some(som) =>
+              val fs = Tables.RawData.Field
+              try {
+                DatabaseHelper.run(r => r.table(Tables.RawData.name)
+                  .filter(fs.isTrain.toString, true)
+                  .skip(offset)
+                  .limit(1)
+                ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
+                  .forEach(consumer(row => {
+                    val (label, _) = som.getLabel(WorkerActor.toIMUVector(row))
+                    //label.
+                  }))
+              } catch {
+                case e: NoSuchElementException =>
+              }
           }
         //TODO working here
         //TODO add other task type
