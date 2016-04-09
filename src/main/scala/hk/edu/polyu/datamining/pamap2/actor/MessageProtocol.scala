@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.{util => ju}
+import java.{util, util => ju}
 
 import akka.actor.ActorSystem
 import com.rethinkdb.RethinkDB.r
@@ -83,11 +83,26 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = SOMProcessTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
+      .`with`(SOMProcessTask.Count, count)
   }
 
-  //  case class ItemCountTask(field:String) extends Task{
-  //    override val actionStatus:ActionStatusType=ActionStatus.itemCount
-  //  }
+  object ItemCountTask {
+    def fromMap(map: util.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
+      map.get(SOMProcessTask.BodyPart).asInstanceOf,
+      map.get(Offset).asInstanceOf
+    )
+
+    val Offset = "offset"
+  }
+
+  case class ItemCountTask(bodyPart: String, offset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.itemCount
+
+    override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
+      .`with`(ItemCountTask.Offset, offset)
+
+    override def fromMap(map: util.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
+  }
 
 }
 

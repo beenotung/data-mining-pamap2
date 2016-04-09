@@ -57,29 +57,42 @@ class DispatchActor extends CommonActor {
       //TODO working here
       /*
       * 1. label training data using the percentage
-      * 2. fire item extract on labeled data
-      * 3. fire item count
-      * 4. fire confidence, interest counting
+      * 2. do som
+      * 3. fire item extract on labeled data
+      * 4. fire item count
+      * 5. fire confidence, interest counting
       * */
       DatabaseHelper.setActionStatus(ActionStatus.sampling)
       /* step 1. */
-      Log.info("start mark train sample")
+      Log.info(s"start mark train sample ($percentage%)")
       fork(() => {
         val count: Long = DatabaseHelper.markTrainSample(percentage)
         Log.info("finished mark train sample")
         self ! function(() => {
           /* step 2. */
-          Log.info("start som process")
+          Log.info(s"start som process (count:$count)")
           DatabaseHelper.setActionStatus(ActionStatus.somProcess)
           findAndDispatchNewTasks(ActionStatus.somProcess, Map(SOMProcessTask.Count -> count))
-          /* step 3. */
-          /* step 4. */
+          /* step 3,4,5 (in TaskCompleted) */
         })
       })
     case fun: Lang_.Function => fun.apply()
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) => cleanTasks()
-    //case msg => log error s"Unsupported msg : $msg"
+      /* check if all som finished */
+      val fs = Tables.Task.Field
+      val currentActionType = DatabaseHelper.getActionStatus
+      val currentTypePendingTask = DatabaseHelper.run(r => r.table(Tables.Task.name)
+        .filter(r.hashMap(fs.taskType.toString, currentActionType.toString))
+        .without(fs.completeTime.toString)
+        .count()
+      )
+      if (currentTypePendingTask == 0) currentActionType match {
+        case ActionStatus.somProcess =>
+          /* start arm : 3. fire item count */
+          findAndDispatchNewTasks(ActionStatus.itemCount)
+        case _ => Log.info("all task finished?")
+      }
   }
 
   def unregisterComputeNode(clusterSeedId: String) = {
@@ -113,7 +126,7 @@ class DispatchActor extends CommonActor {
       .toIndexedSeq
   }
 
-  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal]) = {
+  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty) = {
     handleTask(findNewTasks(actionState, param))
   }
 
@@ -152,13 +165,24 @@ class DispatchActor extends CommonActor {
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     actionState match {
       case ActionStatus.somProcess =>
-        //TODO resolve task from database
         val fs = Tables.RawData.Field
         val p = param.get(SOMProcessTask.Count).get.asInstanceOf[Long]
-        Seq(SOMProcessTask(fs.hand.toString, p),
-          SOMProcessTask(fs.ankle.toString, p),
-          SOMProcessTask(fs.chest.toString, p)
+        Seq(new SOMProcessTask(fs.hand.toString, p),
+          new SOMProcessTask(fs.ankle.toString, p),
+          new SOMProcessTask(fs.chest.toString, p)
         )
+      case ActionStatus.itemCount =>
+        val fs = Tables.RawData.Field
+        val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
+          .filter(fs.isTrain.toString, true)
+          .count()
+        )
+        (0L until taskCount).flatMap(offset => Seq(
+          new ItemCountTask(fs.hand.toString, offset),
+          new ItemCountTask(fs.ankle.toString, offset),
+          new ItemCountTask(fs.chest.toString, offset)
+        ))
+      //TODO add more task type
       case _ => log warning s"findTask on $actionState is not implemened"
         Seq.empty
     }

@@ -69,6 +69,9 @@ class WorkerActor extends CommonActor {
           } catch {
             case e: NoSuchElementException =>
           }
+        case ItemCountTask(bodyPart, offset) =>
+        //TODO working here
+        //TODO add other task type
         case msg => showError(s"unsupported message: $msg")
       }
       Log.info(s"finish task ${task.id}")
