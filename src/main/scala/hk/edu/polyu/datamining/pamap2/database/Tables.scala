@@ -123,6 +123,21 @@ object Tables {
 
   }
 
+  object SomImage extends Table {
+    override val name: String = "som_image"
+    override val fields = Seq(
+      Weights, GridHeight, GridHeight, LabelPrefix, Grids, D1, D2, Vector_s
+    )
+    lazy val Weights = "weights"
+    lazy val GridWidth = "gridWidth"
+    lazy val GridHeight = "gridHeight"
+    lazy val LabelPrefix = "labelPrefix"
+    lazy val Grids = "grids"
+    lazy val D1 = "d1"
+    lazy val D2 = "d2"
+    lazy val Vector_s = "vector"
+  }
+
   object ItemsetCount extends Table {
     override val name: String = "itemset_count"
     override val fields = Field.values.map(_.toString)

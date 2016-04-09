@@ -59,15 +59,17 @@ class DispatchActor extends CommonActor {
       * 3. fire item count
       * 4. fire confidence, interest counting
       * */
-      DatabaseHelper.setActionStatus(ActionStatus.preProcess)
+      DatabaseHelper.setActionStatus(ActionStatus.sampling)
       /* step 1. */
-      Log.debug("start mark train sample")
+      Log.info("start mark train sample")
       fork(() => {
-        DatabaseHelper.markTrainSample(percentage)
-        Log.debug("finished mark train sample")
+        val count = DatabaseHelper.markTrainSample(percentage)
+        Log.info("finished mark train sample")
         self ! function(() => {
           /* step 2. */
-          findAndDispatchNewTasks(ActionStatus.preProcess)
+          Log.info("start som process")
+          DatabaseHelper.setActionStatus(ActionStatus.somProcess)
+          findAndDispatchNewTasks(ActionStatus.somProcess, Map(SOMProcessTask.Count -> count))
           /* step 3. */
           /* step 4. */
         })
@@ -109,8 +111,8 @@ class DispatchActor extends CommonActor {
       .toIndexedSeq
   }
 
-  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus) = {
-    handleTask(findNewTasks(actionState))
+  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]) = {
+    handleTask(findNewTasks(actionState, param))
   }
 
   def handleTask(tasks: Seq[Task]) = {
@@ -144,28 +146,16 @@ class DispatchActor extends CommonActor {
     handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
   }
 
-  def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus): Seq[Task] = {
+  def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     actionState match {
-      case ActionStatus.preProcess =>
+      case ActionStatus.somProcess =>
         //TODO resolve task from database
-        /*
-        * 1. get raw data count
-        * 2. create task (calculate offset and count pairs)
-        * 3. send task to workers
-        * */
-
-        /* 1. get raw data count */
-        val f = Tables.RawData.Field.isTrain.toString
-        val totalCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name).filter(r.hashMap(f, true)).count())
-        //val pairCount: Long = Math.round(Math.ceil(1d * totalCount / DatabaseHelper.BestInsertCount))
-        //(0L until pairCount).toStream.map(offset => MessageProtocol.PreProcessTask(
-        //  skip = offset * DatabaseHelper.BestInsertCount,
-        //  limit = Math.min(DatabaseHelper.BestInsertCount, totalCount - (offset * DatabaseHelper.BestInsertCount) - 1)
-        //))
-        (0L until totalCount).toStream.map(offset => MessageProtocol.PreProcessTask(
-          skip = offset,
-          limit = 1
-        ))
+        val fs = Tables.RawData.Field
+        val p = param.get(SOMProcessTask.Count).toString.toLong
+        Seq(SOMProcessTask(fs.hand.toString, p),
+          SOMProcessTask(fs.ankle.toString, p),
+          SOMProcessTask(fs.chest.toString, p)
+        )
       case _ => log warning s"findTask on $actionState is not implemened"
         Seq.empty
     }
@@ -181,7 +171,7 @@ class DispatchActor extends CommonActor {
     })
     result.iterator().asScala.map(record => {
       ActionStatus.withName(record.get(field.taskType.toString).toString) match {
-        case ActionStatus.preProcess => PreProcessTask.fromMap(record)
+        case ActionStatus.somProcess => SOMProcessTask.fromMap(record)
       }
     }).toIndexedSeq
   }
@@ -204,7 +194,7 @@ class DispatchActor extends CommonActor {
     //println(s"add pending tasks:\nall tasks:$tasks\nnew tasks:$newTasks\nold tasks:$oldTasks")
     /* 1. save new tasks */
     if (newTasks.nonEmpty)
-      DatabaseHelper.tableInsertRows(table, newTasks.asJava)
+      DatabaseHelper.tableInsertRows(table, newTasks.map(_.toMap).asJava)
     /* 2. update old tasks */
     if (oldTasks.nonEmpty)
       DatabaseHelper.run[ju.HashMap[String, AnyRef]](r => {

@@ -1,6 +1,14 @@
 package hk.edu.polyu.datamining.pamap2.som
 
-import hk.edu.polyu.datamining.pamap2.som.Som.similarMeasure
+import hk.edu.polyu.datamining.pamap2.som.Som._
+import java.{util => ju}
+
+import scala.collection.JavaConverters._
+import com.rethinkdb.RethinkDB.r
+import hk.edu.polyu.datamining.pamap2.database.Tables.SomImage._
+
+import scala.language.postfixOps
+import scala.util.Random
 
 /**
   * Created by beenotung on 4/9/16.
@@ -35,19 +43,60 @@ object Som {
       .sum
     //    )
   }
+
+  def fromMap(map: ju.Map[String, AnyRef]): Option[Som] = {
+    try {
+      Some(new Som(
+        weights = map.get(Weights).asInstanceOf[ju.List[Double]].asScala.toArray,
+        labelPrefix = map.get(LabelPrefix).asInstanceOf[String],
+        initGrids = {
+          val gridMaps = map.get(Grids).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
+          gridMaps.asScala.toSeq.map(gridMap => {
+            val d1 = gridMap.get(D1).asInstanceOf[Int]
+            val d2 = gridMap.get(D2).asInstanceOf[Int]
+            val vector_s = gridMap.get(Vector_s).asInstanceOf[ju.List[Double]].asScala.toArray
+            (d1, d2, vector_s)
+          })
+        }
+      ))
+    } catch {
+      case e: Exception => None
+    }
+  }
+
+  def randomGrids(nDimension: Int, gridWidth: Int, gridHeight: Int, min: Double, max: Double): Seq[Grid] =
+    Seq.tabulate(gridWidth, gridHeight)((d1, d2) =>
+      (d1,
+        d2,
+        Array.tabulate(nDimension)(_ => Random.nextDouble() * (max - min) + min))
+    ).flatten
 }
 
-abstract class Som(val weights: Vector, val gridWidth: Int, val gridHeight: Int, val labelPrefix: String) {
+class Som(weights: Vector, val labelPrefix: String, initGrids: Seq[Grid]) {
+  val grids: Seq[Grid] = {
+    val max = initGrids.flatten(_._3).max
+    initGrids.map(x => (x._1, x._2, x._3.map(_ / max)))
+  }
+
+  def toMap: com.rethinkdb.model.MapObject = {
+    r.hashMap(Weights, weights.toList.asJava)
+      .`with`(LabelPrefix, labelPrefix)
+      .`with`(Grids, grids.map(x => r.hashMap()
+        .`with`(D1, x._1)
+        .`with`(D2, x._2)
+        .`with`(Vector_s, x._3.toList.asJava)
+      ).toList.asJava)
+  }
+
   val nDimension = weights.length
+  val normWeights: Vector = {
+    val sum = weights.sum
+    weights.map(_ / sum)
+  }
 
   /* for performance */
   var alpha = Som.alpha0
   var thetaR = 1d
-
-  def randomInit: () => Vector
-
-  val grids: Seq[Grid] = Seq.tabulate(gridWidth, gridHeight)((d1, d2) => (d1, d2, randomInit())).flatten
-
 
   var t = 0L
 
@@ -71,11 +120,11 @@ abstract class Som(val weights: Vector, val gridWidth: Int, val gridHeight: Int,
   }
 
   def findClosestGrid(a: Vector): (Grid, Double) =
-    grids.map(grid => (grid, Som.similarMeasure(weights, a, grid._3)))
+    grids.map(grid => (grid, Som.similarMeasure(normWeights, a, grid._3)))
       .minBy(_._2)
 
   def getLabel(a: Vector): (String, Double) = {
     val (grid, distance) = findClosestGrid(a)
-    (s"$labelPrefix:${grid._1},${grid._2}", distance)
+    (s"$labelPrefix:${grid._1},${grid._2}", Math.sqrt(distance))
   }
 }

@@ -3,6 +3,8 @@ package hk.edu.polyu.datamining.pamap2.actor
 import java.{util => ju}
 
 import akka.actor.ActorSystem
+import com.rethinkdb.RethinkDB.r
+import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
@@ -27,6 +29,8 @@ object MessageProtocol {
     override def compareTo(o: Task) = id.compareTo(o.id)
 
     def fromMap(map: ju.Map[String, AnyRef]): Task
+
+    def toMap: MapObject
   }
 
   case class NodeInfo(processor: Int, freeMemory: Long, totalMemory: Long, maxMemory: Long, upTime: Long, startTime: Long, clusterSeedId: String, genTime: Long) extends Comparable[NodeInfo] {
@@ -51,12 +55,6 @@ object MessageProtocol {
   //  @deprecated("meet bottleneck at database, holding too much data in ram")
   //  case class ProcessRawLines(filename: String, lines: ju.List[String], fileType: ImportActor.FileType.FileType) extends Task
 
-  case class PreProcessTask(skip: Long, limit: Long) extends Task {
-    override val actionState: ActionStatusType = PreProcessTask.actionState
-
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = PreProcessTask.fromMap(map)
-  }
-
   case class ResponseClusterComputeInfo(clusterComputeInfo: ClusterComputeInfo)
 
   case object ReBindDispatcher
@@ -67,17 +65,29 @@ object MessageProtocol {
 
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
-  object PreProcessTask extends Task {
-    override val actionState: ActionStatusType = ActionStatus.preProcess
-    val Skip = "skip"
-    val Limit = "limit"
+  object SOMProcessTask {
+    val actionState: ActionStatusType = ActionStatus.somProcess
+    val BodyPart = "bodyPart"
+    val Count = "count"
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = new PreProcessTask(
-      //TODO test if need to parse from string
-      skip = map.get(Skip).asInstanceOf,
-      limit = map.get(Limit).asInstanceOf
+    def fromMap(map: ju.Map[String, AnyRef]): Task = new SOMProcessTask(
+      map.get(BodyPart).asInstanceOf,
+      map.get(Count).asInstanceOf
     )
   }
+
+  /** @param bodyPart : hand | ankle | chest **/
+  case class SOMProcessTask(bodyPart: String, count: Long) extends Task {
+    override val actionState: ActionStatusType = SOMProcessTask.actionState
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = SOMProcessTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
+  }
+
+  //  case class ItemCountTask(field:String) extends Task{
+  //    override val actionStatus:ActionStatusType=ActionStatus.itemCount
+  //  }
 
 }
 
