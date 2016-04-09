@@ -21,6 +21,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
 import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
+import hk.edu.polyu.datamining.pamap2.som.Som
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
@@ -45,6 +46,8 @@ object DatabaseHelper {
 
   /* self defined db constants */
   lazy val value = "value"
+
+  lazy val Max_Row = 1600L
 
   /* db variables */
   val r = com.rethinkdb.RethinkDB.r
@@ -425,5 +428,25 @@ object DatabaseHelper {
       .concatMap(reqlFunction1(row => row.getField(field)))
       .sample(count)
     ).iterator().asScala.toStream
+  }
+
+  def saveSom(som: Som) =
+    tableInsertRow(Tables.SomImage.name, som.toMap)
+
+  def loadSom(labelPrefix: String): Option[Som] = {
+    try {
+      val xs = DatabaseHelper.run[ju.List[ju.Map[String, AnyRef]]](r => r.table(Tables.SomImage.name)
+        .filter(r.hashMap(Tables.SomImage.LabelPrefix, labelPrefix))
+      )
+      if (xs.isEmpty)
+        None
+      else
+        Som.fromMap(xs.get(0))
+    } catch {
+      case e: Exception =>
+        Log.error(e)
+        fork(() => throw e)
+        None
+    }
   }
 }

@@ -319,7 +319,7 @@ class MonitorController extends MonitorControllerSkeleton {
               i += 1
               val (activityId, activitySlice) = ImportActor.processActivitySlice(line)
               if (activityId != 0)
-                if (lastActivityId == activityId) {
+                if (lastActivityId == activityId && activityBuffer.length < DatabaseHelper.Max_Row) {
                   activityBuffer += activitySlice
                 } else {
                   setImportProgress(i / N)
@@ -329,7 +329,7 @@ class MonitorController extends MonitorControllerSkeleton {
                       .`with`(subject_f, subject)
                       .`with`(fileTypeField.toString, true)
                       .`with`(timeSequence_f, activityBuffer.toList.asJava)
-                    DatabaseHelper.tableInsertRow(table, row)//, softDurability = true)
+                    DatabaseHelper.tableInsertRow(table, row) //, softDurability = true)
                   }
                   activityBuffer.clear()
                   lastActivityId = activityId
@@ -340,7 +340,7 @@ class MonitorController extends MonitorControllerSkeleton {
               .`with`(subject_f, subject)
               .`with`(fileTypeField.toString, true)
               .`with`(timeSequence_f, activityBuffer.toList.asJava)
-            DatabaseHelper.tableInsertRow(table, row)//, softDurability = true)
+            DatabaseHelper.tableInsertRow(table, row) //, softDurability = true)
             activityBuffer.clear()
           }
         }

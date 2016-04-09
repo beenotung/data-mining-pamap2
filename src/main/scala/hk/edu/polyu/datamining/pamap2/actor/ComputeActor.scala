@@ -3,6 +3,7 @@ package hk.edu.polyu.datamining.pamap2.actor
 import java.util.concurrent.TimeUnit
 
 import akka.actor._
+import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ComputeNodeHeartBeat, DispatcherHeartBeat, RequestNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocolFactory.NodeInfo
@@ -36,6 +37,9 @@ class ComputeActor extends CommonActor {
     // set repeat timer to report resources
     context.system.scheduler.schedule(Duration.Zero,
       Duration.create(ActorUtils.ReportInterval, TimeUnit.MILLISECONDS), self, ComputeNodeHeartBeat)
+
+    //    cluster.subscribe(self,initialStateMode = InitialStateAsEvents,
+    //      classOf[MemberEvent],classOf[UnreachableMember])
   }
 
   override def postStop = {
@@ -46,8 +50,8 @@ class ComputeActor extends CommonActor {
 
   override def receive: Receive = {
     case ComputeNodeHeartBeat => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(system)
-    //      if(System.currentTimeMillis()<getMargin)
-    //        context.resta
+      if (lastTimeDispatcherHeartBeat < getMargin)
+        workers.foreach(_ ! MessageProtocol.ReBindDispatcher)
     case DispatcherHeartBeat => lastTimeDispatcherHeartBeat = System.currentTimeMillis()
     case RequestNodeInfo => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
 
