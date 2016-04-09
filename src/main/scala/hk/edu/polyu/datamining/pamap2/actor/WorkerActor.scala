@@ -48,6 +48,9 @@ class WorkerActor extends CommonActor {
     SingletonActor.Dispatcher.proxy ! MessageProtocol.UnRegisterWorker(DatabaseHelper.clusterSeedId)
   }
 
+  var lastIMUIds: String = null
+  var handSom, ankleSom, chestSom: Som = null
+
   override def receive: Receive = {
     case task: Task =>
       log.info(s"received task id: ${task.id}, $task")
@@ -69,24 +72,30 @@ class WorkerActor extends CommonActor {
           } catch {
             case e: NoSuchElementException =>
           }
-        case ItemCountTask(bodyPart, offset) =>
-          DatabaseHelper.loadSom(bodyPart) match {
-            case None =>
-            case Some(som) =>
-              val fs = Tables.RawData.Field
-              try {
-                DatabaseHelper.run(r => r.table(Tables.RawData.name)
-                  .filter(fs.isTrain.toString, true)
-                  .skip(offset)
-                  .limit(1)
-                ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
-                  .forEach(consumer(row => {
-                    val (label, _) = som.getLabel(WorkerActor.toIMUVector(row))
-                    //label.
-                  }))
-              } catch {
-                case e: NoSuchElementException =>
-              }
+        case ItemCountTask(imuIds, offset) =>
+          val fs = Tables.RawData.Field
+          try {
+            DatabaseHelper.run(r => r.table(Tables.RawData.name)
+              .filter(fs.isTrain.toString, true)
+              .skip(offset)
+              .limit(1)
+            ).asInstanceOf[ju.List[MapObject[String, AnyRef]]]
+              .forEach(consumer(row => {
+                if (lastIMUIds != imuIds) {
+                  DatabaseHelper.run(r => r.table(Tables.SomImage.name)).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
+                    .forEach(consumer(row => row.get(Tables.SomImage.LabelPrefix) match {
+                      case fs.ankle.toString => ankleSom = Som.fromMap(row).get
+                      case fs.hand.toString => handSom = Som.fromMap(row).get
+                      case fs.chest.toString => chestSom = Som.fromMap(row).get
+                    }))
+                }
+                row.`with`(a)
+                val (label, _) = som.getLabel(WorkerActor.toIMUVector(row))
+                if
+                //label.
+              }))
+          } catch {
+            case e: NoSuchElementException =>
           }
         //TODO working here
         //TODO add other task type

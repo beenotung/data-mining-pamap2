@@ -182,10 +182,14 @@ class DispatchActor extends CommonActor {
           .filter(fs.isTrain.toString, true)
           .count()
         )
+        val imuIds: String = DatabaseHelper.run(r => r.table(Tables.SomImage.name)
+          .getField(DatabaseHelper.id)
+        ).asInstanceOf[ju.List[String]].asScala
+          .reduce((a, b) => a + b)
         (0L until taskCount).flatMap(offset => Seq(
-          new ItemCountTask(fs.hand.toString, offset),
-          new ItemCountTask(fs.ankle.toString, offset),
-          new ItemCountTask(fs.chest.toString, offset)
+          new ItemCountTask(imuIds, offset),
+          new ItemCountTask(imuIds, offset),
+          new ItemCountTask(imuIds, offset)
         ))
       //TODO add more task type
       case _ => log warning s"findTask on $actionState is not implemened"

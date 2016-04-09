@@ -91,18 +91,19 @@ object MessageProtocol {
   }
 
   object ItemCountTask {
+    val IMUIds = "imuIds"
+    val Offset = "offset"
+
     def fromMap(map: ju.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
-      map.get(SOMProcessTask.BodyPart).asInstanceOf,
+      map.get(IMUIds).asInstanceOf,
       map.get(Offset).asInstanceOf
     )
-
-    val Offset = "offset"
   }
 
-  case class ItemCountTask(bodyPart: String, offset: Long) extends Task {
+  case class ItemCountTask(imuIds: String, offset: Long) extends Task {
     override val actionState: ActionStatusType = ActionStatus.itemCount
 
-    override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
+    override def toMap: MapObject = r.hashMap(ItemCountTask.IMUIds, imuIds)
       .`with`(ItemCountTask.Offset, offset)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
