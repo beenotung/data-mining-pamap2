@@ -11,6 +11,7 @@ import com.rethinkdb.model.MapObject
 import scala.collection.JavaConverters._
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.som.{Som, Vector}
+import hk.edu.polyu.datamining.pamap2.utils.Log
 
 import scala.util.Random
 
@@ -26,19 +27,19 @@ object WorkerActor {
   /* TODO handle number format error */
   def toIMUVector(map: ju.Map[String, AnyRef]): Vector = {
     Array[Double](
-      map.get(IMUField.temperature.toString).asInstanceOf[Double],
-      map.get(IMUField.a16x.toString).asInstanceOf[Double],
-      map.get(IMUField.a16y.toString).asInstanceOf[Double],
-      map.get(IMUField.a16z.toString).asInstanceOf[Double],
-      map.get(IMUField.a6x.toString).asInstanceOf[Double],
-      map.get(IMUField.a6y.toString).asInstanceOf[Double],
-      map.get(IMUField.a6z.toString).asInstanceOf[Double],
-      map.get(IMUField.rx.toString).asInstanceOf[Double],
-      map.get(IMUField.ry.toString).asInstanceOf[Double],
-      map.get(IMUField.rz.toString).asInstanceOf[Double],
-      map.get(IMUField.mx.toString).asInstanceOf[Double],
-      map.get(IMUField.my.toString).asInstanceOf[Double],
-      map.get(IMUField.mz.toString).asInstanceOf[Double])
+      map.get(IMUField.temperature.toString).toString.toDouble,
+      map.get(IMUField.a16x.toString).toString.toDouble,
+      map.get(IMUField.a16y.toString).toString.toDouble,
+      map.get(IMUField.a16z.toString).toString.toDouble,
+      map.get(IMUField.a6x.toString).toString.toDouble,
+      map.get(IMUField.a6y.toString).toString.toDouble,
+      map.get(IMUField.a6z.toString).toString.toDouble,
+      map.get(IMUField.rx.toString).toString.toDouble,
+      map.get(IMUField.ry.toString).toString.toDouble,
+      map.get(IMUField.rz.toString).toString.toDouble,
+      map.get(IMUField.mx.toString).toString.toDouble,
+      map.get(IMUField.my.toString).toString.toDouble,
+      map.get(IMUField.mz.toString).toString.toDouble)
   }
 }
 
@@ -53,7 +54,7 @@ class WorkerActor extends CommonActor {
       task match {
         case SOMProcessTask(bodyPart, count) =>
           try {
-            log.info(s"start building som on $bodyPart")
+            Log.info(s"start building som on $bodyPart")
             val som = new Som(
               weights = WorkerActor.IMUWeights,
               labelPrefix = bodyPart,
@@ -62,20 +63,20 @@ class WorkerActor extends CommonActor {
             DatabaseHelper.getIMU(bodyPart, count).foreach(row => {
               som.addSample(WorkerActor.toIMUVector(row))
             })
-            log.info(s"finish building som on $bodyPart, saving to database")
+            Log.info(s"finish building som on $bodyPart, saving to database")
             DatabaseHelper.tableInsertRow(Tables.SomImage.name, som.toMap)
-            log.info(s"som on $bodyPart saved to database")
+            Log.info(s"som on $bodyPart saved to database")
           } catch {
             case e: NoSuchElementException =>
           }
         case msg => showError(s"unsupported message: $msg")
       }
-      log.info(s"finish task ${task.id}")
+      Log.info(s"finish task ${task.id}")
       DatabaseHelper.finishTask(task.id)
       Dispatcher.proxy ! TaskCompleted(task.id)
     case ReBindDispatcher => preStart()
-      log info "rebind dispatcher"
-    case msg => log warning s"Unsupported msg : $msg"
+      Log info "rebind dispatcher"
+    case msg => showError(s"Unsupported msg : $msg")
   }
 
   override def preStart = {
