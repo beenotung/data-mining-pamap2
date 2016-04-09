@@ -318,7 +318,7 @@ object DatabaseHelper {
   def addNewTask(task: Task, clusterId: String, workerId: String, pending: Boolean = false): String = {
     val field = Tables.Task.Field
     //TODO add more detail about the task
-    val row = r.hashMap(field.taskType.toString, task.getClass.getName)
+    val row = r.hashMap(field.taskType.toString, task.actionState.toString)
       .`with`(field.workerId.toString, workerId)
       .`with`(field.clusterId.toString, clusterId)
       .`with`(field.createTime.toString, OffsetDateTime.now())
@@ -403,6 +403,7 @@ object DatabaseHelper {
     val count = Math.round(totalCount * {
       if (percentage <= 1) percentage else percentage / 100d
     })
+    Log.debug(s"totalCount:$totalCount\tcount:$count")
     /* 2. set all to false */
     Log.info("mark Train Sample (1/3)")
     DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
@@ -418,6 +419,7 @@ object DatabaseHelper {
   def getIMU(field: String, count: Long): Stream[ju.Map[String, AnyRef]] = {
     val fs = Tables.RawData.Field
     DatabaseHelper.run[ju.List[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
+      .filter(r.hashMap(fs.isTrain.toString, true))
       .getField(fs.timeSequence.toString)
       .concatMap(reqlFunction1(row => row.getField(field)))
       .sample(count)
