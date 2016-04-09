@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor._
 import hk.edu.polyu.datamining.pamap2.Main
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.RequestNodeInfo
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ComputeNodeHeartBeat, DispatcherHeartBeat, RequestNodeInfo}
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocolFactory.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
@@ -25,6 +25,7 @@ object ComputeActor {
 
 class ComputeActor extends CommonActor {
   val workers = mutable.Set.empty[ActorRef]
+  var lastTimeDispatcherHeartBeat: Long = System.currentTimeMillis()
 
   override def preStart = {
     // init worker pool
@@ -33,8 +34,8 @@ class ComputeActor extends CommonActor {
       workers += context.actorOf(Props[WorkerActor])
     }
     // set repeat timer to report resources
-    val timer: Cancellable = context.system.scheduler.schedule(Duration.Zero,
-      Duration.create(Main.config.getLong("clustering.report.interval"), TimeUnit.MILLISECONDS), self, RequestNodeInfo)
+    context.system.scheduler.schedule(Duration.Zero,
+      Duration.create(ActorUtils.ReportInterval, TimeUnit.MILLISECONDS), self, ComputeNodeHeartBeat)
   }
 
   override def postStop = {
@@ -44,9 +45,13 @@ class ComputeActor extends CommonActor {
   }
 
   override def receive: Receive = {
+    case ComputeNodeHeartBeat => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(system)
+    //      if(System.currentTimeMillis()<getMargin)
+    //        context.resta
+    case DispatcherHeartBeat => lastTimeDispatcherHeartBeat = System.currentTimeMillis()
     case RequestNodeInfo => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
 
-    case msg => log error s"Unsupported msg : $msg"
-      ???
+    case msg => showError(s"Unsupported msg : $msg")
   }
+
 }

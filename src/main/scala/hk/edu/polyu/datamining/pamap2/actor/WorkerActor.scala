@@ -60,7 +60,7 @@ class WorkerActor extends CommonActor {
               labelPrefix = bodyPart,
               initGrids = Som.randomGrids(WorkerActor.IMUWeights.length, WorkerActor.SomGridWidth, WorkerActor.SomGridHeight, -256d, 256d)
             )
-            DatabaseHelper.getIMU(bodyPart, count).foreach(row => {
+            DatabaseHelper.getIMU(bodyPart, count, Tables.RawData.Field.isTrain.toString).foreach(row => {
               som.addSample(WorkerActor.toIMUVector(row))
             })
             Log.info(s"finish building som on $bodyPart, saving to database")

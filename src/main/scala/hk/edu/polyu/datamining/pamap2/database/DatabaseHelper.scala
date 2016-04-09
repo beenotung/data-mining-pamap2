@@ -414,9 +414,10 @@ object DatabaseHelper {
     count
   }
 
-  /* field : hand | ankle | chest */
+  /** @param field         : hand | ankle | chest
+    * @param trainTestFlag : isTrain | isTest */
   @throws(classOf[NoSuchElementException])
-  def getIMU(field: String, count: Long): Stream[ju.Map[String, AnyRef]] = {
+  def getIMU(field: String, count: Long, trainTestFlag: String): Stream[ju.Map[String, AnyRef]] = {
     val fs = Tables.RawData.Field
     DatabaseHelper.run[ju.List[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
       .filter(r.hashMap(fs.isTrain.toString, true))
