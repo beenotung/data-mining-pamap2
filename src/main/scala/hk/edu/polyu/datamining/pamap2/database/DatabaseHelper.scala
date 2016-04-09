@@ -6,7 +6,7 @@ package hk.edu.polyu.datamining.pamap2.database
 
 import java.time.OffsetDateTime
 import java.util.NoSuchElementException
-import java.{ lang => jl, util => ju}
+import java.{lang => jl, util => ju}
 
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
@@ -393,32 +393,34 @@ object DatabaseHelper {
     }
   }
 
-  def markTrainSample(percentage: Double) = {
+  def markTrainSample(percentage: Double): Long = {
     //DatabaseHelper_.markTrainSample_(Tables.RawData.name, Tables.RawData.Field.isTrain.toString, percentage)
     val t: String = Tables.RawData.name
     val f: String = Tables.RawData.Field.isTrain.toString
     /* 1. calculate count */
-    Log.debug("mark Train Sample (0/3)")
+    Log.info("mark Train Sample (0/3)")
     val totalCount: Long = DatabaseHelper.run(_.table(t).hasFields(f).count())
     val count = Math.round(totalCount * {
       if (percentage <= 1) percentage else percentage / 100d
     })
     /* 2. set all to false */
-    Log.debug("mark Train Sample (1/3)")
+    Log.info("mark Train Sample (1/3)")
     DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
     /* 3. set some to true */
-    Log.debug("mark Train Sample (2/3)")
+    Log.info("mark Train Sample (2/3)")
     DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg(return_changes, false))
-    Log.debug("mark Train Sample (3/3)")
+    Log.info("mark Train Sample (3/3)")
+    count
   }
 
   /* field : hand | ankle | chest */
   @throws(classOf[NoSuchElementException])
-  def getIMU(field: String): Stream[ju.Map[String, AnyRef]] = {
+  def getIMU(field: String, count: Long): Stream[ju.Map[String, AnyRef]] = {
     val fs = Tables.RawData.Field
-    DatabaseHelper.run[Cursor[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
+    DatabaseHelper.run[ju.List[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
       .getField(fs.timeSequence.toString)
       .concatMap(reqlFunction1(row => row.getField(field)))
+      .sample(count)
     ).iterator().asScala.toStream
   }
 }
