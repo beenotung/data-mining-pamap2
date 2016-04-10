@@ -171,24 +171,24 @@ object MessageProtocol {
       .`with`(Label, AgeSomTrainingTask.getClass.toString)
   }
 
-  object ItemCountTask {
+  object ItemExtractTask {
     val IMUIds = "imuIds"
     val Offset = "offset"
 
-    def fromMap(map: ju.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
+    def fromMap(map: ju.Map[String, AnyRef]): ItemExtractTask = new ItemExtractTask(
       map.get(IMUIds).asInstanceOf,
       map.get(Offset).asInstanceOf
     )
   }
 
-  case class ItemCountTask(imuIds: String, offset: Long) extends Task {
-    override val actionState: ActionStatusType = ActionStatus.itemCount
+  case class ItemExtractTask(imuIds: String, offset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.itemExtract
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(ItemCountTask.IMUIds, imuIds)
-      .`with`(ItemCountTask.Offset, offset)
+      .`with`(ItemExtractTask.IMUIds, imuIds)
+      .`with`(ItemExtractTask.Offset, offset)
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemExtractTask.fromMap(map)
   }
 
 }

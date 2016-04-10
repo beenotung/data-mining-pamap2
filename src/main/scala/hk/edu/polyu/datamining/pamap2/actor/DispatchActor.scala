@@ -62,7 +62,7 @@ class DispatchActor extends CommonActor {
       //TODO working here
       /*
       * 1. label training data using the percentage
-      * 2. do som
+      * 2. fire som training on labeled data
       * 3. fire item extract on labeled data
       * 4. fire item count
       * 5. fire confidence, interest counting
@@ -92,10 +92,10 @@ class DispatchActor extends CommonActor {
         .count()
       )
       if (currentTypePendingTask == 0) currentActionType match {
-        case ActionStatus.somProcess =>
-          /* start arm : 3. fire item count */
-          findAndDispatchNewTasks(ActionStatus.itemCount)
-        case _ => Log.info("all task finished?")
+        case status: ActionStatus.ActionStatusType =>
+          /* start arm : 3. fire item extract */
+          findAndDispatchNewTasks(ActionStatus.next(status))
+        case ActionStatus.finished => Log.info("all task finished?")
       } else
         cleanTasks()
   }
@@ -177,7 +177,7 @@ class DispatchActor extends CommonActor {
           .+:(new WeightSomTrainingTask)
           .+:(new HeightSomTrainingTask)
           .+:(new AgeSomTrainingTask)
-      case ActionStatus.itemCount =>
+      case ActionStatus.itemExtract =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
           .filter(fs.isTrain.toString, true)
@@ -188,12 +188,12 @@ class DispatchActor extends CommonActor {
         ).asInstanceOf[ju.List[String]].asScala
           .reduce((a, b) => a + b)
         (0L until taskCount).flatMap(offset => Seq(
-          new ItemCountTask(imuIds, offset),
-          new ItemCountTask(imuIds, offset),
-          new ItemCountTask(imuIds, offset)
+          new ItemExtractTask(imuIds, offset),
+          new ItemExtractTask(imuIds, offset),
+          new ItemExtractTask(imuIds, offset)
         ))
       //TODO add more task type
-      case _ => log warning s"findTask on $actionState is not implemened"
+      case _ => log warning s"findTask on $actionState is not implemented"
         Seq.empty
     }
   }
