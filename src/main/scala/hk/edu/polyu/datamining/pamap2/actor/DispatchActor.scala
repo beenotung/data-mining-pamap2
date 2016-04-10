@@ -69,7 +69,7 @@ class DispatchActor extends CommonActor {
       * */
       DatabaseHelper.setActionStatus(ActionStatus.sampling)
       /* step 1. */
-      Log.info(s"start mark train sample ($percentage%)")
+      Log.info(s"start mark train sample (${percentage * 100d}%)")
       fork(() => {
         val count: Long = DatabaseHelper.markTrainSample(percentage)
         Log.info("finished mark train sample")

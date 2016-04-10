@@ -404,17 +404,16 @@ object DatabaseHelper {
     val t: String = Tables.RawData.name
     val f: String = Tables.RawData.Field.isTrain.toString
     /* 1. calculate count */
-    Log.info("mark Train Sample (0/3)")
+    Log.info("mark Train Sample (1/3) : calculate sample count")
     val totalCount: Long = DatabaseHelper.run(_.table(t).hasFields(f).count())
     val count = Math.round(totalCount * percentage)
     Log.debug(s"totalCount:$totalCount\tcount:$count")
     /* 2. set all to false */
-    Log.info("mark Train Sample (1/3)")
+    Log.info("mark Train Sample (2/3) : set all to false")
     DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
     /* 3. set some to true */
-    Log.info("mark Train Sample (2/3)")
+    Log.info("mark Train Sample (3/3) : set some to true")
     DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg(return_changes, false))
-    Log.info("mark Train Sample (3/3)")
     count
   }
 
