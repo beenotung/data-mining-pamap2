@@ -18,6 +18,7 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
   def createNextSeqList(activity:Array[ItemSets]: util.ArrayList[ItemSets] ={
     var seq_sets:util.ArrayList[ItemSets] = Sequence.createNextSeq(activity)
     seq_sets = Sequence.countActSeq(activity, seq_sets)
+    seq_sets
   }
 
   def seqCombine(seqList1:util.ArrayList[ItemSets], seqList2:util.ArrayList[ItemSets]): util.ArrayList[ItemSets] = {
