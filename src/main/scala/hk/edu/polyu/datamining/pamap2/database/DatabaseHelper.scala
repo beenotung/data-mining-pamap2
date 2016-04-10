@@ -403,7 +403,7 @@ object DatabaseHelper {
     /* 1. calculate count */
     Log.info("mark Train Sample (0/3)")
     val totalCount: Long = DatabaseHelper.run(_.table(t).hasFields(f).count())
-    val count = totalCount * percentage
+    val count = Math.round(totalCount * percentage)
     Log.debug(s"totalCount:$totalCount\tcount:$count")
     /* 2. set all to false */
     Log.info("mark Train Sample (1/3)")
