@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.{util, util => ju}
+import java.{util => ju}
 
 import akka.actor.ActorSystem
 import com.rethinkdb.RethinkDB.r
@@ -137,7 +137,7 @@ object MessageProtocol {
   }
 
   case class WeightSomTrainingTask() extends SomTask {
-    override def fromMap(map: util.Map[String, AnyRef]): Task = WeightSomTrainingTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = WeightSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
 
@@ -150,7 +150,7 @@ object MessageProtocol {
   }
 
   case class HeightSomTrainingTask() extends SomTask {
-    override def fromMap(map: util.Map[String, AnyRef]): Task = HeightSomTrainingTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = HeightSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
 
@@ -163,7 +163,7 @@ object MessageProtocol {
   }
 
   case class AgeSomTrainingTask() extends SomTask {
-    override def fromMap(map: util.Map[String, AnyRef]): Task = AgeSomTrainingTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = AgeSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
 

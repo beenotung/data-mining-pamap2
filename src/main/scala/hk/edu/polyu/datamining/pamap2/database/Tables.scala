@@ -153,7 +153,7 @@ object Tables {
 
   object SequenceItemSetCount extends Table {
     override val name: String = "sequence_itemset_count"
-    override val fields: Iterable[String] = _
+    override val fields: Iterable[String] = Field.values.map(_.toString)
 
     object Field extends Enumeration {
       type Field = Value

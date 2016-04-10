@@ -11,7 +11,6 @@ import com.rethinkdb.model.MapObject
 
 import scala.collection.JavaConverters._
 import hk.edu.polyu.datamining.pamap2.Main
-import hk.edu.polyu.datamining.pamap2.actor.WorkerActor._
 import hk.edu.polyu.datamining.pamap2.som.{Som, Vector}
 import hk.edu.polyu.datamining.pamap2.utils.Log
 
@@ -61,22 +60,21 @@ class WorkerActor extends CommonActor {
       task match {
         case ImuSomTrainingTask(label, trainingDataCount) =>
           Log.info(s"start training som for $label")
-          val IMUPartGridWidth = Main.config.getInt("algorithm.som.imuPart.gridWidth")
-          val IMUPartGridHeight = Main.config.getInt("algorithm.som.imuPart.gridHeight")
-          val IMUPartSomMinChange = Main.config.getInt("algorithm.som.imuPart.minChange")
+          val minChange = Main.config.getDouble("algorithm.som.imuPart.minChange")
           try {
-            val som = new Som(
-              weights = Array(1, 1, 1),
-              labelPrefix = label.toString,
-              initGrids = Som.randomGrids(3, IMUPartGridWidth, IMUPartGridHeight, -256d, 256d)
-            )
+            val som = new Som(Array(1), label.toString, Som.randomGrids(3,
+              Main.config.getInt("algorithm.som.imuPart.gridWidth"),
+              Main.config.getInt("algorithm.som.imuPart.gridHeight"),
+              Main.config.getDouble("algorithm.som.imuPart.initMin"),
+              Main.config.getDouble("algorithm.som.imuPart.initMax")
+            ))
             var change = Double.MaxValue
             val x = label + "x"
             val y = label + "y"
             val z = label + "z"
-            while (change > IMUPartSomMinChange) {
+            while (change > minChange) {
               DatabaseHelper.getIMUPart(label, DatabaseHelper.BestInsertCount, Tables.RawData.Field.isTrain.toString)
-                .takeWhile(_ => change > IMUPartSomMinChange)
+                .takeWhile(_ => change > minChange)
                 .foreach(map =>
                   change = som.addSample(Array(
                     map.get(x),
@@ -95,17 +93,15 @@ class WorkerActor extends CommonActor {
           try {
             val fs = Tables.RawData.Field
             val f: String = temperature_f
-            val TemperatureGridWidth = Main.config.getInt("algorithm.som.temperature.gridWidth")
-            val TemperatureGridHeight = Main.config.getInt("algorithm.som.temperature.gridHeight")
-            val TemperatureSomMinChange = Main.config.getInt("algorithm.som.temperature.minChange")
+            val minChange = Main.config.getDouble("algorithm.som.temperature.minChange")
             val som = new Som(Array(1), f, Som.randomGrids(1,
-              Main.config.getInt("algorithm.som.heartRate.gridWidth"),
-              Main.config.getInt("algorithm.som.heartRate.gridHeight"),
-              Main.config.getDouble("algorithm.som.heartRate.initMin"),
-              Main.config.getDouble("algorithm.som.heartRate.initMax")
+              Main.config.getInt("algorithm.som.temperature.gridWidth"),
+              Main.config.getInt("algorithm.som.temperature.gridHeight"),
+              Main.config.getDouble("algorithm.som.temperature.initMin"),
+              Main.config.getDouble("algorithm.som.temperature.initMax")
             ))
             var change = Double.MaxValue
-            while (change > TemperatureSomMinChange) {
+            while (change > minChange) {
               DatabaseHelper.run(r => r.table(Tables.RawData.name)
                 .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
                 .getField(fs.timeSequence.toString)
@@ -115,7 +111,7 @@ class WorkerActor extends CommonActor {
                   //.add(row.getField(fs.chest.toString).getField(f))
                   row.getField(fs.chest.toString).getField(f)
                 ))).asInstanceOf[ju.List[Double]].asScala
-                .takeWhile(_ => change > TemperatureSomMinChange)
+                .takeWhile(_ => change > minChange)
                 .foreach(temp =>
                   change = som.addSample(Array(temp))
                 )
@@ -131,7 +127,7 @@ class WorkerActor extends CommonActor {
           Log.info(s"start training som for $f")
           try {
             val fs = Tables.RawData.Field
-            val minChange = Main.config.getInt("algorithm.som.heartRate.minChange")
+            val minChange = Main.config.getDouble("algorithm.som.heartRate.minChange")
             val som = new Som(Array(1), f, Som.randomGrids(1,
               Main.config.getInt("algorithm.som.heartRate.gridWidth"),
               Main.config.getInt("algorithm.som.heartRate.gridHeight"),
@@ -139,13 +135,13 @@ class WorkerActor extends CommonActor {
               Main.config.getDouble("algorithm.som.heartRate.initMax")
             ))
             var change = Double.MaxValue
-            while (change > HeartRateSomMinChange) {
+            while (change > minChange) {
               DatabaseHelper.run(r => r.table(Tables.RawData.name)
                 .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
                 .getField(fs.timeSequence.toString)
                 .concatMap(reqlFunction1(row => row.getField(f)))
               ).asInstanceOf[ju.List[Double]].asScala
-                .takeWhile(_ => change > HeartRateSomMinChange)
+                .takeWhile(_ => change > minChange)
                 .foreach(temp =>
                   change = som.addSample(Array(temp))
                 )
@@ -160,7 +156,7 @@ class WorkerActor extends CommonActor {
           val f = Tables.Subject.Field.weight.toString
           Log.info(s"start training som for $f")
           try {
-            val minChange = Main.config.getInt("algorithm.som.weight.minChange")
+            val minChange = Main.config.getDouble("algorithm.som.weight.minChange")
             val som = new Som(Array(1), f, Som.randomGrids(1,
               Main.config.getInt("algorithm.som.weight.gridWidth"),
               Main.config.getInt("algorithm.som.weight.gridHeight"),
@@ -185,7 +181,8 @@ class WorkerActor extends CommonActor {
                 val subjectId: String = activity.get(fs.subject.toString).asInstanceOf
                 if (subjectMap.get(subjectId).isEmpty)
                   subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
-                val subject = subjectMap.get(subject)
+                val subject = subjectMap.get(subjectId)
+                //TODO subject som
 
                 /* reload som if not valid */
                 if (lastIMUIds != imuIds) {
@@ -203,7 +200,7 @@ class WorkerActor extends CommonActor {
                   .`with`(Tables.ItemsetCount.Field.count.toString, -1)
                 /* replace data by som label */
                 val timeSequenceLabels = activity.get(fs.timeSequence.toString).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].asScala.map(row => {
-                  val temperature = row.get(fs.chest).asInstanceOf[ju.Map[String, AnyRef].get(temperature_f).toString.toDouble
+                  val temperature = row.get(fs.chest).asInstanceOf[ju.Map[String, AnyRef]].get(temperature_f).toString.toDouble
                   val bodyParts = Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString)
                   val labels = mutable.Buffer.empty[String]
                   bodyParts.flatMap(bodyPart => ImuSomTrainingTask.values.map(_.toString).map(label => {
