@@ -77,7 +77,7 @@ class DispatchActor extends CommonActor {
           /* step 2. */
           Log.info(s"start som process (count:$count)")
           DatabaseHelper.setActionStatus(ActionStatus.somProcess)
-          findAndDispatchNewTasks(ActionStatus.somProcess, Map(SOMProcessTask.Count -> count))
+          findAndDispatchNewTasks(ActionStatus.somProcess, Map(ImuSomTrainingTask.TrainingDataCount -> count))
           /* step 3,4,5 (in TaskCompleted) */
         })
       })
@@ -171,11 +171,12 @@ class DispatchActor extends CommonActor {
     actionState match {
       case ActionStatus.somProcess =>
         val fs = Tables.RawData.Field
-        val p = param.get(SOMProcessTask.Count).get.asInstanceOf[Long]
-        Seq(new SOMProcessTask(fs.hand.toString, p),
-          new SOMProcessTask(fs.ankle.toString, p),
-          new SOMProcessTask(fs.chest.toString, p)
-        )
+        val trainingDataCount: Long = param.get(ImuSomTrainingTask.TrainingDataCount).asInstanceOf
+        val taskBuffer = mutable.Buffer.empty[Task]
+        val bodyParts = Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString)
+        bodyParts.flatMap(bodyPart => ImuSomTrainingTask.values.map(label => new ImuSomTrainingTask(label, trainingDataCount)))
+          .+:(new HeartRateSomTrainingTask(trainingDataCount))
+          .+:(new TemperatureSomTrainingTask(trainingDataCount))
       case ActionStatus.itemCount =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
@@ -209,7 +210,11 @@ class DispatchActor extends CommonActor {
     result.iterator().asScala.map(record => {
       val taskType = record.get(field.taskType.toString).toString
       ActionStatus.withName(taskType) match {
-        case ActionStatus.somProcess => SOMProcessTask.fromMap(record)
+        case ActionStatus.somProcess => record.get(Task.Param) match {
+          case s: String if s.equals(ImuSomTrainingTask.getClass.toString) => ImuSomTrainingTask.fromMap(record)
+          case s: String if s.equals(TemperatureSomTrainingTask.getClass.toString) => TemperatureSomTrainingTask.fromMap(record)
+          case s: String if s.equals(HeartRateSomTrainingTask.getClass.toString) => HeartRateSomTrainingTask.fromMap(record)
+        }
         case _ => Log.error(s"unknown task type $taskType")
           null
       }

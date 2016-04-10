@@ -19,7 +19,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ActionStatus
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ImuSomTrainingTask, Task}
 import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
 import hk.edu.polyu.datamining.pamap2.som.Som
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
@@ -347,7 +347,7 @@ object DatabaseHelper {
   }
 
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] =
-    run(r => r.table(Task.name).get(taskId).update(reqlFunction1(row => r.hashMap(Task.Field.completeTime.toString, OffsetDateTime.now()))))
+    run(r => r.table(Tables.Task.name).get(taskId).update(reqlFunction1(row => r.hashMap(Tables.Task.Field.completeTime.toString, OffsetDateTime.now()))))
 
   def run[A](fun: RethinkDB => ReqlAst): A = conn.synchronized({
     try {
@@ -420,15 +420,35 @@ object DatabaseHelper {
   /** @param field         : hand | ankle | chest
     * @param trainTestFlag : isTrain | isTest */
   @throws(classOf[NoSuchElementException])
+  @deprecated("too rough")
   def getIMU(field: String, count: Long, trainTestFlag: String): Stream[ju.Map[String, AnyRef]] = {
     val fs = Tables.RawData.Field
     DatabaseHelper.run[ju.List[ju.Map[String, AnyRef]]](r => r.table(Tables.RawData.name)
-      .filter(r.hashMap(fs.isTrain.toString, true))
+      .filter(r.hashMap(trainTestFlag, true))
       .getField(fs.timeSequence.toString)
       .concatMap(reqlFunction1(row => row.getField(field)))
       .sample(count)
     ).iterator().asScala.toStream
   }
+
+  /** @param trainTestFlag : isTrain | isTest **/
+  def getIMUPart(label: ImuSomTrainingTask.LabelType, count: Long, trainTestFlag: String) = {
+    val fs = Tables.RawData.Field
+    val x = label + "x"
+    val y = label + "y"
+    val z = label + "z"
+    run[ju.List[ju.Map[String, Double]]](r => r.table(Tables.RawData.name)
+      .filter(r.hashMap(trainTestFlag, true))
+      .getField(fs.timeSequence.toString)
+      .concatMap(reqlFunction1(row =>
+        row.getField(fs.hand.toString).withFields(x, y, z)
+          .add(row.getField(fs.ankle.toString).withFields(x, y, z))
+          .add(row.getField(fs.chest.toString).withFields(x, y, z))
+      ))
+      .sample(count)
+    ).iterator().asScala.toStream
+  }
+
 
   def saveSom(som: Som) =
     tableInsertRow(Tables.SomImage.name, som.toMap)

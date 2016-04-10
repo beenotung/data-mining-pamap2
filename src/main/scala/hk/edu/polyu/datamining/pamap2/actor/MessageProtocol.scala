@@ -22,9 +22,14 @@ object MessageProtocol {
 
   sealed trait DispatchActorProtocol
 
+  object Task {
+    val Param = "param"
+  }
+
   sealed trait Task extends Comparable[Task] {
     val actionState: ActionStatus.ActionStatusType
     var id: String = null
+    val param: MapObject = r.hashMap()
 
     override def compareTo(o: Task) = id.compareTo(o.id)
 
@@ -69,25 +74,71 @@ object MessageProtocol {
 
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
-  object SOMProcessTask {
-    val actionState: ActionStatusType = ActionStatus.somProcess
-    val BodyPart = "bodyPart"
-    val Count = "count"
+  abstract class SomTask extends Task {
+    override val actionState: ActionStatusType = ActionStatus.somProcess
+    val Label = "label"
+  }
 
-    def fromMap(map: ju.Map[String, AnyRef]): Task = new SOMProcessTask(
-      map.get(BodyPart).asInstanceOf,
-      map.get(Count).asInstanceOf
+  case object ImuSomTrainingTask extends Enumeration {
+    val Label = "label"
+    val TrainingDataCount = "trainingDataCount"
+
+    type LabelType = Value
+    val a16, a6, r, m, polar = Value
+
+    def fromMap(map: ju.Map[String, AnyRef]): ImuSomTrainingTask = new ImuSomTrainingTask(
+      label = withName(map.get(Label).asInstanceOf),
+      trainingDataCount = map.get(TrainingDataCount).asInstanceOf
     )
   }
 
-  /** @param bodyPart : hand | ankle | chest **/
-  case class SOMProcessTask(bodyPart: String, count: Long) extends Task {
-    override val actionState: ActionStatusType = SOMProcessTask.actionState
+  case class ImuSomTrainingTask(label: ImuSomTrainingTask.LabelType, trainingDataCount: Long) extends SomTask {
+    override val actionState: ActionStatusType = ActionStatus.somProcess
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = SOMProcessTask.fromMap(map)
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(ImuSomTrainingTask.Label, label.toString)
+      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
 
-    override def toMap: MapObject = r.hashMap(SOMProcessTask.BodyPart, bodyPart)
-      .`with`(SOMProcessTask.Count, count)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = ImuSomTrainingTask.fromMap(map)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, ImuSomTrainingTask.getClass.toString)
+  }
+
+  case object TemperatureSomTrainingTask {
+    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
+
+    def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
+  }
+
+  case class TemperatureSomTrainingTask(trainingDataCount: Long) extends SomTask {
+    override val actionState: ActionStatusType = ActionStatus.somProcess
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TemperatureSomTrainingTask.TrainingDataCount, trainingDataCount)
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask.fromMap(map)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, TemperatureSomTrainingTask.getClass.toString)
+  }
+
+  case object HeartRateSomTrainingTask {
+    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
+
+    def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
+  }
+
+  case class HeartRateSomTrainingTask(trainingDataCount: Long) extends SomTask {
+    override val actionState: ActionStatusType = ActionStatus.somProcess
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask.fromMap(map)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, HeartRateSomTrainingTask.getClass.toString)
   }
 
   object ItemCountTask {
@@ -103,7 +154,8 @@ object MessageProtocol {
   case class ItemCountTask(imuIds: String, offset: Long) extends Task {
     override val actionState: ActionStatusType = ActionStatus.itemCount
 
-    override def toMap: MapObject = r.hashMap(ItemCountTask.IMUIds, imuIds)
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(ItemCountTask.IMUIds, imuIds)
       .`with`(ItemCountTask.Offset, offset)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)

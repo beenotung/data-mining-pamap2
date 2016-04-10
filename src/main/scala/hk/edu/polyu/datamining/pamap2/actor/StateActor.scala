@@ -10,7 +10,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 object ActionStatus extends Enumeration {
   type ActionStatusType = Value
   val name = "ActionStatus"
-  val reset, init, importing, imported,sampling, somProcess, itemCount, learning, testing, finished = Value
+  val reset, init, importing, imported, sampling, somProcess, itemCount, learning, testing, finished = Value
 
   @deprecated
   def next(actionStatusType: ActionStatusType@NotNull): ActionStatusType = actionStatusType match {
