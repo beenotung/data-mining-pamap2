@@ -224,6 +224,18 @@ class MonitorController extends MonitorControllerSkeleton {
     })
   }
 
+  override def reset_cluster_db(event: ActionEvent) = {
+    val alert = new Alert(AlertType.WARNING)
+    alert.setTitle("Warning")
+    alert.setHeaderText("Reset Cluster Status")
+    alert.setContentText(s"cluster seed, task will be erased!")
+    alert.showAndWait().get() match {
+      case ButtonType.OK =>
+        Seq(Tables.ClusterSeed.name, Tables.Task.name).foreach(DatabaseHelper.createTableDropIfExistResult)
+      case _ =>
+    }
+  }
+
   override def start_association_rule_mining(event: ActionEvent) = {
     try {
       val start = min_support_start.getText.toDouble
@@ -238,11 +250,11 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.setHeaderText("Invalid Parameter")
         alert.setContentText(s"$iterCount iteration, wrong direction?")
         alert.showAndWait()
-      } else if (percentage <= 0 || percentage >= 100) {
+      } else if (percentage <= 0 || percentage > 100) {
         val alert = new Alert(AlertType.ERROR)
         alert.setTitle("Error")
         alert.setHeaderText("Invalid Parameter")
-        alert.setContentText(s"percentage should be [0..100]")
+        alert.setContentText(s"percentage should be (0..100]")
         alert.showAndWait()
       }
       else

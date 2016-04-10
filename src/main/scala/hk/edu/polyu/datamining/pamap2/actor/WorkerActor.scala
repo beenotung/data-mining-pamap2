@@ -102,15 +102,15 @@ class WorkerActor extends CommonActor {
             ))
             var change = Double.MaxValue
             while (change > minChange) {
-              DatabaseHelper.run(r => r.table(Tables.RawData.name)
-                .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
+              DatabaseHelper.runToBuffer[Double](r => r.table(Tables.RawData.name)
+                .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
                 .getField(fs.timeSequence.toString)
                 .concatMap(reqlFunction1(row =>
                   //row.getField(fs.hand.toString).getField(f)
                   //.add(row.getField(fs.ankle.toString).getField(f))
                   //.add(row.getField(fs.chest.toString).getField(f))
                   row.getField(fs.chest.toString).getField(f)
-                ))).asInstanceOf[ju.List[Double]].asScala
+                )))
                 .takeWhile(_ => change > minChange)
                 .foreach(temp =>
                   change = som.addSample(Array(temp))

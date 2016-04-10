@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
@@ -27,8 +22,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.76-ea"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.72" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
@@ -121,6 +116,9 @@
                                                 <CheckBox fx:id="auto_update" mnemonicParsing="false"
                                                           onAction="#auto_update_onChanged" text="auto update"
                                                           GridPane.rowIndex="5"/>
+                                                <Button mnemonicParsing="false" onAction="#reset_cluster_db"
+                                                        text="RESET (preserve data set)" GridPane.columnIndex="1"
+                                                        GridPane.rowIndex="5"/>
                                             </children>
                                         </GridPane>
                                     </children>

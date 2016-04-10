@@ -210,24 +210,7 @@ class DispatchActor extends CommonActor {
         query.limit(limit)
       else
         query
-    }).map(record => {
-      val taskType = record.get(field.taskType.toString).toString
-      val fs = Tables.RawData.Field
-      val fs2 = Tables.Subject.Field
-      ActionStatus.withName(taskType) match {
-        case ActionStatus.somProcess => record.get(Task.Param).asInstanceOf[ju.Map[String, AnyRef]].get(MessageProtocol.Label) match {
-          case s: String if s.equals(Tables.IMU.Field.temperature.toString) => TemperatureSomTrainingTask.fromMap(record)
-          case s: String if s.equals(fs.heartRate.toString) => HeartRateSomTrainingTask.fromMap(record)
-          case s: String if s.equals(fs2.weight.toString) => WeightSomTrainingTask.fromMap(record)
-          case s: String if s.equals(fs2.height.toString) => HeightSomTrainingTask.fromMap(record)
-          case s: String if s.equals(fs2.age.toString) => AgeSomTrainingTask.fromMap(record)
-          case s: String => ImuSomTrainingTask.fromMap(record)
-          case _ => showError(s"unknown task type $taskType")
-            fork(() => throw ???)
-            null
-        }
-      }
-    }).filterNot(_ == null).toIndexedSeq
+    }).map(DatabaseHelper.toTask).filterNot(_ == null).toIndexedSeq
     Log.debug(s"get ${result.length} pending task(s)")
     result
   }

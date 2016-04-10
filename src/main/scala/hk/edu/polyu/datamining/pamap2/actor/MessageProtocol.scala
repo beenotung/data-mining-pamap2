@@ -7,6 +7,7 @@ import com.rethinkdb.RethinkDB.r
 import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.TaskType
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
 /**
@@ -24,6 +25,7 @@ object MessageProtocol {
 
   object Task {
     val Param = "param"
+    val TaskType = Tables.Task.Field.taskType.toString
   }
 
   sealed trait Task extends Comparable[Task] {
@@ -75,6 +77,7 @@ object MessageProtocol {
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
   val Label = "label"
+
   abstract class SomTask extends Task {
     override val actionState: ActionStatusType = ActionStatus.somProcess
   }
@@ -86,13 +89,14 @@ object MessageProtocol {
     val a16, a6, r, m, polar = Value
 
     def fromMap(map: ju.Map[String, AnyRef]): ImuSomTrainingTask = new ImuSomTrainingTask(
-      label = withName(map.get(Label).asInstanceOf),
-      trainingDataCount = map.get(TrainingDataCount).asInstanceOf
+      label = withName(map.get(Label).asInstanceOf[String]),
+      trainingDataCount = map.get(TrainingDataCount).asInstanceOf[Long]
     )
   }
 
   case class ImuSomTrainingTask(label: ImuSomTrainingTask.LabelType, trainingDataCount: Long) extends SomTask {
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
       .`with`(Label, label.toString)
       .`with`(TrainingDataCount, trainingDataCount)
 
@@ -103,11 +107,12 @@ object MessageProtocol {
   }
 
   case object TemperatureSomTrainingTask {
-    def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
+    def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask(map.get(TrainingDataCount).asInstanceOf[Long])
   }
 
   case class TemperatureSomTrainingTask(trainingDataCount: Long) extends SomTask {
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
       .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask.fromMap(map)
@@ -117,11 +122,12 @@ object MessageProtocol {
   }
 
   case object HeartRateSomTrainingTask {
-    def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
+    def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask(map.get(TrainingDataCount).asInstanceOf[Long])
   }
 
   case class HeartRateSomTrainingTask(trainingDataCount: Long) extends SomTask {
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
       .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask.fromMap(map)
@@ -138,6 +144,7 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = WeightSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
 
     override val param: MapObject = r.hashMap()
       .`with`(Label, Tables.Subject.Field.weight.toString)
@@ -151,6 +158,7 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = HeightSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
 
     override val param: MapObject = r.hashMap()
       .`with`(Label, Tables.Subject.Field.height.toString)
@@ -164,6 +172,7 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = AgeSomTrainingTask.fromMap(map)
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
 
     override val param: MapObject = r.hashMap()
       .`with`(Label, Tables.Subject.Field.age.toString)
@@ -183,6 +192,7 @@ object MessageProtocol {
     override val actionState: ActionStatusType = ActionStatus.itemExtract
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
+      .`with`(TaskType, actionState.toString)
       .`with`(ItemExtractTask.IMUIds, imuIds)
       .`with`(ItemExtractTask.Offset, offset)
 

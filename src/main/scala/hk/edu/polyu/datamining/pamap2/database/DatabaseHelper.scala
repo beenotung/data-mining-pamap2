@@ -14,12 +14,13 @@ import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.gen.exc.ReqlDriverError
 import com.rethinkdb.model.{MapObject, OptArgs}
 import com.rethinkdb.net.{Connection, Cursor}
+import com.sun.istack.internal.NotNull
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ImuSomTrainingTask, Task}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
 import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
 import hk.edu.polyu.datamining.pamap2.som.Som
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
@@ -343,12 +344,20 @@ object DatabaseHelper {
   }
 
   def getTasksByWorkerId(workerId: String): Seq[Task] = {
-    //TODO
-    Seq.empty
+    val fs = Tables.Task.Field
+    runToBuffer[ju.Map[String, AnyRef]](r => r.table(Tables.Task.name)
+      .filter(r.hashMap(fs.workerId.toString, workerId)
+        .`with`(fs.completeTime.toString, null)
+      )
+    ).map(toTask)
   }
 
-  def finishTask(taskId: String): ju.HashMap[String, AnyRef] =
-    run(r => r.table(Tables.Task.name).get(taskId).update(reqlFunction1(row => r.hashMap(Tables.Task.Field.completeTime.toString, OffsetDateTime.now()))))
+  def finishTask(taskId: String): ju.HashMap[String, AnyRef] = {
+    assert(taskId != null)
+    run(r => r.table(Tables.Task.name).get(taskId).update(reqlFunction1(row =>
+      r.hashMap(Tables.Task.Field.completeTime.toString, OffsetDateTime.now())
+    )))
+  }
 
   def run[A](fun: RethinkDB => ReqlAst): A = conn.synchronized({
     try {
@@ -483,5 +492,31 @@ object DatabaseHelper {
       case e: NoSuchElementException =>
     }
     buffer
+  }
+
+  def toTask(map: ju.Map[String, AnyRef]): Task = {
+    import Tables.Task.{Field => field}
+    import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.Param
+    import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Label
+    val taskType = map.get(field.taskType.toString)
+    if (taskType == null) {
+      Log.error(s"unknown task type $map")
+      fork(() => throw ???)
+    }
+    val fs = Tables.RawData.Field
+    val fs2 = Tables.Subject.Field
+    ActionStatus.withName(taskType.toString) match {
+      case ActionStatus.somProcess => map.get(Param).asInstanceOf[ju.Map[String, AnyRef]].get(Label) match {
+        case s: String if s.equals(Tables.IMU.Field.temperature.toString) => TemperatureSomTrainingTask.fromMap(map)
+        case s: String if s.equals(fs.heartRate.toString) => HeartRateSomTrainingTask.fromMap(map)
+        case s: String if s.equals(fs2.weight.toString) => WeightSomTrainingTask.fromMap(map)
+        case s: String if s.equals(fs2.height.toString) => HeightSomTrainingTask.fromMap(map)
+        case s: String if s.equals(fs2.age.toString) => AgeSomTrainingTask.fromMap(map)
+        case s: String => ImuSomTrainingTask.fromMap(map)
+        case _ => Log.error(s"unknown task type $taskType")
+          fork(() => throw ???)
+          null
+      }
+    }
   }
 }

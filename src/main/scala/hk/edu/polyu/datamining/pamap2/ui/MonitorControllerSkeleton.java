@@ -120,6 +120,11 @@ public class MonitorControllerSkeleton {
   }
 
   @FXML
+  void reset_cluster_db(ActionEvent event) {
+
+  }
+
+  @FXML
   void update_dataset_count(ActionEvent event) {
 
   }
