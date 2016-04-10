@@ -26,6 +26,7 @@ import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 object DatabaseHelper {
   /* db constants */
@@ -366,6 +367,8 @@ object DatabaseHelper {
     }
   })
 
+  def runToBuffer[A](fun: RethinkDB => ReqlAst): mutable.Buffer[A] = cursorToBuffer(run(fun))
+
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
@@ -472,4 +475,14 @@ object DatabaseHelper {
     run(r => r.table(Tables.Subject.name)
       .filter(r.hashMap(Tables.Subject.Field.subject_id.toString, subjectId))
     ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].get(0)
+
+  implicit def cursorToBuffer[A](implicit cursor: Cursor[A]) = {
+    val buffer = mutable.Buffer.empty[A]
+    try {
+      cursor.iterator().asScala.foreach(x => buffer += x)
+    } catch {
+      case e: NoSuchElementException =>
+    }
+    buffer
+  }
 }

@@ -170,9 +170,7 @@ class DispatchActor extends CommonActor {
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     actionState match {
       case ActionStatus.somProcess =>
-        val existingSoms = DatabaseHelper.run(r => r.table(Tables.SomImage.name)
-          .getField(Tables.SomImage.LabelPrefix)
-        ).asInstanceOf[ju.List[String]].asScala.toSet
+        val existingSoms = DatabaseHelper.runToBuffer[String](r => r.table(Tables.SomImage.name).getField(Tables.SomImage.LabelPrefix)).toSet
         val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).asInstanceOf
         ImuSomTrainingTask.values.toSeq.map(label => new ImuSomTrainingTask(label, trainingDataCount))
           .+:(new TemperatureSomTrainingTask(trainingDataCount))
