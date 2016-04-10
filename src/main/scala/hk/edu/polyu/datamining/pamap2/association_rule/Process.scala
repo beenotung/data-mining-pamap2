@@ -24,6 +24,11 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
     Sequence.combine2SeqCount(seqList1, seqList2)
   }
 
+  def checkMinSup(seq_set:Array[ItemSets], min_sup_count:Int): Array[ItemSets] ={
+    Sequence.checkMinSup(seq_set, min_sup_count)
+  }
+
+
 }
 
 object Process {
