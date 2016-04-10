@@ -15,8 +15,8 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
   val supportAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "supportAuto", supportAuto)
   val isAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "isAuto", false)
 
-  def createSeqList(activity:Array[ItemSets]: Array[ItemSets] ={
-    var seq_sets = Sequence.createFirstSeq(activity)
+  def createNextSeqList(activity:Array[ItemSets]: Array[ItemSets] ={
+    var seq_sets = Sequence.createNextSeq(activity)
     seq_sets = Sequence.countActSeq(activity, seq_sets)
   }
 
@@ -27,8 +27,7 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
   def checkMinSup(seq_set:Array[ItemSets], min_sup_count:Int): Array[ItemSets] ={
     Sequence.checkMinSup(seq_set, min_sup_count)
   }
-
-
+  
 }
 
 object Process {
