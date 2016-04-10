@@ -15,19 +15,19 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
   val supportAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "supportAuto", supportAuto)
   val isAutoProperty: BooleanProperty = new SimpleBooleanProperty(this, "isAuto", false)
 
-  def createNextSeqList(activity:Array[ItemSets]: Array[ItemSets] ={
-    var seq_sets = Sequence.createNextSeq(activity)
+  def createNextSeqList(activity:Array[ItemSets]: util.ArrayList[ItemSets] ={
+    var seq_sets:util.ArrayList[ItemSets] = Sequence.createNextSeq(activity)
     seq_sets = Sequence.countActSeq(activity, seq_sets)
   }
 
-  def seqCombine(seqList1:Array[ItemSets], seqList2:Array[ItemSets]): Array[ItemSets] = {
+  def seqCombine(seqList1:util.ArrayList[ItemSets], seqList2:util.ArrayList[ItemSets]): util.ArrayList[ItemSets] = {
     Sequence.combine2SeqCount(seqList1, seqList2)
   }
 
-  def checkMinSup(seq_set:Array[ItemSets], min_sup_count:Int): Array[ItemSets] ={
+  def checkMinSup(seq_set:util.ArrayList[ItemSets], min_sup_count:Int): Array[ItemSets] ={
     Sequence.checkMinSup(seq_set, min_sup_count)
   }
-  
+
 }
 
 object Process {
