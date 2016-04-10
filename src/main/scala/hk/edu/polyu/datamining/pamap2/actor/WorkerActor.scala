@@ -94,7 +94,56 @@ class WorkerActor extends CommonActor {
             case e: NoSuchElementException =>
           }
         case TemperatureSomTrainingTask(trainingDataCount) =>
+          Log.info(s"start training som for temperature")
+          try {
+            val fs = Tables.RawData.Field
+            val f: String = Tables.IMU.Field.temperature.toString
+            val som = new Som(Array(1), f, Som.randomGrids(1, TemperatureGridWidth, TemperatureGridHeight, 20, 40))
+            var change = Double.MaxValue
+            while (change > TemperatreSomMinChange) {
+              DatabaseHelper.run(r => r.table(Tables.RawData.name)
+                .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
+                .getField(fs.timeSequence.toString)
+                .concatMap(reqlFunction1(row =>
+                  row.getField(fs.hand.toString).getField(f)
+                    .add(row.getField(fs.ankle.toString).getField(f))
+                    .add(row.getField(fs.chest.toString).getField(f))
+                ))).asInstanceOf[ju.List[Double]].asScala
+                .takeWhile(_ => change > TemperatreSomMinChange)
+                .foreach(temp =>
+                  change = som.addSample(Array(temp))
+                )
+            }
+            Log.info(s"finished building som for $f, saving to database")
+            DatabaseHelper.saveSom(som)
+            Log.info(s"som for $f saved to database")
+          } catch {
+            case e: NoSuchElementException =>
+          }
         case HeartRateSomTrainingTask(trainingDataCount) =>
+          val f = Tables.RawData.Field.heartRate.toString
+          Log.info(s"start training som for $f")
+          try {
+            val fs = Tables.RawData.Field
+            val som = new Som(Array(1), f, Som.randomGrids(1, HeartRateGridWidth, HeartRateGridHeight, 40, 200))
+            var change = Double.MaxValue
+            while (change > HeartRateSomMinChange) {
+              DatabaseHelper.run(r => r.table(Tables.RawData.name)
+                .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
+                .getField(fs.timeSequence.toString)
+                .concatMap(reqlFunction1(row => row.getField(f)))
+              ).asInstanceOf[ju.List[Double]].asScala
+                .takeWhile(_ => change > HeartRateSomMinChange)
+                .foreach(temp =>
+                  change = som.addSample(Array(temp))
+                )
+            }
+            Log.info(s"finished building som for $f, saving to database")
+            DatabaseHelper.saveSom(som)
+            Log.info(s"som for $f saved to database")
+          } catch {
+            case e: NoSuchElementException =>
+          }
         case ItemCountTask(imuIds, offset) =>
           val fs = Tables.RawData.Field
           val imuFs = Tables.IMU.Field
