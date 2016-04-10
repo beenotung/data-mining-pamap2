@@ -224,7 +224,7 @@ class WorkerActor extends CommonActor {
           } catch {
             case e: NoSuchElementException =>
           }
-        case ItemCountTask(imuIds, offset) =>
+        case ItemExtractTask(imuIds, offset) =>
           val fs = Tables.RawData.Field
           try {
             DatabaseHelper.run(r => r.table(Tables.RawData.name)
@@ -233,12 +233,8 @@ class WorkerActor extends CommonActor {
               .limit(1)
             ).asInstanceOf[ju.List[MapObject]]
               .forEach(consumer(activity => {
-                /* get subject data if not exist */
-                val subjectId: String = activity.get(fs.subject.toString).asInstanceOf
-                if (subjectMap.get(subjectId).isEmpty)
-                  subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
-                val subject = subjectMap.get(subjectId)
-                //TODO subject som
+                val item = RethinkDB.r.hashMap(Tables.ItemsetCount.Field.count.toString, -1)
+                val commonLabels = mutable.Buffer.empty[String]
 
                 /* reload som if not valid */
                 if (lastIMUIds != imuIds) {
@@ -250,10 +246,22 @@ class WorkerActor extends CommonActor {
                       somMap.update(label, som)
                     }))
                 }
+
+                /* get subject data if not exist */
+                val subjectId: String = activity.get(fs.subject.toString).asInstanceOf
+                if (subjectMap.get(subjectId).isEmpty)
+                  subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
+                val subject = subjectMap.get(subjectId).get
+                val subject_f = Tables.Subject.Field
+                val weight_f = subject_f.weight.toString
+                val height_f = subject_f.height.toString
+                val age_f = subject_f.age.toString
+                commonLabels += somMap.get(weight_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
+                commonLabels += somMap.get(height_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
+                commonLabels += somMap.get(age_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
+
                 val heartRate = activity.get(fs.heartRate.toString).toString.toDouble
-                val heartRate_f: String = somMap.get(fs.heartRate.toString).get.getLabel(Array(heartRate))._1
-                val item = RethinkDB.r.hashMap(fs.heartRate.toString, heartRate_f)
-                  .`with`(Tables.ItemsetCount.Field.count.toString, -1)
+                commonLabels += somMap.get(fs.heartRate.toString).get.getLabel(Array(heartRate))._1
                 /* replace data by som label */
                 val timeSequenceLabels = activity.get(fs.timeSequence.toString).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].asScala.map(row => {
                   val temperature = row.get(fs.chest).asInstanceOf[ju.Map[String, AnyRef]].get(temperature_f).toString.toDouble
@@ -274,7 +282,9 @@ class WorkerActor extends CommonActor {
                   labels += somMap.get(temperature_f).get.getLabel(Array(temperature))._1
                   labels.asJava
                 }).asJava
-                item.`with`(fs.timeSequence.toString, timeSequenceLabels)
+                val fs2 = Tables.ItemsetCount.Field
+                item.`with`(fs2.timeSequence.toString, timeSequenceLabels)
+                  .`with`(fs2.common.toString, commonLabels.asJava)
                 DatabaseHelper.tableInsertRow(Tables.ItemsetCount.name, item)
               }))
           } catch {
