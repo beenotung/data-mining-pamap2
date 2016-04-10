@@ -171,7 +171,7 @@ class DispatchActor extends CommonActor {
     actionState match {
       case ActionStatus.somProcess =>
         val existingSoms = DatabaseHelper.runToBuffer[String](r => r.table(Tables.SomImage.name).getField(Tables.SomImage.LabelPrefix)).toSet
-        val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).asInstanceOf
+        val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).get.asInstanceOf[Long]
         ImuSomTrainingTask.values.toSeq.map(label => new ImuSomTrainingTask(label, trainingDataCount))
           .+:(new TemperatureSomTrainingTask(trainingDataCount))
           .+:(new HeartRateSomTrainingTask(trainingDataCount))
@@ -203,24 +203,33 @@ class DispatchActor extends CommonActor {
   def getPendingTasks(limit: Long = -1): Seq[Task] = {
     Log.debug(s"get pending task, limit:$limit")
     val field = Tables.Task.Field
-    val result: Cursor[ju.Map[String, AnyRef]] = DatabaseHelper.run(r => {
-      val query = r.table(Tables.Task.name).filter(r.hashMap(field.pending.toString, true))
+    val result = DatabaseHelper.runToBuffer[ju.Map[String, AnyRef]](r => {
+      val query = r.table(Tables.Task.name)
+        .filter(r.hashMap(field.pending.toString, true))
       if (limit > 0)
         query.limit(limit)
-      query
-    })
-    result.iterator().asScala.map(record => {
+      else
+        query
+    }).map(record => {
       val taskType = record.get(field.taskType.toString).toString
+      val fs = Tables.RawData.Field
+      val fs2 = Tables.Subject.Field
       ActionStatus.withName(taskType) match {
-        case ActionStatus.somProcess => record.get(Task.Param) match {
-          case s: String if s.equals(ImuSomTrainingTask.getClass.toString) => ImuSomTrainingTask.fromMap(record)
-          case s: String if s.equals(TemperatureSomTrainingTask.getClass.toString) => TemperatureSomTrainingTask.fromMap(record)
-          case s: String if s.equals(HeartRateSomTrainingTask.getClass.toString) => HeartRateSomTrainingTask.fromMap(record)
+        case ActionStatus.somProcess => record.get(Task.Param).asInstanceOf[ju.Map[String, AnyRef]].get(MessageProtocol.Label) match {
+          case s: String if s.equals(Tables.IMU.Field.temperature.toString) => TemperatureSomTrainingTask.fromMap(record)
+          case s: String if s.equals(fs.heartRate.toString) => HeartRateSomTrainingTask.fromMap(record)
+          case s: String if s.equals(fs2.weight.toString) => WeightSomTrainingTask.fromMap(record)
+          case s: String if s.equals(fs2.height.toString) => HeightSomTrainingTask.fromMap(record)
+          case s: String if s.equals(fs2.age.toString) => AgeSomTrainingTask.fromMap(record)
+          case s: String => ImuSomTrainingTask.fromMap(record)
+          case _ => showError(s"unknown task type $taskType")
+            fork(() => throw ???)
+            null
         }
-        case _ => Log.error(s"unknown task type $taskType")
-          null
       }
-    }).toIndexedSeq.filter(x => x != null)
+    }).filterNot(_ == null).toIndexedSeq
+    Log.debug(s"get ${result.length} pending task(s)")
+    result
   }
 
   def numberOfPendingTask: Long =
@@ -241,7 +250,7 @@ class DispatchActor extends CommonActor {
     //println(s"add pending tasks:\nall tasks:$tasks\nnew tasks:$newTasks\nold tasks:$oldTasks")
     /* 1. save new tasks */
     if (newTasks.nonEmpty)
-      DatabaseHelper.tableInsertRows(table, newTasks.map(_.toMap).asJava)
+      DatabaseHelper.tableInsertRows(table, newTasks.map(_.toMap.`with`(field.pending.toString, true)).asJava)
     /* 2. update old tasks */
     if (oldTasks.nonEmpty)
       DatabaseHelper.run[ju.HashMap[String, AnyRef]](r => {

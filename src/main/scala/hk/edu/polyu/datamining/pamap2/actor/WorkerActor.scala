@@ -136,12 +136,11 @@ class WorkerActor extends CommonActor {
             ))
             var change = Double.MaxValue
             while (change > minChange) {
-              DatabaseHelper.run(r => r.table(Tables.RawData.name)
-                .filter(r.hashMap(Tables.RawData.Field.isTrain, true))
+              DatabaseHelper.runToBuffer[Double](r => r.table(Tables.RawData.name)
+                .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
                 .getField(fs.timeSequence.toString)
                 .concatMap(reqlFunction1(row => row.getField(f)))
-              ).asInstanceOf[ju.List[Double]].asScala
-                .takeWhile(_ => change > minChange)
+              ).takeWhile(_ => change > minChange)
                 .foreach(temp =>
                   change = som.addSample(Array(temp))
                 )
@@ -163,13 +162,7 @@ class WorkerActor extends CommonActor {
               Main.config.getDouble("algorithm.som.weight.initMin"),
               Main.config.getDouble("algorithm.som.weight.initMax")
             ))
-            var change = Double.MaxValue
-            while (change > minChange) {
-              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
-                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
-                change = som.addSample(Array(row.toString.toDouble))
-              })
-            }
+            trainSimple1DSom(som, minChange, Tables.Subject.name.toString, f)
             Log.info(s"finished building som for $f, saving to database")
             DatabaseHelper.saveSom(som)
             Log.info(s"som for $f saved to database")
@@ -187,13 +180,7 @@ class WorkerActor extends CommonActor {
               Main.config.getDouble("algorithm.som.height.initMin"),
               Main.config.getDouble("algorithm.som.height.initMax")
             ))
-            var change = Double.MaxValue
-            while (change > minChange) {
-              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
-                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
-                change = som.addSample(Array(row.toString.toDouble))
-              })
-            }
+            trainSimple1DSom(som, minChange, Tables.Subject.name.toString, f)
             Log.info(s"finished building som for $f, saving to database")
             DatabaseHelper.saveSom(som)
             Log.info(s"som for $f saved to database")
@@ -211,13 +198,7 @@ class WorkerActor extends CommonActor {
               Main.config.getDouble("algorithm.som.age.initMin"),
               Main.config.getDouble("algorithm.som.age.initMax")
             ))
-            var change = Double.MaxValue
-            while (change > minChange) {
-              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
-                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
-                change = som.addSample(Array(row.toString.toDouble))
-              })
-            }
+            trainSimple1DSom(som, minChange, Tables.Subject.name.toString, f)
             Log.info(s"finished building som for $f, saving to database")
             DatabaseHelper.saveSom(som)
             Log.info(s"som for $f saved to database")
@@ -300,6 +281,13 @@ class WorkerActor extends CommonActor {
     case ReBindDispatcher => preStart()
       Log info "rebind dispatcher"
     case msg => showError(s"Unsupported msg : $msg")
+  }
+
+  def trainSimple1DSom(som: Som, minChange: Double, tableName: String, fieldName: String) = {
+    var change = Double.MaxValue
+    DatabaseHelper.runToBuffer[AnyVal](r => r.table(tableName).getField(fieldName))
+      .takeWhile(_ => change > minChange)
+      .foreach(row => change = som.addSample(Array(row.toString.toDouble)))
   }
 
   override def preStart = {
