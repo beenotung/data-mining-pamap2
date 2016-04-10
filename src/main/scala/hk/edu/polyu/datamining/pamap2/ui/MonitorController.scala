@@ -30,6 +30,7 @@ import hk.edu.polyu.datamining.pamap2.utils.{FileUtils, Log}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.io.Source
+import scala.util.Random
 
 /**
   * Created by beenotung on 1/30/16.
@@ -87,7 +88,7 @@ object MonitorController {
 class MonitorController extends MonitorControllerSkeleton {
   instance = this
   val cursorRef = new AtomicReference[Cursor[ju.Map[String, ju.Map[String, AnyRef]]]](null)
-  var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType)]
+  var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType, Double)]
 
   def setUIStatus(msg: String) = {
     Log.info(msg)
@@ -251,6 +252,13 @@ class MonitorController extends MonitorControllerSkeleton {
   }
 
   def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {
+    val sampleRate = import_sample_rate.getText.toDouble / 100
+    if (sampleRate <= 0 || sampleRate > 1) {
+      val alert = new Alert(AlertType.ERROR)
+      alert.setTitle("Error")
+      alert.setHeaderText("Invalid Parameter")
+      alert.setContentText("The import sample rate should be larger than zero and smaller than or equal to 100")
+    }
     val fileChooser = new FileChooser()
     fileChooser.setTitle(title)
     fileChooser.getExtensionFilters.addAll(
@@ -260,7 +268,7 @@ class MonitorController extends MonitorControllerSkeleton {
       case list: ju.List[File] if list != null =>
         val files = list.asScala
         setUIStatus(s"selected ${files.length} file(s)")
-        pendingFileItems.addAll(files.map(file => (file, fileType)).asJava)
+        pendingFileItems.addAll(files.map(file => (file, fileType, sampleRate)).asJava)
         handleNextFile()
       case _ =>
         setUIStatus("selected no files")
@@ -280,7 +288,7 @@ class MonitorController extends MonitorControllerSkeleton {
         val fileItem = pendingFileItems.poll()
         if (fileItem == null)
           return
-        val (file, filetype) = fileItem
+        val (file, filetype, sampleRate) = fileItem
         val filename = file.getName
         val (table, fileTypeField) = filetype match {
           case FileType.subject => (Tables.Subject.name, "")
@@ -305,7 +313,6 @@ class MonitorController extends MonitorControllerSkeleton {
             })
         } else {
           // training or testing data
-          //TODO remove english, only keep number
           val subject = filename.split("\\.")(0).filter(c => c >= '0' && c <= '9')
           val subjectField = Tables.RawData.Field.subject.toString
           val activityBuffer = mutable.ListBuffer.empty[MapObject]
@@ -323,7 +330,7 @@ class MonitorController extends MonitorControllerSkeleton {
                   activityBuffer += activitySlice
                 } else {
                   setImportProgress(i / N)
-                  if (activityBuffer.nonEmpty) {
+                  if (activityBuffer.nonEmpty && Random.nextDouble() < sampleRate) {
                     /* insert to database */
                     val row = RethinkDB.r.hashMap(activity_f, lastActivityId)
                       .`with`(subject_f, subject)

@@ -62,6 +62,9 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="min_support_step"
   protected TextField min_support_step; // Value injected by FXMLLoader
 
+  @FXML
+  protected TextField import_sample_rate;
+
   @FXML // fx:id="left_status"
   protected Label left_status; // Value injected by FXMLLoader
 
@@ -142,6 +145,7 @@ public class MonitorControllerSkeleton {
     assert left_status != null : "fx:id=\"left_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert auto_update != null : "fx:id=\"auto_update\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert cluster_status != null : "fx:id=\"cluster_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert import_sample_rate != null : "fx:id=\"import_sample_rate\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     customInit();
   }
 

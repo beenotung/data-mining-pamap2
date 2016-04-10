@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
@@ -140,9 +145,6 @@
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <Button mnemonicParsing="false" onAction="#select_testing_datafile"
-                                                        text="Testing Data" GridPane.halignment="CENTER"
-                                                        GridPane.rowIndex="1"/>
                                                 <ProgressBar fx:id="import_file_progress" prefWidth="600.0"
                                                              progress="0.0" GridPane.halignment="CENTER"
                                                              GridPane.rowIndex="3" GridPane.valignment="CENTER"/>
@@ -159,6 +161,16 @@
                                                         <Button mnemonicParsing="false"
                                                                 onAction="#select_training_datafile"
                                                                 text="Training Data"/>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_testing_datafile"
+                                                                text="Testing Data"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.rowIndex="1">
+                                                    <children>
+                                                        <Label text="Sample Rate (only for Training Data and Testing Data)"/>
+                                                        <TextField fx:id="import_sample_rate" text="80"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -248,7 +260,7 @@
                                                            GridPane.rowIndex="3"/>
                                                 <Label text="Sampling" GridPane.columnSpan="2147483647"
                                                        GridPane.halignment="CENTER" GridPane.rowIndex="4"/>
-                                                <Label text="\% of training data (in full data set)"
+                                                <Label text="\% of training data (in imported data set)"
                                                        GridPane.halignment="CENTER" GridPane.rowIndex="5"/>
                                                 <TextField fx:id="percentage_training_data" GridPane.columnIndex="1"
                                                            GridPane.rowIndex="5"/>
