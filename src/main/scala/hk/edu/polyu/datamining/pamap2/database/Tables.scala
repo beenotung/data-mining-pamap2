@@ -126,7 +126,7 @@ object Tables {
   object SomImage extends Table {
     override val name: String = "som_image"
     override val fields = Seq(
-      Weights, GridHeight, GridHeight, LabelPrefix, Grids, D1, D2, Vector_s
+      Weights, GridWidth, GridHeight, LabelPrefix, Grids, D1, D2, Vector_s
     )
     lazy val Weights = "weights"
     lazy val GridWidth = "gridWidth"
