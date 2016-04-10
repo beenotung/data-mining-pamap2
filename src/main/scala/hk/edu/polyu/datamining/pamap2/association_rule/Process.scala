@@ -19,6 +19,11 @@ class Process(name: String, supportAuto: Boolean, defaultAuto: Boolean = false) 
     var seq_sets = Sequence.createFirstSeq(activity)
     seq_sets = Sequence.countActSeq(activity, seq_sets)
   }
+
+  def seqCombine(seqList1:Array[ItemSets], seqList2:Array[ItemSets]): Array[ItemSets] = {
+    Sequence.combine2SeqCount(seqList1, seqList2)
+  }
+
 }
 
 object Process {
