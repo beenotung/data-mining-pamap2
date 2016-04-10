@@ -126,7 +126,7 @@ object Tables {
   object SomImage extends Table {
     override val name: String = "som_image"
     override val fields = Seq(
-      Weights, GridHeight, GridHeight, LabelPrefix, Grids, D1, D2, Vector_s
+      Weights, GridWidth, GridHeight, LabelPrefix, Grids, D1, D2, Vector_s
     )
     lazy val Weights = "weights"
     lazy val GridWidth = "gridWidth"
@@ -144,8 +144,23 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      /* array[String] */
-      val itemset = Value
+      /* array[label:String] */
+      val common = Value
+      /* array[array[label:String] */
+      val timeSequence = Value
+      val count = Value
+    }
+
+  }
+
+  object SequenceItemSetCount extends Table {
+    override val name: String = "sequence_itemset_count"
+    override val fields: Iterable[String] = Field.values.map(_.toString)
+
+    object Field extends Enumeration {
+      type Field = Value
+      /* array[itemsetId:String] */
+      val sequence = Value
       val count = Value
     }
 

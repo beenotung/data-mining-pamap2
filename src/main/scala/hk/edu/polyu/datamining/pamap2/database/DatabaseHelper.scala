@@ -12,7 +12,7 @@ import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.gen.exc.ReqlDriverError
-import com.rethinkdb.model.OptArgs
+import com.rethinkdb.model.{MapObject, OptArgs}
 import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus
@@ -26,6 +26,7 @@ import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 object DatabaseHelper {
   /* db constants */
@@ -366,6 +367,8 @@ object DatabaseHelper {
     }
   })
 
+  def runToBuffer[A](fun: RethinkDB => ReqlAst): mutable.Buffer[A] = cursorToBuffer(run(fun))
+
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
 
@@ -401,19 +404,16 @@ object DatabaseHelper {
     val t: String = Tables.RawData.name
     val f: String = Tables.RawData.Field.isTrain.toString
     /* 1. calculate count */
-    Log.info("mark Train Sample (0/3)")
+    Log.info("mark Train Sample (1/3) : calculate sample count")
     val totalCount: Long = DatabaseHelper.run(_.table(t).hasFields(f).count())
-    val count = Math.round(totalCount * {
-      if (percentage <= 1) percentage else percentage / 100d
-    })
+    val count = Math.round(totalCount * percentage)
     Log.debug(s"totalCount:$totalCount\tcount:$count")
     /* 2. set all to false */
-    Log.info("mark Train Sample (1/3)")
+    Log.info("mark Train Sample (2/3) : set all to false")
     DatabaseHelper.run[ju.Map[String, AnyRef]](_.table(t).hasFields(f).update(r.hashMap(f, false)))
     /* 3. set some to true */
-    Log.info("mark Train Sample (2/3)")
+    Log.info("mark Train Sample (3/3) : set some to true")
     DatabaseHelper.run[ju.Map[String, AnyVal]](_.table(t).hasFields(f).sample(count).update(r.hashMap(f, true)).optArg(return_changes, false))
-    Log.info("mark Train Sample (3/3)")
     count
   }
 
@@ -468,5 +468,20 @@ object DatabaseHelper {
         fork(() => throw e)
         None
     }
+  }
+
+  def loadSubject(subjectId: String) =
+    run(r => r.table(Tables.Subject.name)
+      .filter(r.hashMap(Tables.Subject.Field.subject_id.toString, subjectId))
+    ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].get(0)
+
+  implicit def cursorToBuffer[A](implicit cursor: Cursor[A]) = {
+    val buffer = mutable.Buffer.empty[A]
+    try {
+      cursor.iterator().asScala.foreach(x => buffer += x)
+    } catch {
+      case e: NoSuchElementException =>
+    }
+    buffer
   }
 }

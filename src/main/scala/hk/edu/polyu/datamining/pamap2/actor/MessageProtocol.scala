@@ -7,7 +7,7 @@ import com.rethinkdb.RethinkDB.r
 import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
-import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
+import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
 /**
   * Created by beenotung on 2/18/16.
@@ -74,15 +74,14 @@ object MessageProtocol {
 
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
+  val Label = "label"
   abstract class SomTask extends Task {
     override val actionState: ActionStatusType = ActionStatus.somProcess
-    val Label = "label"
   }
 
-  case object ImuSomTrainingTask extends Enumeration {
-    val Label = "label"
-    val TrainingDataCount = "trainingDataCount"
+  val TrainingDataCount = "trainingDataCount"
 
+  case object ImuSomTrainingTask extends Enumeration {
     type LabelType = Value
     val a16, a6, r, m, polar = Value
 
@@ -93,72 +92,101 @@ object MessageProtocol {
   }
 
   case class ImuSomTrainingTask(label: ImuSomTrainingTask.LabelType, trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(ImuSomTrainingTask.Label, label.toString)
-      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(Label, label.toString)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = ImuSomTrainingTask.fromMap(map)
 
     override val param: MapObject = r.hashMap()
-      .`with`(Label, ImuSomTrainingTask.getClass.toString)
+      .`with`(Label, label.toString)
   }
 
   case object TemperatureSomTrainingTask {
-    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
-
     def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
   }
 
   case class TemperatureSomTrainingTask(trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(TemperatureSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask.fromMap(map)
 
     override val param: MapObject = r.hashMap()
-      .`with`(Label, TemperatureSomTrainingTask.getClass.toString)
+      .`with`(Label, Tables.IMU.Field.temperature.toString)
   }
 
   case object HeartRateSomTrainingTask {
-    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
-
     def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
   }
 
   case class HeartRateSomTrainingTask(trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask.fromMap(map)
 
     override val param: MapObject = r.hashMap()
-      .`with`(Label, HeartRateSomTrainingTask.getClass.toString)
+      .`with`(Label, Tables.RawData.Field.heartRate.toString)
   }
 
-  object ItemCountTask {
+  case object WeightSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = WeightSomTrainingTask()
+  }
+
+  case class WeightSomTrainingTask() extends SomTask {
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = WeightSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, Tables.Subject.Field.weight.toString)
+  }
+
+  case object HeightSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = HeightSomTrainingTask()
+  }
+
+  case class HeightSomTrainingTask() extends SomTask {
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = HeightSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, Tables.Subject.Field.height.toString)
+  }
+
+  case object AgeSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = AgeSomTrainingTask()
+  }
+
+  case class AgeSomTrainingTask() extends SomTask {
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = AgeSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, Tables.Subject.Field.age.toString)
+  }
+
+  object ItemExtractTask {
     val IMUIds = "imuIds"
     val Offset = "offset"
 
-    def fromMap(map: ju.Map[String, AnyRef]): ItemCountTask = new ItemCountTask(
+    def fromMap(map: ju.Map[String, AnyRef]): ItemExtractTask = new ItemExtractTask(
       map.get(IMUIds).asInstanceOf,
       map.get(Offset).asInstanceOf
     )
   }
 
-  case class ItemCountTask(imuIds: String, offset: Long) extends Task {
-    override val actionState: ActionStatusType = ActionStatus.itemCount
+  case class ItemExtractTask(imuIds: String, offset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.itemExtract
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(ItemCountTask.IMUIds, imuIds)
-      .`with`(ItemCountTask.Offset, offset)
+      .`with`(ItemExtractTask.IMUIds, imuIds)
+      .`with`(ItemExtractTask.Offset, offset)
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemCountTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemExtractTask.fromMap(map)
   }
 
 }

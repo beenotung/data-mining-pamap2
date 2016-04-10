@@ -238,9 +238,15 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.setHeaderText("Invalid Parameter")
         alert.setContentText(s"$iterCount iteration, wrong direction?")
         alert.showAndWait()
+      } else if (percentage <= 0 || percentage >= 100) {
+        val alert = new Alert(AlertType.ERROR)
+        alert.setTitle("Error")
+        alert.setHeaderText("Invalid Parameter")
+        alert.setContentText(s"percentage should be [0..100]")
+        alert.showAndWait()
       }
       else
-        UIActor.dispatch(StartARM(percentage, start, end, step))
+        UIActor.dispatch(StartARM(percentage / 100d, start, end, step))
     } catch {
       case e: NumberFormatException =>
         val alert = new Alert(AlertType.ERROR)

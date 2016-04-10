@@ -62,14 +62,14 @@ class DispatchActor extends CommonActor {
       //TODO working here
       /*
       * 1. label training data using the percentage
-      * 2. do som
+      * 2. fire som training on labeled data
       * 3. fire item extract on labeled data
       * 4. fire item count
       * 5. fire confidence, interest counting
       * */
       DatabaseHelper.setActionStatus(ActionStatus.sampling)
       /* step 1. */
-      Log.info(s"start mark train sample ($percentage%)")
+      Log.info(s"start mark train sample (${percentage * 100d}%)")
       fork(() => {
         val count: Long = DatabaseHelper.markTrainSample(percentage)
         Log.info("finished mark train sample")
@@ -77,7 +77,7 @@ class DispatchActor extends CommonActor {
           /* step 2. */
           Log.info(s"start som process (count:$count)")
           DatabaseHelper.setActionStatus(ActionStatus.somProcess)
-          findAndDispatchNewTasks(ActionStatus.somProcess, Map(ImuSomTrainingTask.TrainingDataCount -> count))
+          findAndDispatchNewTasks(ActionStatus.somProcess, Map(MessageProtocol.TrainingDataCount -> count))
           /* step 3,4,5 (in TaskCompleted) */
         })
       })
@@ -92,10 +92,10 @@ class DispatchActor extends CommonActor {
         .count()
       )
       if (currentTypePendingTask == 0) currentActionType match {
-        case ActionStatus.somProcess =>
-          /* start arm : 3. fire item count */
-          findAndDispatchNewTasks(ActionStatus.itemCount)
-        case _ => Log.info("all task finished?")
+        case status: ActionStatus.ActionStatusType =>
+          /* start arm : 3. fire item extract */
+          findAndDispatchNewTasks(ActionStatus.next(status))
+        case ActionStatus.finished => Log.info("all task finished?")
       } else
         cleanTasks()
   }
@@ -170,14 +170,16 @@ class DispatchActor extends CommonActor {
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     actionState match {
       case ActionStatus.somProcess =>
-        val fs = Tables.RawData.Field
-        val trainingDataCount: Long = param.get(ImuSomTrainingTask.TrainingDataCount).asInstanceOf
-        val taskBuffer = mutable.Buffer.empty[Task]
-        val bodyParts = Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString)
-        bodyParts.flatMap(bodyPart => ImuSomTrainingTask.values.map(label => new ImuSomTrainingTask(label, trainingDataCount)))
-          .+:(new HeartRateSomTrainingTask(trainingDataCount))
+        val existingSoms = DatabaseHelper.runToBuffer[String](r => r.table(Tables.SomImage.name).getField(Tables.SomImage.LabelPrefix)).toSet
+        val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).asInstanceOf
+        ImuSomTrainingTask.values.toSeq.map(label => new ImuSomTrainingTask(label, trainingDataCount))
           .+:(new TemperatureSomTrainingTask(trainingDataCount))
-      case ActionStatus.itemCount =>
+          .+:(new HeartRateSomTrainingTask(trainingDataCount))
+          .+:(new WeightSomTrainingTask)
+          .+:(new HeightSomTrainingTask)
+          .+:(new AgeSomTrainingTask)
+          .filterNot(somTask => existingSoms.contains(somTask.param.get(MessageProtocol.Label).toString))
+      case ActionStatus.itemExtract =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
           .filter(fs.isTrain.toString, true)
@@ -188,12 +190,12 @@ class DispatchActor extends CommonActor {
         ).asInstanceOf[ju.List[String]].asScala
           .reduce((a, b) => a + b)
         (0L until taskCount).flatMap(offset => Seq(
-          new ItemCountTask(imuIds, offset),
-          new ItemCountTask(imuIds, offset),
-          new ItemCountTask(imuIds, offset)
+          new ItemExtractTask(imuIds, offset),
+          new ItemExtractTask(imuIds, offset),
+          new ItemExtractTask(imuIds, offset)
         ))
       //TODO add more task type
-      case _ => log warning s"findTask on $actionState is not implemened"
+      case _ => log warning s"findTask on $actionState is not implemented"
         Seq.empty
     }
   }
