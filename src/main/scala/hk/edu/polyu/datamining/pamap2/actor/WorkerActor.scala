@@ -163,11 +163,67 @@ class WorkerActor extends CommonActor {
               Main.config.getDouble("algorithm.som.weight.initMin"),
               Main.config.getDouble("algorithm.som.weight.initMax")
             ))
+            var change = Double.MaxValue
+            while (change > minChange) {
+              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
+                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
+                change = som.addSample(Array(row.toString.toDouble))
+              })
+            }
+            Log.info(s"finished building som for $f, saving to database")
+            DatabaseHelper.saveSom(som)
+            Log.info(s"som for $f saved to database")
           } catch {
             case e: NoSuchElementException =>
           }
         case HeightSomTrainingTask() =>
+          val f = Tables.Subject.Field.height.toString
+          Log.info(s"start training som for $f")
+          try {
+            val minChange = Main.config.getDouble("algorithm.som.height.minChange")
+            val som = new Som(Array(1), f, Som.randomGrids(1,
+              Main.config.getInt("algorithm.som.height.gridWidth"),
+              Main.config.getInt("algorithm.som.height.gridHeight"),
+              Main.config.getDouble("algorithm.som.height.initMin"),
+              Main.config.getDouble("algorithm.som.height.initMax")
+            ))
+            var change = Double.MaxValue
+            while (change > minChange) {
+              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
+                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
+                change = som.addSample(Array(row.toString.toDouble))
+              })
+            }
+            Log.info(s"finished building som for $f, saving to database")
+            DatabaseHelper.saveSom(som)
+            Log.info(s"som for $f saved to database")
+          } catch {
+            case e: NoSuchElementException =>
+          }
         case AgeSomTrainingTask() =>
+          val f = Tables.Subject.Field.age.toString
+          Log.info(s"start training som for $f")
+          try {
+            val minChange = Main.config.getDouble("algorithm.som.age.minChange")
+            val som = new Som(Array(1), f, Som.randomGrids(1,
+              Main.config.getInt("algorithm.som.age.gridWidth"),
+              Main.config.getInt("algorithm.som.age.gridHeight"),
+              Main.config.getDouble("algorithm.som.age.initMin"),
+              Main.config.getDouble("algorithm.som.age.initMax")
+            ))
+            var change = Double.MaxValue
+            while (change > minChange) {
+              DatabaseHelper.run(r => r.table(Tables.Subject.name).getField(f))
+                .asInstanceOf[ju.List[AnyVal]].asScala.takeWhile(_ => change > minChange).foreach(row => {
+                change = som.addSample(Array(row.toString.toDouble))
+              })
+            }
+            Log.info(s"finished building som for $f, saving to database")
+            DatabaseHelper.saveSom(som)
+            Log.info(s"som for $f saved to database")
+          } catch {
+            case e: NoSuchElementException =>
+          }
         case ItemCountTask(imuIds, offset) =>
           val fs = Tables.RawData.Field
           try {
