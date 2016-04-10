@@ -1,6 +1,6 @@
 package hk.edu.polyu.datamining.pamap2.actor
 
-import java.{util => ju}
+import java.{util, util => ju}
 
 import akka.actor.ActorSystem
 import com.rethinkdb.RethinkDB.r
@@ -79,9 +79,10 @@ object MessageProtocol {
     val Label = "label"
   }
 
+  val TrainingDataCount = "trainingDataCount"
+
   case object ImuSomTrainingTask extends Enumeration {
     val Label = "label"
-    val TrainingDataCount = "trainingDataCount"
 
     type LabelType = Value
     val a16, a6, r, m, polar = Value
@@ -93,11 +94,9 @@ object MessageProtocol {
   }
 
   case class ImuSomTrainingTask(label: ImuSomTrainingTask.LabelType, trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
       .`with`(ImuSomTrainingTask.Label, label.toString)
-      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = ImuSomTrainingTask.fromMap(map)
 
@@ -106,16 +105,12 @@ object MessageProtocol {
   }
 
   case object TemperatureSomTrainingTask {
-    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
-
     def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
   }
 
   case class TemperatureSomTrainingTask(trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(TemperatureSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = TemperatureSomTrainingTask.fromMap(map)
 
@@ -124,21 +119,56 @@ object MessageProtocol {
   }
 
   case object HeartRateSomTrainingTask {
-    val TrainingDataCount = ImuSomTrainingTask.TrainingDataCount
-
     def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask(map.get(TrainingDataCount).asInstanceOf)
   }
 
   case class HeartRateSomTrainingTask(trainingDataCount: Long) extends SomTask {
-    override val actionState: ActionStatusType = ActionStatus.somProcess
-
     override def toMap: MapObject = r.hashMap(Task.Param, param)
-      .`with`(ImuSomTrainingTask.TrainingDataCount, trainingDataCount)
+      .`with`(TrainingDataCount, trainingDataCount)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = HeartRateSomTrainingTask.fromMap(map)
 
     override val param: MapObject = r.hashMap()
       .`with`(Label, HeartRateSomTrainingTask.getClass.toString)
+  }
+
+  case object WeightSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = WeightSomTrainingTask()
+  }
+
+  case class WeightSomTrainingTask() extends SomTask {
+    override def fromMap(map: util.Map[String, AnyRef]): Task = WeightSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, WeightSomTrainingTask.getClass.toString)
+  }
+
+  case object HeightSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = HeightSomTrainingTask()
+  }
+
+  case class HeightSomTrainingTask() extends SomTask {
+    override def fromMap(map: util.Map[String, AnyRef]): Task = HeightSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, HeightSomTrainingTask.getClass.toString)
+  }
+
+  case object AgeSomTrainingTask {
+    def fromMap(map: ju.Map[String, AnyRef]) = AgeSomTrainingTask()
+  }
+
+  case class AgeSomTrainingTask() extends SomTask {
+    override def fromMap(map: util.Map[String, AnyRef]): Task = AgeSomTrainingTask.fromMap(map)
+
+    override def toMap: MapObject = r.hashMap(Task.Param, param)
+
+    override val param: MapObject = r.hashMap()
+      .`with`(Label, AgeSomTrainingTask.getClass.toString)
   }
 
   object ItemCountTask {

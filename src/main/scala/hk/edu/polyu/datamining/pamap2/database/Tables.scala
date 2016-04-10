@@ -144,8 +144,21 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      /* array[String] */
+      /* array[label:String] */
       val itemset = Value
+      val count = Value
+    }
+
+  }
+
+  object SequenceItemSetCount extends Table {
+    override val name: String = "sequence_itemset_count"
+    override val fields: Iterable[String] = _
+
+    object Field extends Enumeration {
+      type Field = Value
+      /* array[itemsetId:String] */
+      val sequence = Value
       val count = Value
     }
 

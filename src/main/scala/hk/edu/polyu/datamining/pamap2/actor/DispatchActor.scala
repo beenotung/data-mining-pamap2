@@ -77,7 +77,7 @@ class DispatchActor extends CommonActor {
           /* step 2. */
           Log.info(s"start som process (count:$count)")
           DatabaseHelper.setActionStatus(ActionStatus.somProcess)
-          findAndDispatchNewTasks(ActionStatus.somProcess, Map(ImuSomTrainingTask.TrainingDataCount -> count))
+          findAndDispatchNewTasks(ActionStatus.somProcess, Map(MessageProtocol.TrainingDataCount -> count))
           /* step 3,4,5 (in TaskCompleted) */
         })
       })
@@ -170,13 +170,13 @@ class DispatchActor extends CommonActor {
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     actionState match {
       case ActionStatus.somProcess =>
-        val fs = Tables.RawData.Field
-        val trainingDataCount: Long = param.get(ImuSomTrainingTask.TrainingDataCount).asInstanceOf
-        val taskBuffer = mutable.Buffer.empty[Task]
-        val bodyParts = Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString)
-        bodyParts.flatMap(bodyPart => ImuSomTrainingTask.values.map(label => new ImuSomTrainingTask(label, trainingDataCount)))
-          .+:(new HeartRateSomTrainingTask(trainingDataCount))
+        val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).asInstanceOf
+        ImuSomTrainingTask.values.toStream.map(label => new ImuSomTrainingTask(label, trainingDataCount))
           .+:(new TemperatureSomTrainingTask(trainingDataCount))
+          .+:(new HeartRateSomTrainingTask(trainingDataCount))
+          .+:(new WeightSomTrainingTask)
+          .+:(new HeightSomTrainingTask)
+          .+:(new AgeSomTrainingTask)
       case ActionStatus.itemCount =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)

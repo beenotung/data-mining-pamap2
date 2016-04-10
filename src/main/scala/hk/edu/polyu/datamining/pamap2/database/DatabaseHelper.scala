@@ -12,7 +12,7 @@ import com.rethinkdb.RethinkDB
 import com.rethinkdb.ast.ReqlAst
 import com.rethinkdb.gen.ast.{Json, ReqlExpr}
 import com.rethinkdb.gen.exc.ReqlDriverError
-import com.rethinkdb.model.OptArgs
+import com.rethinkdb.model.{MapObject, OptArgs}
 import com.rethinkdb.net.{Connection, Cursor}
 import com.typesafe.config.ConfigFactory
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus
@@ -469,4 +469,9 @@ object DatabaseHelper {
         None
     }
   }
+
+  def loadSubject(subjectId: String) =
+    run(r => r.table(Tables.Subject.name)
+      .filter(r.hashMap(Tables.Subject.Field.subject_id.toString, subjectId))
+    ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].get(0)
 }
