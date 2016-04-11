@@ -127,6 +127,7 @@ object DatabaseHelper {
 
   def tableInsertRow[A](table: String, row: A, softDurability: Boolean = false): ju.HashMap[String, AnyRef] = conn.synchronized {
     try {
+      assert(row != null, "row cannot be null")
       r.table(table).insert(row).run(conn, OptArgs.of(durability, if (softDurability) soft else hard))
     } catch {
       case e: ReqlDriverError =>
@@ -376,10 +377,28 @@ object DatabaseHelper {
     }
   })
 
-  def runToBuffer[A](fun: RethinkDB => ReqlAst): mutable.Buffer[A] = run[Object](fun) match {
-    case cursor: Cursor[A] => cursorToBuffer[A](cursor)
-    case xs: ju.List[A] => xs.asInstanceOf[ju.List[A]].asScala
-  }
+  def runToBuffer[A](fun: RethinkDB => ReqlAst, retry: Boolean = true): mutable.Buffer[A] = conn.synchronized({
+    assert(r != null)
+    assert(fun != null)
+    assert(conn != null)
+    def main(): mutable.Buffer[A] = {
+      fun(r).run[Object](conn) match {
+        case cursor: Cursor[A] => cursorToBuffer[A](cursor)
+        case xs: ju.List[A] => xs.asInstanceOf[ju.List[A]].asScala
+      }
+    }
+    try {
+      main()
+    } catch {
+      case e: ReqlDriverError =>
+        fork(runnable(() => {
+          throw e
+        }))
+        Log.error("try to reconnect database", e)
+        conn.reconnect()
+        main()
+    }
+  })
 
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)

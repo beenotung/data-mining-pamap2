@@ -38,6 +38,9 @@ class DispatchActor extends CommonActor {
     //    system.scheduler.schedule(initialDelay = Duration.Zero,
     //      interval = Duration(DispatchActor.ReportInterval, TimeUnit.MILLISECONDS),
     //      receiver = self, message = DispatcherHeartBeat)
+    import Tables.Task.{Field => fs}
+    DatabaseHelper.run(r => r.table(Tables.Task.name).filter())
+    //    DatabaseHelper.getTasksByWorkerId(workerId = )
   }
 
   override def postStop() = {
@@ -48,7 +51,13 @@ class DispatchActor extends CommonActor {
   override def receive: Receive = {
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
       sender() ! DispatcherHeartBeat
-    case RegisterWorker(clusterSeedId, workerId) => workers += ((sender(), new WorkerRecord(clusterSeedId, workerId, 0, 0)))
+    case RegisterWorker(clusterSeedId, workerId) =>
+      val numberOfPendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
+        .filter(r.hashMap(Tables.Task.Field.workerId.toString, workerId))
+        .filter(r.hashMap(Tables.Task.Field.pending.toString, true))
+        .count()
+      )
+      workers += ((sender(), new WorkerRecord(clusterSeedId, workerId, numberOfPendingTask, 0)))
       Log.info(s"register worker $workerId")
       cleanTasks()
     //TODO get worker record from database
@@ -169,6 +178,7 @@ class DispatchActor extends CommonActor {
   }
 
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
+    Log.debug(s"find new task (${actionState.toString})")
     actionState match {
       case ActionStatus.somProcess =>
         val existingSoms = DatabaseHelper.runToBuffer[String](r => r.table(Tables.SomImage.name).getField(Tables.SomImage.LabelPrefix)).toSet

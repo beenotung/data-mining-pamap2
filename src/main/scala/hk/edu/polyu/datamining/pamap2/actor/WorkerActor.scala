@@ -110,11 +110,14 @@ class WorkerActor extends CommonActor {
                   //row.getField(fs.hand.toString).getField(f)
                   //.add(row.getField(fs.ankle.toString).getField(f))
                   //.add(row.getField(fs.chest.toString).getField(f))
-                  row.getField(fs.chest.toString).getField(f)
+                  row.getField(fs.chest.toString)
+                    //.getField(f)
+                    .pluck(f)
                 )))
                 .takeWhile(_ => change > minChange)
-                .foreach(temp =>
+                .foreach(row =>
                   try {
+                    val temp: Object = row.asInstanceOf[ju.Map[String, AnyRef]].get(f)
                     change = som.addSample(Array(temp.toString.toDouble))
                   } catch {
                     case e: NullPointerException => // timestamp without temperature
