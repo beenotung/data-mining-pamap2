@@ -34,11 +34,12 @@ object Main extends App {
       DatabaseHelper.removeSeed(clusterSeedId)
       DatabaseHelper.leaveReplicas()
     })))
-    system.registerOnTermination({
-      /* notify UI, will shutdown JVM */
-      MonitorController.onActorSystemTerminated()
-      //shutdown jvm now?
-    })
+    if (cluster.selfRoles.contains("ui"))
+      system.registerOnTermination({
+        /* notify UI, will shutdown JVM */
+        MonitorController.onActorSystemTerminated()
+        //shutdown jvm now?
+      })
 
     // Register a monitor actor for demo purposes
     //MonitorActor.subName(clusterSeedId)

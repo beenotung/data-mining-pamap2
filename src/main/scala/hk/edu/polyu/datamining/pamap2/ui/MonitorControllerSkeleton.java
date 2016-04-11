@@ -11,6 +11,7 @@ import java.util.ResourceBundle;
  * Created by beenotung on 1/30/16.
  */
 public class MonitorControllerSkeleton {
+
   @FXML // ResourceBundle that was given to the FXMLLoader
   protected ResourceBundle resources;
 
@@ -32,11 +33,17 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="btn_nodes"
   protected Button btn_nodes; // Value injected by FXMLLoader
 
+  @FXML // fx:id="auto_update"
+  protected CheckBox auto_update; // Value injected by FXMLLoader
+
   @FXML // fx:id="import_file_progress"
   protected ProgressBar import_file_progress; // Value injected by FXMLLoader
 
   @FXML // fx:id="file_progress_text"
   protected Label file_progress_text; // Value injected by FXMLLoader
+
+  @FXML // fx:id="import_sample_rate"
+  protected TextField import_sample_rate; // Value injected by FXMLLoader
 
   @FXML // fx:id="training_data_count"
   protected Label training_data_count; // Value injected by FXMLLoader
@@ -56,20 +63,14 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="min_support_end"
   protected TextField min_support_end; // Value injected by FXMLLoader
 
-  @FXML // fx:id="percentage_training_data"
-  protected TextField percentage_training_data; // Value injected by FXMLLoader
-
   @FXML // fx:id="min_support_step"
   protected TextField min_support_step; // Value injected by FXMLLoader
 
-  @FXML
-  protected TextField import_sample_rate;
+  @FXML // fx:id="percentage_training_data"
+  protected TextField percentage_training_data; // Value injected by FXMLLoader
 
   @FXML // fx:id="left_status"
   protected Label left_status; // Value injected by FXMLLoader
-
-  @FXML // fx:id="auto_update"
-  protected CheckBox auto_update; // Value injected by FXMLLoader
 
   @FXML // fx:id="cluster_status"
   protected Button cluster_status; // Value injected by FXMLLoader
@@ -81,6 +82,11 @@ public class MonitorControllerSkeleton {
 
   @FXML
   void auto_update_onChanged(ActionEvent event) {
+
+  }
+
+  @FXML
+  void reset_cluster_db(ActionEvent event) {
 
   }
 
@@ -120,11 +126,6 @@ public class MonitorControllerSkeleton {
   }
 
   @FXML
-  void reset_cluster_db(ActionEvent event) {
-
-  }
-
-  @FXML
   void update_dataset_count(ActionEvent event) {
 
   }
@@ -137,22 +138,23 @@ public class MonitorControllerSkeleton {
     assert text_number_of_completed_task != null : "fx:id=\"text_number_of_completed_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_cluster_memory != null : "fx:id=\"text_cluster_memory\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert auto_update != null : "fx:id=\"auto_update\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert file_progress_text != null : "fx:id=\"file_progress_text\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert import_sample_rate != null : "fx:id=\"import_sample_rate\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert training_data_count != null : "fx:id=\"training_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert testing_data_count != null : "fx:id=\"testing_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert subject_count != null : "fx:id=\"subject_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert refresh_dataset_count_progress != null : "fx:id=\"refresh_dataset_count_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_start != null : "fx:id=\"min_support_start\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_end != null : "fx:id=\"min_support_end\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert percentage_training_data != null : "fx:id=\"percentage_training_data\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert min_support_step != null : "fx:id=\"min_support_step\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert percentage_training_data != null : "fx:id=\"percentage_training_data\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert left_status != null : "fx:id=\"left_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert auto_update != null : "fx:id=\"auto_update\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert cluster_status != null : "fx:id=\"cluster_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert import_sample_rate != null : "fx:id=\"import_sample_rate\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     customInit();
   }
+
 
   protected void customInit() {
     System.out.println("customInit is not implemented");

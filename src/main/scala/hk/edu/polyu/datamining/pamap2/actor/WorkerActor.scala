@@ -102,7 +102,7 @@ class WorkerActor extends CommonActor {
             ))
             var change = Double.MaxValue
             while (change > minChange) {
-              DatabaseHelper.runToBuffer[Double](r => r.table(Tables.RawData.name)
+              DatabaseHelper.runToBuffer[AnyRef](r => r.table(Tables.RawData.name)
                 .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
                 .getField(fs.timeSequence.toString)
                 .concatMap(reqlFunction1(row =>
@@ -113,7 +113,11 @@ class WorkerActor extends CommonActor {
                 )))
                 .takeWhile(_ => change > minChange)
                 .foreach(temp =>
-                  change = som.addSample(Array(temp))
+                  try {
+                    change = som.addSample(Array(temp.toString.toDouble))
+                  } catch {
+                    case e: NullPointerException => // timestamp without temperature
+                  }
                 )
             }
             Log.info(s"finished building som for $f, saving to database")
@@ -136,13 +140,13 @@ class WorkerActor extends CommonActor {
             ))
             var change = Double.MaxValue
             while (change > minChange) {
-              DatabaseHelper.runToBuffer[Double](r => r.table(Tables.RawData.name)
+              DatabaseHelper.runToBuffer[AnyVal](r => r.table(Tables.RawData.name)
                 .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
                 .getField(fs.timeSequence.toString)
                 .concatMap(reqlFunction1(row => row.getField(f)))
               ).takeWhile(_ => change > minChange)
                 .foreach(temp =>
-                  change = som.addSample(Array(temp))
+                  change = som.addSample(Array(temp.toString.toDouble))
                 )
             }
             Log.info(s"finished building som for $f, saving to database")

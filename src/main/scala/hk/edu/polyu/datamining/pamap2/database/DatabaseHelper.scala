@@ -328,9 +328,9 @@ object DatabaseHelper {
       .`with`(field.clusterId.toString, clusterId)
       .`with`(field.createTime.toString, OffsetDateTime.now())
       .`with`(field.pending.toString, pending)
-    run[ju.List[String]](r => r.table(Tables.Task.name).insert(row)
-      .getField(generated_keys))
-      .get(0)
+    val taskId: String = run(r => r.table(Tables.Task.name).insert(row).getField(generated_keys).nth(0))
+    Log.debug(s"new task saved to database, taskid: $taskId")
+    taskId
   }
 
   def reassignTask(taskId: String, clusterId: String, workerId: String) = {
@@ -353,7 +353,7 @@ object DatabaseHelper {
   }
 
   def finishTask(taskId: String): ju.HashMap[String, AnyRef] = {
-    assert(taskId != null)
+    assert(taskId != null, s"Error : taskid is null!")
     run(r => r.table(Tables.Task.name).get(taskId).update(reqlFunction1(row =>
       r.hashMap(Tables.Task.Field.completeTime.toString, OffsetDateTime.now())
     )))
@@ -376,7 +376,10 @@ object DatabaseHelper {
     }
   })
 
-  def runToBuffer[A](fun: RethinkDB => ReqlAst): mutable.Buffer[A] = cursorToBuffer(run(fun))
+  def runToBuffer[A](fun: RethinkDB => ReqlAst): mutable.Buffer[A] = run[Object](fun) match {
+    case cursor: Cursor[A] => cursorToBuffer[A](cursor)
+    case xs: ju.List[A] => xs.asInstanceOf[ju.List[A]].asScala
+  }
 
   /* for java */
   def run_[A](fun: Lang_.ProducerConsumer[RethinkDB, ReqlAst]): A = fun.apply(r).run(conn)
@@ -446,8 +449,8 @@ object DatabaseHelper {
     val x = label + "x"
     val y = label + "y"
     val z = label + "z"
-    run[ju.List[ju.Map[String, Double]]](r => r.table(Tables.RawData.name)
-      .filter(r.hashMap(trainTestFlag, true))
+    runToBuffer[ju.Map[String, Double]](r => r.table(Tables.RawData.name)
+      .filter(trainTestFlag, true)
       .getField(fs.timeSequence.toString)
       .concatMap(reqlFunction1(row =>
         row.getField(fs.hand.toString).withFields(x, y, z)
@@ -455,7 +458,7 @@ object DatabaseHelper {
           .add(row.getField(fs.chest.toString).withFields(x, y, z))
       ))
       .sample(count)
-    ).iterator().asScala.toStream
+    )
   }
 
 
@@ -490,6 +493,9 @@ object DatabaseHelper {
       cursor.iterator().asScala.foreach(x => buffer += x)
     } catch {
       case e: NoSuchElementException =>
+      case e: NullPointerException =>
+        Log.error(s"Error : cursorToBuffer $buffer")
+        throw e
     }
     buffer
   }
