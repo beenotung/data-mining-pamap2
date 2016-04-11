@@ -10,7 +10,11 @@ import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 object ActionStatus extends Enumeration {
   type ActionStatusType = Value
   val name = "ActionStatus"
-  val reset, init, importing, imported, sampling, somProcess, itemExtract, itemCount, learning, testing, finished = Value
+  val reset, init, importing, imported, sampling, somProcess = Value
+  val itemExtract, itemReduce=Value
+  val itemSetGeneration, itemSetReduction = Value
+  val sequenceGeneration, sequenceReduction = Value
+  val learning, testing, finished = Value
 
   def next(actionStatusType: ActionStatusType@NotNull): ActionStatusType = actionStatusType match {
     case `init` => importing
@@ -18,8 +22,12 @@ object ActionStatus extends Enumeration {
     case `imported` => sampling
     case `sampling` => somProcess
     case `somProcess` => itemExtract
-    case `itemExtract` => itemCount
-    case `itemCount` => learning
+    case `itemExtract` => itemReduce
+    case `itemReduce` => itemSetGeneration
+    case `itemSetGeneration` => itemSetReduction
+    case `itemSetReduction` => sequenceGeneration
+    case `sequenceGeneration` => sequenceReduction
+    case `sequenceReduction` => learning
     case `learning` => testing
     case `testing` => finished
     case `finished` => finished

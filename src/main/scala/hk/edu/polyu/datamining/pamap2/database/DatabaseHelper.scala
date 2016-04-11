@@ -558,5 +558,9 @@ object DatabaseHelper {
     defaultValue = 1L
   )
 
-  def setArmLNum(num: Long) = DatabaseHelper.setValue()
+  def setArmLNum(num: Long) = DatabaseHelper.setValue(
+    tablename = Tables.Status.name,
+    idValue = Tables.Status.Field.armLNum.toString,
+    newVal = num
+  )
 }

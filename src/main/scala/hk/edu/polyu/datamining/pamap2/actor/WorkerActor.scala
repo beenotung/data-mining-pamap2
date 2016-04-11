@@ -217,70 +217,76 @@ class WorkerActor extends CommonActor {
           }
         case ItemExtractTask(imuIds, offset) =>
           val fs = Tables.RawData.Field
-          try {
-            DatabaseHelper.run(r => r.table(Tables.RawData.name)
-              .filter(fs.isTrain.toString, true)
-              .skip(offset)
-              .limit(1)
-            ).asInstanceOf[ju.List[MapObject]]
-              .forEach(consumer(activity => {
-                val item = RethinkDB.r.hashMap(Tables.ItemsetCount.Field.count.toString, -1)
-                val commonLabels = mutable.Buffer.empty[String]
 
-                /* reload som if not valid */
-                if (lastIMUIds != imuIds) {
-                  lastIMUIds = imuIds
-                  DatabaseHelper.run(r => r.table(Tables.SomImage.name)).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
-                    .forEach(consumer(row => {
-                      val som = Som.fromMap(row).get
-                      val label = row.get(Tables.SomImage.LabelPrefix).toString
-                      somMap.update(label, som)
-                    }))
-                }
-
-                /* get subject data if not exist */
-                val subjectId: String = activity.get(fs.subject.toString).asInstanceOf
-                if (subjectMap.get(subjectId).isEmpty)
-                  subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
-                val subject = subjectMap.get(subjectId).get
-                val subject_f = Tables.Subject.Field
-                val weight_f = subject_f.weight.toString
-                val height_f = subject_f.height.toString
-                val age_f = subject_f.age.toString
-                commonLabels += somMap.get(weight_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
-                commonLabels += somMap.get(height_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
-                commonLabels += somMap.get(age_f).get.getLabel(Array(subject.get(subject_f).toString.toDouble))._1
-
-                val heartRate = activity.get(fs.heartRate.toString).toString.toDouble
-                commonLabels += somMap.get(fs.heartRate.toString).get.getLabel(Array(heartRate))._1
-                /* replace data by som label */
-                val timeSequenceLabels = activity.get(fs.timeSequence.toString).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].asScala.map(row => {
-                  val temperature = row.get(fs.chest).asInstanceOf[ju.Map[String, AnyRef]].get(temperature_f).toString.toDouble
-                  val bodyParts = Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString)
-                  val labels = mutable.Buffer.empty[String]
-                  bodyParts.flatMap(bodyPart => ImuSomTrainingTask.values.map(_.toString).map(label => {
-                    val x = label + "x"
-                    val y = label + "y"
-                    val z = label + "z"
-                    val imupart = row.get(bodyPart).asInstanceOf[ju.Map[String, AnyVal]]
-                    val vector = Array(
-                      imupart.get(x).toString.toDouble,
-                      imupart.get(y).toString.toDouble,
-                      imupart.get(z).toString.toDouble
-                    )
-                    labels += somMap.get(label).get.getLabel(vector)._1
-                  }))
-                  labels += somMap.get(temperature_f).get.getLabel(Array(temperature))._1
-                  labels.asJava
-                }).asJava
-                val fs2 = Tables.ItemsetCount.Field
-                item.`with`(fs2.timeSequence.toString, timeSequenceLabels)
-                  .`with`(fs2.common.toString, commonLabels.asJava)
-                DatabaseHelper.tableInsertRow(Tables.ItemsetCount.name, item)
+          /* reload som if not valid */
+          if (lastIMUIds != imuIds) {
+            lastIMUIds = imuIds
+            DatabaseHelper.run(r => r.table(Tables.SomImage.name)).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
+              .forEach(consumer(row => {
+                val som = Som.fromMap(row).get
+                val label = row.get(Tables.SomImage.LabelPrefix).toString
+                somMap.update(label, som)
               }))
-          } catch {
-            case e: NoSuchElementException =>
           }
+
+          DatabaseHelper.runToBuffer[ju.Map[String, AnyRef]](_.table(Tables.RawData.name)
+            .filter(fs.isTrain.toString, true)
+            .skip(offset)
+            .limit(1)
+          ).foreach(activity => {
+            val id = activity.get(DatabaseHelper.id).toString
+            val activityId = activity.get(fs.activityId.toString).toString
+            val labels = mutable.Set.empty[String]
+
+            /* get subject data if not exist */
+            val subjectId: String = activity.get(fs.subject.toString).toString
+            if (subjectMap.get(subjectId).isEmpty)
+              subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
+            val subject = subjectMap.get(subjectId).get
+            val subject_f = Tables.Subject.Field
+            val weight_f = subject_f.weight.toString
+            val height_f = subject_f.height.toString
+            val age_f = subject_f.age.toString
+            labels += somMap.get(weight_f).get.getLabel(Array(subject.get(weight_f).toString.toDouble))._1
+            labels += somMap.get(height_f).get.getLabel(Array(subject.get(height_f).toString.toDouble))._1
+            labels += somMap.get(age_f).get.getLabel(Array(subject.get(age_f).toString.toDouble))._1
+
+            val heartRate = activity.get(fs.heartRate.toString).toString.toDouble
+            labels += somMap.get(fs.heartRate.toString).get.getLabel(Array(heartRate))._1
+
+            val timeSequenceLabels: Seq[Seq[String]] = activity.get(fs.timeSequence.toString).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].asScala.map(row => {
+              val labels = mutable.Buffer.empty[String]
+
+              val temperature = row.get(fs.chest.toString).asInstanceOf[ju.Map[String, AnyRef]].get(temperature_f).toString.toDouble
+              labels += somMap.get(temperature_f).get.getLabel(Array(temperature))._1
+
+              labels ++= Seq(fs.hand.toString, fs.ankle.toString, fs.chest.toString).flatMap(bodyPart => ImuSomTrainingTask.values.map(_.toString).map(label => {
+                val x = label + "x"
+                val y = label + "y"
+                val z = label + "z"
+                val imupart = row.get(bodyPart).asInstanceOf[ju.Map[String, AnyVal]]
+                val vector = Array(
+                  imupart.get(x).toString.toDouble,
+                  imupart.get(y).toString.toDouble,
+                  imupart.get(z).toString.toDouble
+                )
+                somMap.get(label).get.getLabel(vector)._1
+              }))
+
+              labels
+            })
+
+            labels ++= timeSequenceLabels.flatten
+            val itemset: ju.List[String] = new ju.ArrayList[String]()
+            labels.foreach(itemset.add)
+
+            DatabaseHelper.tableInsertRow(Tables.ItemsetCount.name, RethinkDB.r.hashMap()
+              .`with`(fs.activityId.toString, activityId)
+              .`with`(DatabaseHelper.id, id)
+              .`with`(Tables.ItemsetCount.Field.count.toString, -1)
+              .`with`(Tables.ItemsetCount.Field.itemset.toString, itemset)
+            )
+          })
         //TODO working here
         //TODO add other task type
         case msg => showError(s"unsupported message: $msg")

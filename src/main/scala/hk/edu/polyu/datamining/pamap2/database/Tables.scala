@@ -147,9 +147,7 @@ object Tables {
     object Field extends Enumeration {
       type Field = Value
       /* array[label:String] */
-      val common = Value
-      /* array[array[label:String] */
-      val timeSequence = Value
+      val itemset = Value
       val count = Value
     }
 
