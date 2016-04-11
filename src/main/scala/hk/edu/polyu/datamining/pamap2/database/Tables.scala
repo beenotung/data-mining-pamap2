@@ -37,7 +37,9 @@ object Tables {
 
     object Field extends Enumeration {
       type Field = Value
-      val actionStatus, pendingIds, dispatchedIds = Value
+      val actionStatus = Value
+      val armLNum = Value
+      //val pendingIds, dispatchedIds = Value
     }
 
   }

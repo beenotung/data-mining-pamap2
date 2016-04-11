@@ -190,6 +190,9 @@ object DatabaseHelper {
     actionStatus
   }
 
+  def getValueResult[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, defaultValue: A) =
+    run[A](_ => getValue(dbname, tablename, idValue, fieldname, defaultValue))
+
   def getValue[A](dbname: String = dbname, tablename: String, idValue: String, fieldname: String = value, defaultValue: A): ReqlAst =
     r.branch(
       // db exist
@@ -548,4 +551,12 @@ object DatabaseHelper {
       }
     }
   }
+
+  def getArmLNum: Long = DatabaseHelper.getValueResult(
+    tablename = Tables.Status.name,
+    idValue = Tables.Status.Field.armLNum.toString,
+    defaultValue = 1L
+  )
+
+  def setArmLNum(num: Long) = DatabaseHelper.setValue()
 }

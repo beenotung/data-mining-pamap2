@@ -4,6 +4,7 @@ import java.util.concurrent.{Callable, FutureTask, TimeUnit}
 import java.{util => ju}
 
 import akka.actor.ActorRef
+import akka.remote.EndpointWriter.AckIdleCheckTimer
 import com.rethinkdb.net.Cursor
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
@@ -106,6 +107,25 @@ class DispatchActor extends CommonActor {
       )
       if (currentTypePendingTask == 0) currentActionType match {
         case ActionStatus.finished => Log.info("all task finished?")
+        case ActionStatus.somProcess =>
+          Log.info("finished som training")
+          DatabaseHelper.setArmLNum(1)
+          findAndDispatchNewTasks(ActionStatus.itemExtract)
+        case ActionStatus.itemExtract =>
+          val l = DatabaseHelper.getArmLNum
+          Log.info(s"finished item extract on L$l")
+          // TODO map phrase and reduce phrase
+          findAndDispatchNewTasks(ActionStatus.itemCount)
+        case ActionStatus.itemCount =>
+          //TODO detect to stop
+          val l = DatabaseHelper.getArmLNum
+          Log.info(s"finished item count on L$l")
+          if (true) {
+            DatabaseHelper.setArmLNum(l + 1)
+            findAndDispatchNewTasks(ActionStatus.itemExtract)
+          } else {
+            findAndDispatchNewTasks(ActionStatus.learning)
+          }
         case status: ActionStatus.ActionStatusType =>
           /* start arm : 3. fire item extract */
           findAndDispatchNewTasks(ActionStatus.next(status))
