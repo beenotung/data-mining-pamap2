@@ -151,13 +151,8 @@ object DatabaseHelper {
   def tableUpdate(tableName: String, idValue: String, value: com.rethinkdb.model.MapObject): ju.HashMap[String, AnyRef] =
     run(_.table(tableName).get(idValue).update(value))
 
-  def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] = {
-    val tableName = Tables.ClusterSeed.name
-    r.table(tableName)
-      .get(id)
-      .delete()
-      .run(conn)
-  }
+  def removeSeed(id: String = clusterSeedId): ju.HashMap[String, AnyVal] =
+    run(_.table(Tables.ClusterSeed.name).get(id).delete())
 
   /**
     * REMOVE then create database
@@ -344,11 +339,11 @@ object DatabaseHelper {
     ))
   }
 
-  def getTasksByWorkerId(workerId: String): Seq[Task] = {
+  def getActiveTasksByWorkerId(workerId: String): Seq[Task] = {
     val fs = Tables.Task.Field
     runToBuffer[ju.Map[String, AnyRef]](r => r.table(Tables.Task.name)
+      .without(fs.completeTime.toString)
       .filter(r.hashMap(fs.workerId.toString, workerId)
-        .`with`(fs.completeTime.toString, null)
       )
     ).map(toTask)
   }
@@ -382,10 +377,19 @@ object DatabaseHelper {
     assert(fun != null)
     assert(conn != null)
     def main(): mutable.Buffer[A] = {
-      fun(r).run[Object](conn) match {
-        case cursor: Cursor[A] => cursorToBuffer[A](cursor)
-        case xs: ju.List[A] => xs.asInstanceOf[ju.List[A]].asScala
+      val buffer = fun(r).run[Object](conn) match {
+        case cursor: Cursor[A] =>
+          Log.debug(s"buliding buffer from cursor $cursor")
+          cursorToBuffer[A](cursor)
+        case xs: ju.List[A] =>
+          Log.debug(s"building buffer from list $xs")
+          xs.asInstanceOf[ju.List[Object]].asScala.filter(x => {
+            Log.debug("check type of $x")
+            x.isInstanceOf[A]
+          }).map(_.asInstanceOf[A])
       }
+      Log.debug(s"built buffer of length ${buffer.length}")
+      buffer
     }
     try {
       main()
@@ -506,10 +510,10 @@ object DatabaseHelper {
       .filter(r.hashMap(Tables.Subject.Field.subject_id.toString, subjectId))
     ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].get(0)
 
-  implicit def cursorToBuffer[A](implicit cursor: Cursor[A]) = {
+  implicit def cursorToBuffer[A](implicit cursor: Cursor[A], skipNull: Boolean = true) = {
     val buffer = mutable.Buffer.empty[A]
     try {
-      cursor.iterator().asScala.foreach(x => buffer += x)
+      cursor.iterator().asScala.foreach(x => if (x != null || skipNull) buffer += x)
     } catch {
       case e: NoSuchElementException =>
       case e: NullPointerException =>

@@ -93,6 +93,10 @@ class DispatchActor extends CommonActor {
     case fun: Lang_.Function => fun.apply()
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) =>
+      workers.get(sender()) match {
+        case Some(worker) => worker.completedTask += 1
+        case None =>
+      }
       val fs = Tables.Task.Field
       val currentActionType = DatabaseHelper.getActionStatus
       val currentTypePendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
@@ -101,10 +105,10 @@ class DispatchActor extends CommonActor {
         .count()
       )
       if (currentTypePendingTask == 0) currentActionType match {
+        case ActionStatus.finished => Log.info("all task finished?")
         case status: ActionStatus.ActionStatusType =>
           /* start arm : 3. fire item extract */
           findAndDispatchNewTasks(ActionStatus.next(status))
-        case ActionStatus.finished => Log.info("all task finished?")
       } else
         cleanTasks()
   }
@@ -118,7 +122,7 @@ class DispatchActor extends CommonActor {
   }
 
   def unregisterWorkers(workerIds: IndexedSeq[String]) = {
-    val tasks: Seq[Task] = workerIds.flatMap(workerId => DatabaseHelper.getTasksByWorkerId(workerId))
+    val tasks: Seq[Task] = workerIds.flatMap(workerId => DatabaseHelper.getActiveTasksByWorkerId(workerId))
     workers.retain((ref, record) => !workerIds.contains(record.workerId))
     handleTask(tasks)
   }
@@ -179,7 +183,7 @@ class DispatchActor extends CommonActor {
 
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {
     Log.debug(s"find new task (${actionState.toString})")
-    actionState match {
+    val xs = actionState match {
       case ActionStatus.somProcess =>
         val existingSoms = DatabaseHelper.runToBuffer[String](r => r.table(Tables.SomImage.name).getField(Tables.SomImage.LabelPrefix)).toSet
         val trainingDataCount: Long = param.get(MessageProtocol.TrainingDataCount).get.asInstanceOf[Long]
@@ -209,6 +213,8 @@ class DispatchActor extends CommonActor {
       case _ => log warning s"findTask on $actionState is not implemented"
         Seq.empty
     }
+    Log.debug(s"number of task found:${xs.length}")
+    xs
   }
 
   def getPendingTasks(limit: Long = -1): Seq[Task] = {

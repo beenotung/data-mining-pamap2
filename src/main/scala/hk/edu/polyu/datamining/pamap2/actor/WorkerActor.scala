@@ -60,7 +60,7 @@ class WorkerActor extends CommonActor {
       val temperature_f: String = Tables.IMU.Field.temperature.toString
       task match {
         case ImuSomTrainingTask(label, trainingDataCount) =>
-          Log.info(s"start training som for $label")
+          Log.info(s"start training som for IMU part : $label")
           val minChange = Main.config.getDouble("algorithm.som.imuPart.minChange")
           try {
             val som = new Som(Array(1), label.toString, Som.randomGrids(3,
@@ -74,14 +74,16 @@ class WorkerActor extends CommonActor {
             val y = label + "y"
             val z = label + "z"
             while (change > minChange) {
-              DatabaseHelper.getIMUPart(label, DatabaseHelper.BestInsertCount, Tables.RawData.Field.isTrain.toString)
-                .takeWhile(_ => change > minChange)
+              val xs = DatabaseHelper.getIMUPart(label, DatabaseHelper.BestInsertCount, Tables.RawData.Field.isTrain.toString)
+              assert(xs != null, s"no sample for som IMU $label!")
+              xs.takeWhile(_ => change > minChange)
                 .foreach(map =>
                   change = som.addSample(Array(
                     map.get(x),
                     map.get(y),
                     map.get(z)
                   )))
+              Log.debug(s"som for IMU-$label t:${som.t}, change:$change")
             }
             Log.info(s"finished building som for $label, saving to database")
             DatabaseHelper.saveSom(som)

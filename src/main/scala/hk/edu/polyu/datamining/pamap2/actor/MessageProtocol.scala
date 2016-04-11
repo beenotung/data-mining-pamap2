@@ -89,7 +89,8 @@ object MessageProtocol {
 
   case object ImuSomTrainingTask extends Enumeration {
     type LabelType = Value
-    val a16, a6, r, m, polar = Value
+    val a16, a6, r, m = Value
+    //val polar = Value
 
     def fromMap(map: ju.Map[String, AnyRef]): ImuSomTrainingTask = new ImuSomTrainingTask(
       label = withName(map.get(Label).asInstanceOf[String]),
