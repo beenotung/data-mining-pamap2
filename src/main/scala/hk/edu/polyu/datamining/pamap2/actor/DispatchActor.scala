@@ -153,7 +153,7 @@ class DispatchActor extends CommonActor {
           record.pendingTask += 1
           Log.debug(s"sent task $task to $actorRef")
           assert(task.id != null, "task id should not be null")
-          actorRef ! task
+          actorRef ! TaskAssign(task.id, task)
         } else {
           pendingTasks += task
         }

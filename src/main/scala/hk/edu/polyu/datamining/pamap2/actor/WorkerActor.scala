@@ -54,7 +54,8 @@ class WorkerActor extends CommonActor {
   val subjectMap = mutable.Map.empty[String, ju.Map[String, AnyRef]]
 
   override def receive: Receive = {
-    case task: Task =>
+    case TaskAssign(taskId, task) =>
+      task.id = taskId
       log.info(s"received task id: ${task.id}, $task")
       val temperature_f: String = Tables.IMU.Field.temperature.toString
       task match {

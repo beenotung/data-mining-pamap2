@@ -30,6 +30,7 @@ object MessageProtocol {
 
   sealed trait Task extends Comparable[Task] {
     val actionState: ActionStatus.ActionStatusType
+    /** id : volatile **/
     var id: String = null
     val param: MapObject = r.hashMap()
 
@@ -53,6 +54,8 @@ object MessageProtocol {
   case class UnRegisterWorker(clusterSeedId: String) extends DispatchActorProtocol
 
   case class UnRegisterComputeNode(clusterSeedId: String) extends DispatchActorProtocol
+
+  case class TaskAssign(taskId: String, task: Task)
 
   case class TaskCompleted(taskId: String)
 
