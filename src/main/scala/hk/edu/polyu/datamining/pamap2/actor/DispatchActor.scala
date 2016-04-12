@@ -38,8 +38,8 @@ class DispatchActor extends CommonActor {
     //    system.scheduler.schedule(initialDelay = Duration.Zero,
     //      interval = Duration(DispatchActor.ReportInterval, TimeUnit.MILLISECONDS),
     //      receiver = self, message = DispatcherHeartBeat)
-    import Tables.Task.{Field => fs}
-    DatabaseHelper.run(r => r.table(Tables.Task.name).filter())
+    //    import Tables.Task.{Field => fs}
+    //    DatabaseHelper.run(r => r.table(Tables.Task.name).filter())
     //    DatabaseHelper.getTasksByWorkerId(workerId = )
   }
 
@@ -181,6 +181,7 @@ class DispatchActor extends CommonActor {
 
   def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty): Unit = {
     val tasks = findNewTasks(actionState, param)
+    DatabaseHelper.setActionStatus(actionState)
     if (tasks.isEmpty)
       onTaskTypeCompleted(actionState)
     else

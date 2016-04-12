@@ -82,8 +82,8 @@ object DatabaseHelper {
     }
     initTables(conn)
     conn.use(dbname)
-    if (!isUsingBackupHost)
-      maxReplicas(conn)
+    //    if (!isUsingBackupHost)
+    maxReplicas(conn)
     println(s"Database : connected to ${conn.hostname}")
     (conn, isUsingBackupHost)
   }
@@ -118,7 +118,7 @@ object DatabaseHelper {
   }
 
   /*    util functions    */
-  def numberOfServer(conn: Connection = conn): Long = r.db("rethinkdb").table("server_config").count().run(conn)
+  def numberOfServer(conn: Connection = conn): Long = conn.synchronized(r.db("rethinkdb").table("server_config").count().run(conn))
 
   def createTableDropIfExistResult(tableName: String) = {
     run(_.db(dbname).tableDrop(tableName)).asInstanceOf[ju.Map[String, AnyRef]]
@@ -181,11 +181,11 @@ object DatabaseHelper {
   }
 
   def getActionStatus: ActionStatusType = {
-    val value: Any = getValue(
+    val value: Any = getValueResult(
       tablename = Tables.Status.name,
       idValue = ActionStatus.name,
       defaultValue = ActionStatus.init.toString
-    ).run(conn)
+    )
     val actionStatus = ActionStatus.withName(value.toString)
     actionStatus
   }
@@ -596,5 +596,5 @@ object DatabaseHelper {
     run(_.table(table.name).get(id))
 
   def getTableRowMapObject(table: Table, offset: Long): ju.Map[String, AnyRef] =
-    run(_.table(table.name).limit(offset))
+    runToBuffer(_.table(table.name).skip(offset).limit(1)).get(0)
 }
