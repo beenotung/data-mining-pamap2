@@ -21,7 +21,7 @@ import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType
 import hk.edu.polyu.datamining.pamap2.actor.ImportActor.FileType.FileType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
-import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Task}
+import hk.edu.polyu.datamining.pamap2.database.Tables.{RawDataFile, Table, Task}
 import hk.edu.polyu.datamining.pamap2.som.Som
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import hk.edu.polyu.datamining.pamap2.utils.{Lang, Lang_, Log}
@@ -575,4 +575,14 @@ object DatabaseHelper {
     idValue = Tables.Status.Field.armLNum.toString,
     newVal = num
   )
+
+  def countTableItem(table: Table, filter: MapObject): Long =
+    countTableItem(table, Seq(filter))
+
+  def countTableItem(table: Table, filters: Seq[MapObject]): Long =
+    run[Long](r => {
+      var query: ReqlExpr = r.table(table.name)
+      filters.foreach(filter => query = query.filter(filter))
+      query.count()
+    })
 }

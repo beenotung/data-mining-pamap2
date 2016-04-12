@@ -4,6 +4,7 @@ import java.util.concurrent.{Callable, FutureTask, TimeUnit}
 import java.{util => ju}
 
 import akka.actor.ActorRef
+import com.rethinkdb.RethinkDB
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.actor.DispatchActor.MaxTask
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol._
@@ -110,22 +111,14 @@ class DispatchActor extends CommonActor {
           findAndDispatchNewTasks(ActionStatus.mapRawDataToItem)
         case ActionStatus.mapRawDataToItem =>
           Log.info(s"finished raw data to item mapping")
-          DatabaseHelper.setItemSetSize(1)
-          findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
-        case ActionStatus.itemSetGeneration =>
-          val size: Long = DatabaseHelper.getItemSetSize
-          Log.info(s"finished item set generation of size $size")
-          findAndDispatchNewTasks(ActionStatus.itemSetReduction)
-        case ActionStatus.itemSetReduction =>
-          val size = DatabaseHelper.getItemSetSize
-          Log info s"finished item set reduction of size $size"
-          if (true) {
-            DatabaseHelper.setItemSetSize(size + 1)
-            findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
-          } else {
-            DatabaseHelper.setArmLNum(1)
-            findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
-          }
+          findAndDispatchNewTasks(ActionStatus.firstSequenceGeneration)
+        case ActionStatus.firstSequenceGeneration =>
+          Log info "finished first sequence generation"
+          findAndDispatchNewTasks(ActionStatus.firstSequenceReduction)
+        case ActionStatus.firstSequenceReduction =>
+          Log info "finished first sequence reduction"
+          DatabaseHelper.setArmLNum(2)
+          findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
         case ActionStatus.sequenceGeneration =>
           val l = DatabaseHelper.getArmLNum
           Log.info(s"finished sequence generation on L$l")
@@ -136,7 +129,7 @@ class DispatchActor extends CommonActor {
           //TODO detect to stop
           if (true) {
             DatabaseHelper.setArmLNum(l + 1)
-            findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
+            findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
           } else {
             findAndDispatchNewTasks(ActionStatus.ruleGeneration)
           }
@@ -241,17 +234,10 @@ class DispatchActor extends CommonActor {
           new MapRawDataToItemTask(imuIds, offset),
           new MapRawDataToItemTask(imuIds, offset)
         ))
-      case ActionStatus.itemSetGeneration =>
-        val size = DatabaseHelper.getItemSetSize
-        if (size == 1L) {
-          val count: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
-            .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
-            .count()
-          )
-          (0L until count).map(offset => new ItemSetGenerationTask(offset))
-        } else {
-          ???
-        }
+      case ActionStatus.firstSequenceGeneration =>
+        val activityCount = DatabaseHelper.countTableItem(Tables.ActivityItemSetSequence, RethinkDB.r.hashMap())
+        (0L until activityCount).map(offset => new FirstSequenceGenerationTask(offset))
+      //      case ActionStatus.firstSequenceReduction =>
       //TODO add more task type
       case _ => log warning s"findTask on $actionState is not implemented"
         Seq.empty

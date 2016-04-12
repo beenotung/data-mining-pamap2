@@ -13,6 +13,7 @@ package SequentialAR;
  */
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Sequence {
 
@@ -236,7 +237,7 @@ public class Sequence {
   public static boolean equals2DArray(String[][] array1, String[][] array2, int length) {
     for (int i = 0; i < length; i++) {
       for (int j = 0; j < array1[i].length && array1[i].length == array2[i].length; j++) {
-        if (array1[i][j] != array2[i][j]) {
+        if (!Objects.equals(array1[i][j], array2[i][j])) {
           return false;
         }
       }

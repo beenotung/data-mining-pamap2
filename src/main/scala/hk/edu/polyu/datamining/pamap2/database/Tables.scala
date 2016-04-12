@@ -168,10 +168,10 @@ object Tables {
   object ActivityItemSetSequence extends Table {
     override val name: String = "activity_item_set_sequence"
     lazy val RawDataId = "raw_data_id"
-    lazy val ActivityId = "activity_id"
+    lazy val ActivityTypeId = "activity_type_id"
     /* Array[Array[String]] : Seq[Set[String]] */
     lazy val ItemSetSequence = "item_set_sequence"
-    override val fields: Iterable[String] = Seq(RawDataId, ActivityId, ItemSetSequence)
+    override val fields: Iterable[String] = Seq(RawDataId, ActivityTypeId, ItemSetSequence)
   }
 
   tableList += ItemSetTemp
@@ -183,11 +183,11 @@ object Tables {
   object ItemSetTemp extends Table {
     override val name: String = "itemset_temp"
 
-    lazy val ActivityItemSetSequenceId = "activity_item_set_sequence_id"
+    lazy val ActivityId = "activity_id"
     /* Array[String] : Set[String] */
     lazy val ItemSet = "item_set"
 
-    override val fields: Iterable[String] = Seq[String](ActivityItemSetSequenceId, ItemSet)
+    override val fields: Iterable[String] = Seq[String](ActivityId, ItemSet)
   }
 
   tableList += ItemSetCount

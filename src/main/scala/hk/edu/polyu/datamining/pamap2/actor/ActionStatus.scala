@@ -12,7 +12,9 @@ object ActionStatus extends Enumeration {
   val name = "ActionStatus"
   val reset, init, importing, imported, sampling, somProcess = Value
   val mapRawDataToItem = Value
-  val itemSetGeneration, itemSetReduction = Value
+  //  val itemSetGeneration, itemSetReduction = Value
+  val firstSequenceGeneration = Value
+  val firstSequenceReduction = Value
   val sequenceGeneration, sequenceReduction = Value
   val ruleGeneration, ruleReduction = Value
   val testing = Value
@@ -24,9 +26,12 @@ object ActionStatus extends Enumeration {
     case `imported` => sampling
     case `sampling` => somProcess
     case `somProcess` => mapRawDataToItem
-    case `mapRawDataToItem` => itemSetGeneration
-    case `itemSetGeneration` => itemSetReduction
-    case `itemSetReduction` => sequenceGeneration
+    //    case `mapRawDataToItem` => itemSetGeneration
+    //    case `itemSetGeneration` => itemSetReduction
+    //    case `itemSetReduction` => sequenceGeneration
+    case `mapRawDataToItem` => firstSequenceGeneration
+    case `firstSequenceGeneration` => firstSequenceReduction
+    case `firstSequenceReduction` => sequenceGeneration
     case `sequenceGeneration` => sequenceReduction
     case `sequenceReduction` => ruleGeneration
     case `ruleGeneration` => ruleReduction

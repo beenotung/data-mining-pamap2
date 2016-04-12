@@ -241,7 +241,7 @@ class WorkerActor extends CommonActor {
           ).foreach(activity => {
             import Tables.ActivityItemSetSequence
             val id = activity.get(DatabaseHelper.id).toString
-            val activityId = activity.get(fs.activityId.toString).toString
+            val activityTypeId = activity.get(fs.activityId.toString).toString
             val itemSetSequence: mutable.Buffer[Set[String]] = mutable.Buffer.empty
             val commonItemSet = mutable.Set.empty[String]
 
@@ -249,7 +249,7 @@ class WorkerActor extends CommonActor {
 
             /* 2.1 get comman labels */
             /* get subject data if not cached */
-            val subjectId = activityId.getBytes(fs.subject.toString).toString
+            val subjectId = activity.get(fs.subject.toString).toString
             if (subjectMap.get(subjectId).isEmpty)
               subjectMap.put(subjectId, DatabaseHelper.loadSubject(subjectId))
             val subject = subjectMap.get(subjectId).get
@@ -316,7 +316,7 @@ class WorkerActor extends CommonActor {
             import Tables.ActivityItemSetSequence
             val row = RethinkDB.r.hashMap()
               .`with`(ActivityItemSetSequence.RawDataId, id)
-              .`with`(ActivityItemSetSequence.ActivityId, activityId)
+              .`with`(ActivityItemSetSequence.ActivityTypeId, activityTypeId)
               .`with`(ActivityItemSetSequence.ItemSetSequence, itemSetSequence_j)
             DatabaseHelper.tableInsertRow(Tables.ActivityItemSetSequence.name, row)
           })

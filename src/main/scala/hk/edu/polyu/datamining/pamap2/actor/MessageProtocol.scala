@@ -7,7 +7,7 @@ import com.rethinkdb.RethinkDB.r
 import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{NodeInfo, Task}
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.{Label, TaskType, Offset}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.{Label, Offset, TaskType}
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
 /**
@@ -207,21 +207,24 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = MapRawDataToItemTask.fromMap(map)
   }
 
-  case object ItemSetGenerationTask {
-    def fromMap(map: ju.Map[String, AnyRef]): Task = new ItemSetGenerationTask(
-      map.get(Offset).asInstanceOf[Long]
+  case object FirstSequenceGenerationTask {
+    val ActivityOffset = "activity_offset"
+
+    def fromMap(map: ju.Map[String, AnyRef]): Task = new FirstSequenceGenerationTask(
+      map.get(ActivityOffset).asInstanceOf[Long]
     )
   }
 
-  case class ItemSetGenerationTask(offset: Long) extends Task {
-    override val actionState: ActionStatusType = ActionStatus.itemSetGeneration
+  case class FirstSequenceGenerationTask(activityOffset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.firstSequenceGeneration
 
     override def toMap: MapObject = baseMap
-      .`with`(Offset, offset)
+      .`with`(FirstSequenceGenerationTask.ActivityOffset, activityOffset)
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemSetGenerationTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = FirstSequenceGenerationTask.fromMap(map)
   }
 
+  //  case class FirstSequenceReductionTask extends Task
 }
 
 object MessageProtocolFactory {
