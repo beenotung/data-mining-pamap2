@@ -164,12 +164,14 @@ object Tables {
 
   tableList += ActivityItemSetSequence
 
+  /* build from raw data, mapped everything to string labels */
   object ActivityItemSetSequence extends Table {
     override val name: String = "activity_item_set_sequence"
     lazy val RawDataId = "raw_data_id"
+    lazy val ActivityId = "activity_id"
     /* Array[Array[String]] : Seq[Set[String]] */
     lazy val ItemSetSequence = "item_set_sequence"
-    override val fields: Iterable[String] = Seq(RawDataId, ItemSetSequence)
+    override val fields: Iterable[String] = Seq(RawDataId, ActivityId, ItemSetSequence)
   }
 
   tableList += ItemSetTemp
