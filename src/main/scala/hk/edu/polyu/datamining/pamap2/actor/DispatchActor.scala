@@ -90,13 +90,16 @@ class DispatchActor extends CommonActor {
       fork(() => {
         val count: Long = DatabaseHelper.markTrainSample(percentage)
         Log.info("finished mark train sample")
-        self ! function(() => {
-          /* step 2. */
-          Log.info(s"start som process (count:$count)")
-          DatabaseHelper.setActionStatus(ActionStatus.somProcess)
-          findAndDispatchNewTasks(ActionStatus.somProcess, Map(MessageProtocol.TrainingDataCount -> count))
-          /* step 3,4,5 (in TaskCompleted) */
-        })
+        if (count == 0)
+          Log info "Warning no training sample is selected"
+        else
+          self ! function(() => {
+            /* step 2. */
+            Log.info(s"start som process (count:$count)")
+            DatabaseHelper.setActionStatus(ActionStatus.somProcess)
+            findAndDispatchNewTasks(ActionStatus.somProcess, Map(MessageProtocol.TrainingDataCount -> count))
+            /* step 3,4,5 (in TaskCompleted) */
+          })
       })
     case fun: Lang_.Function => fun.apply()
     case task: MessageProtocol.Task => handleTask(Seq(task))

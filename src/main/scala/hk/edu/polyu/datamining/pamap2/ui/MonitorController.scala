@@ -46,7 +46,11 @@ object MonitorController {
   def receivedNodeInfos(newVal: ClusterComputeInfo) = {
     //    Log.info("received nodeinfos")
     clusterComputeInfo = newVal
-    runOnUIThread(() => instance.updated_computeNodeInfos())
+    val status = DatabaseHelper.getActionStatus
+    runOnUIThread(() => {
+      instance.updated_computeNodeInfos()
+      instance.cluster_status.setText(status.toString)
+    })
     NodesDetailController.updateList()
     //TODO use UIActor scheduler
     if (instance.auto_update.isSelected)
@@ -266,7 +270,9 @@ class MonitorController extends MonitorControllerSkeleton {
       val step = min_support_step.getText.toDouble
       val percentage = percentage_training_data.getText.toDouble
       val iterCount = Math.ceil((end - start) / step)
-      Log.info(s"start arm, found $iterCount iteration(s)")
+      val totalCount: Long = DatabaseHelper.run(_.table(Tables.RawData.name).hasFields(Tables.RawData.Field.isTrain.toString).count())
+      val count = Math.round(totalCount * percentage)
+      Log.info(s"start arm, found $iterCount iteration(s), $totalCount sample(s) will be used")
       if (iterCount <= 0) {
         val alert = new Alert(AlertType.ERROR)
         alert.setTitle("Error")
@@ -278,6 +284,13 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.setTitle("Error")
         alert.setHeaderText("Invalid Parameter")
         alert.setContentText(s"percentage should be (0..100]")
+        alert.showAndWait()
+      }
+      else if (totalCount == 0) {
+        val alert = new Alert(AlertType.ERROR)
+        alert.setTitle("Error")
+        alert.setHeaderText("Too low sampling rate")
+        alert.setContentText(s"No training data is sampled at all")
         alert.showAndWait()
       }
       else
