@@ -268,7 +268,7 @@ class MonitorController extends MonitorControllerSkeleton {
       val start = min_support_start.getText.toDouble
       val end = min_support_end.getText.toDouble
       val step = min_support_step.getText.toDouble
-      val percentage = percentage_training_data.getText.toDouble
+      val percentage = percentage_training_data.getText.toDouble / 100d
       val iterCount = Math.ceil((end - start) / step)
       val totalCount: Long = DatabaseHelper.run(_.table(Tables.RawData.name).hasFields(Tables.RawData.Field.isTrain.toString).count())
       val sampleCount = Math.round(totalCount * percentage)
@@ -279,7 +279,7 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.setHeaderText("Invalid Parameter")
         alert.setContentText(s"$iterCount iteration, wrong direction?")
         alert.showAndWait()
-      } else if (percentage <= 0 || percentage > 100) {
+      } else if (percentage <= 0 || percentage > 1) {
         val alert = new Alert(AlertType.ERROR)
         alert.setTitle("Error")
         alert.setHeaderText("Invalid Parameter")
@@ -294,7 +294,7 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.showAndWait()
       }
       else
-        UIActor.dispatch(StartARM(percentage / 100d, start, end, step))
+        UIActor.dispatch(StartARM(percentage, start, end, step))
     } catch {
       case e: NumberFormatException =>
         val alert = new Alert(AlertType.ERROR)
