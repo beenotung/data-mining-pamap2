@@ -552,6 +552,18 @@ object DatabaseHelper {
     }
   }
 
+  def getItemSetSize: Long = DatabaseHelper.getValueResult(
+    tablename = Tables.Status.name,
+    idValue = Tables.Status.Field.itemsetSize.toString,
+    defaultValue = 1L
+  )
+
+  def setItemSetSize(size: Long) = DatabaseHelper.setValue(
+    tablename = Tables.Status.name,
+    idValue = Tables.Status.Field.itemsetSize.toString,
+    newVal = size
+  )
+
   def getArmLNum: Long = DatabaseHelper.getValueResult(
     tablename = Tables.Status.name,
     idValue = Tables.Status.Field.armLNum.toString,

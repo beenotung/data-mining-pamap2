@@ -107,28 +107,41 @@ class DispatchActor extends CommonActor {
         case ActionStatus.finished => Log.info("all task finished?")
         case ActionStatus.somProcess =>
           Log.info("finished som training")
-          findAndDispatchNewTasks(ActionStatus.itemExtract)
-        case ActionStatus.itemExtract =>
-          Log.info(s"finished item extract")
-          findAndDispatchNewTasks(ActionStatus.itemReduce)
-        case ActionStatus.itemReduce =>
-          Log.info("finished item reduct")
-          DatabaseHelper.setArmLNum(1)
+          findAndDispatchNewTasks(ActionStatus.mapRawDataToItem)
+        case ActionStatus.mapRawDataToItem =>
+          Log.info(s"finished raw data to item mapping")
+          DatabaseHelper.setItemSetSize(1)
           findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
         case ActionStatus.itemSetGeneration =>
-          val l = DatabaseHelper.getArmLNum
-          Log.info(s"finshed itemset generation on L$l")
+          val size: Long = DatabaseHelper.getItemSetSize
+          Log.info(s"finished item set generation of size $size")
+          findAndDispatchNewTasks(ActionStatus.itemSetReduction)
         case ActionStatus.itemSetReduction =>
+          val size = DatabaseHelper.getItemSetSize
+          Log info s"finished item set reduction of size $size"
+          if (true) {
+            DatabaseHelper.setItemSetSize(size + 1)
+            findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
+          } else {
+            DatabaseHelper.setArmLNum(1)
+            findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
+          }
+        case ActionStatus.sequenceGeneration =>
           val l = DatabaseHelper.getArmLNum
-          Log.info(s"finished itemset reduction on L$l")
+          Log.info(s"finished sequence generation on L$l")
+          findAndDispatchNewTasks(ActionStatus.sequenceReduction)
+        case ActionStatus.sequenceReduction =>
+          val l = DatabaseHelper.getArmLNum
+          Log info s"finished sequence reduction on L$l"
           //TODO detect to stop
           if (true) {
             DatabaseHelper.setArmLNum(l + 1)
             findAndDispatchNewTasks(ActionStatus.itemSetGeneration)
           } else {
-            findAndDispatchNewTasks(ActionStatus.learning)
+            findAndDispatchNewTasks(ActionStatus.ruleGeneration)
           }
         case status: ActionStatus.ActionStatusType =>
+          Log info s"finished all task of $status"
           findAndDispatchNewTasks(ActionStatus.next(status))
       } else
         cleanTasks()
@@ -215,7 +228,7 @@ class DispatchActor extends CommonActor {
           .+:(new HeightSomTrainingTask)
           .+:(new AgeSomTrainingTask)
           .filterNot(somTask => existingSoms.contains(somTask.param.get(MessageProtocol.Label).toString))
-      case ActionStatus.itemExtract =>
+      case ActionStatus.mapRawDataToItem =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
           .filter(fs.isTrain.toString, true)
@@ -224,9 +237,9 @@ class DispatchActor extends CommonActor {
         val imuIds: String = DatabaseHelper.runToBuffer[String](_.table(Tables.SomImage.name).getField(DatabaseHelper.id))
           .reduce((a, b) => a + b)
         (0L until taskCount).flatMap(offset => Seq(
-          new ItemExtractTask(imuIds, offset),
-          new ItemExtractTask(imuIds, offset),
-          new ItemExtractTask(imuIds, offset)
+          new MapRawDataToItemTask(imuIds, offset),
+          new MapRawDataToItemTask(imuIds, offset),
+          new MapRawDataToItemTask(imuIds, offset)
         ))
       //TODO add more task type
       case _ => log warning s"findTask on $actionState is not implemented"

@@ -46,6 +46,7 @@ object Tables {
       type Field = Value
       val actionStatus = Value
       val armLNum = Value
+      val itemsetSize = Value
       //val pendingIds, dispatchedIds = Value
     }
 

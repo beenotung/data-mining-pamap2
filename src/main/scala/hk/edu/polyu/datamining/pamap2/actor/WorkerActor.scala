@@ -215,7 +215,7 @@ class WorkerActor extends CommonActor {
           } catch {
             case e: NoSuchElementException =>
           }
-        case ItemExtractTask(imuIds, offset) =>
+        case MapRawDataToItemTask(imuIds, offset) =>
           val fs = Tables.RawData.Field
 
           /* reload som if not valid */

@@ -182,25 +182,25 @@ object MessageProtocol {
       .`with`(Label, Tables.Subject.Field.age.toString)
   }
 
-  object ItemExtractTask {
+  object MapRawDataToItemTask {
     val IMUIds = "imuIds"
     val Offset = "offset"
 
-    def fromMap(map: ju.Map[String, AnyRef]): ItemExtractTask = new ItemExtractTask(
+    def fromMap(map: ju.Map[String, AnyRef]): MapRawDataToItemTask = new MapRawDataToItemTask(
       map.get(IMUIds).asInstanceOf,
       map.get(Offset).asInstanceOf
     )
   }
 
-  case class ItemExtractTask(imuIds: String, offset: Long) extends Task {
-    override val actionState: ActionStatusType = ActionStatus.itemExtract
+  case class MapRawDataToItemTask(imuIds: String, offset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.mapRawDataToItem
 
     override def toMap: MapObject = r.hashMap(Task.Param, param)
       .`with`(TaskType, actionState.toString)
-      .`with`(ItemExtractTask.IMUIds, imuIds)
-      .`with`(ItemExtractTask.Offset, offset)
+      .`with`(MapRawDataToItemTask.IMUIds, imuIds)
+      .`with`(MapRawDataToItemTask.Offset, offset)
 
-    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemExtractTask.fromMap(map)
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = MapRawDataToItemTask.fromMap(map)
   }
 
 }
