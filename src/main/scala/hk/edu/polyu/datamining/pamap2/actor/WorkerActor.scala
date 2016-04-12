@@ -323,8 +323,8 @@ class WorkerActor extends CommonActor {
           })
         case FirstSequenceGenerationTask(activityOffset) =>
           val activity = DatabaseHelper.getTableRowMapObject(Tables.ActivityItemSetSequence, activityOffset)
-          activity.get()
-          Sequence.createFirstSeq(Array(ac))
+//          activity.get()
+//          Sequence.createFirstSeq(Array(ac))
         //TODO working here
         case SequenceGenerationTask(activityOffset, seqOffset, seqCount) =>
           ???

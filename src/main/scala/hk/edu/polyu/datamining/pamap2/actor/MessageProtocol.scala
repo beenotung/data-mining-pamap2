@@ -224,8 +224,29 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = FirstSequenceGenerationTask.fromMap(map)
   }
 
-  case class SequenceGenerationTask(activityOffset: Long, seqOffset: Long, seqCount: Long) extends Task {
+  object SequenceGenerationTask {
+    val ActivityOffset = "activity_offset"
+    val SeqOffset = "seq_offset"
+    val SeqCount = "seq_count"
 
+    def fromMap(map: ju.Map[String, AnyRef]): Task = new SequenceGenerationTask(
+      map.get(ActivityOffset).asInstanceOf[Long],
+      map.get(SeqOffset).asInstanceOf[Long],
+      map.get(SeqCount).asInstanceOf[Long]
+    )
+  }
+
+  case class SequenceGenerationTask(activityOffset: Long, seqOffset: Long, seqCount: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.sequenceGeneration
+
+    import SequenceGenerationTask._
+
+    override def toMap: MapObject = baseMap
+      .`with`(ActivityOffset, activityOffset)
+      .`with`(SeqOffset, seqOffset)
+      .`with`(SeqCount, seqCount)
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = SequenceGenerationTask.fromMap(map)
   }
 
   //  case class FirstSequenceReductionTask extends Task
