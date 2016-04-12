@@ -36,17 +36,3 @@ object ActionStatus extends Enumeration {
   }
 }
 
-object StateHelper {
-
-  sealed trait Message
-
-  case class ResponseStatus(actionState: ActionStatusType) extends Message
-
-  case class SetStatus(actionState: ActionStatusType) extends Message
-
-  case object AskStatus extends Message
-
-  /** @deprecated */
-  case object NextStatus extends Message
-
-}
