@@ -224,6 +224,10 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = FirstSequenceGenerationTask.fromMap(map)
   }
 
+  case class SequenceGenerationTask(activityOffset: Long, seqOffset: Long, seqCount: Long) extends Task {
+
+  }
+
   //  case class FirstSequenceReductionTask extends Task
 }
 

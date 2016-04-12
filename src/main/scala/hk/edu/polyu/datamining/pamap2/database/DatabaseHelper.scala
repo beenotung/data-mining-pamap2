@@ -585,4 +585,10 @@ object DatabaseHelper {
       filters.foreach(filter => query = query.filter(filter))
       query.count()
     })
+
+  def getTableRowMapObject(table: Table, id: String): ju.Map[String, AnyRef] =
+    run(_.table(table.name).get(id))
+
+  def getTableRowMapObject(table: Table, offset: Long): ju.Map[String, AnyRef] =
+    run(_.table(table.name).limit(offset))
 }

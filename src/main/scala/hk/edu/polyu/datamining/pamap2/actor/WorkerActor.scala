@@ -6,6 +6,7 @@ import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import java.{util => ju}
 
+import SequentialAR.Sequence
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.model.MapObject
 
@@ -320,7 +321,13 @@ class WorkerActor extends CommonActor {
               .`with`(ActivityItemSetSequence.ItemSetSequence, itemSetSequence_j)
             DatabaseHelper.tableInsertRow(Tables.ActivityItemSetSequence.name, row)
           })
+        case FirstSequenceGenerationTask(activityOffset) =>
+          val activity = DatabaseHelper.getTableRowMapObject(Tables.ActivityItemSetSequence, activityOffset)
+          activity.get()
+          Sequence.createFirstSeq(Array(ac))
         //TODO working here
+        case SequenceGenerationTask(activityOffset, seqOffset, seqCount) =>
+          ???
         //TODO add other task type
         case msg => showError(s"unsupported message: $msg")
       }
