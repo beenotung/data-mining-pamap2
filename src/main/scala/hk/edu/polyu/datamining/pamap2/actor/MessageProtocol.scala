@@ -79,6 +79,8 @@ object MessageProtocol {
 
   case object ComputeNodeHeartBeat
 
+  case object RestartCluster
+
   //  @deprecated("meet bottleneck at database, holding too much data in ram")
   //  case class ExtractFromRaw(ids: Seq[String]) extends Task
 

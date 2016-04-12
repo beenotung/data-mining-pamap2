@@ -232,6 +232,8 @@ class MonitorController extends MonitorControllerSkeleton {
     alert.showAndWait().get() match {
       case ButtonType.OK =>
         Seq(Tables.ClusterSeed.name, Tables.Task.name).foreach(DatabaseHelper.createTableDropIfExistResult)
+        UIActor.dispatch(MessageProtocol.RestartCluster)
+
       case _ =>
     }
   }

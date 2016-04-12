@@ -32,6 +32,7 @@ class DispatchActor extends CommonActor {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
   var currentTypePendingTaskCount = 0L
+  var isDoingRestart = false
 
   override def preStart(): Unit = {
     log info "starting Task-Dispatcher"
@@ -47,9 +48,15 @@ class DispatchActor extends CommonActor {
   override def postStop() = {
     log info "stopping dispatcher"
     workers.keys.foreach(r => r ! MessageProtocol.ReBindDispatcher)
+    if (isDoingRestart)
+      Main.mainRun()
   }
 
   override def receive: Receive = {
+    case RestartCluster =>
+      isDoingRestart = true
+      workers.foreach(_._1 ! RestartCluster)
+      system.terminate()
     case nodeInfo: NodeInfo => if (nodeInfo.clusterSeedId != null) nodeInfos.put(nodeInfo.clusterSeedId, nodeInfo)
       sender() ! DispatcherHeartBeat
     case RegisterWorker(clusterSeedId, workerId) =>
@@ -253,8 +260,8 @@ class DispatchActor extends CommonActor {
         (0L until activityCount).map(activityOffset => new FirstSequenceGenerationTask(activityOffset))
       //      case ActionStatus.firstSequenceReduction =>
       //TODO add more task type
-      case _ => log warning s"findTask on $actionState is not implemented"
-        Seq.empty
+      case _ => Log error s"findTask on $actionState is not implemented"
+        ???
     }
     Log.debug(s"number of task found:${xs.length}")
     xs

@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor._
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
 import hk.edu.polyu.datamining.pamap2.Main
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ComputeNodeHeartBeat, DispatcherHeartBeat, RequestNodeInfo}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{ComputeNodeHeartBeat, DispatcherHeartBeat, RequestNodeInfo, RestartCluster}
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocolFactory.NodeInfo
 import hk.edu.polyu.datamining.pamap2.database.DatabaseHelper
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
@@ -27,6 +27,7 @@ object ComputeActor {
 class ComputeActor extends CommonActor {
   val workers = mutable.Set.empty[ActorRef]
   var lastTimeDispatcherHeartBeat: Long = System.currentTimeMillis()
+  var isDoingRestart = false
 
   override def preStart = {
     // init worker pool
@@ -46,16 +47,21 @@ class ComputeActor extends CommonActor {
     SingletonActor.Dispatcher.proxy ! MessageProtocol.UnRegisterComputeNode(DatabaseHelper.clusterSeedId)
     workers.foreach(context.stop)
     workers.retain(_ => false)
+    if (isDoingRestart)
+      Main.mainRun()
   }
 
   override def receive: Receive = {
+    case RestartCluster =>
+      isDoingRestart = true
+      system.terminate()
     case ComputeNodeHeartBeat => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(system)
       if (lastTimeDispatcherHeartBeat < getMargin)
         workers.foreach(_ ! MessageProtocol.ReBindDispatcher)
     case DispatcherHeartBeat => lastTimeDispatcherHeartBeat = System.currentTimeMillis()
     case RequestNodeInfo => SingletonActor.Dispatcher.proxy ! NodeInfo.newInstance(context.system)
 
-    case msg => showError(s"Unsupported msg : $msg")
+    case msg => showError(s"ComputeActor: Unsupported msg : $msg")
   }
 
 }
