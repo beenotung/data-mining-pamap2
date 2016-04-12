@@ -261,7 +261,8 @@ class DispatchActor extends CommonActor {
       case ActionStatus.firstSequenceGeneration =>
         val activityCount = DatabaseHelper.countTableItem(Tables.ActivityItemSetSequence, RethinkDB.r.hashMap())
         (0L until activityCount).map(activityOffset => new FirstSequenceGenerationTask(activityOffset))
-      //      case ActionStatus.firstSequenceReduction =>
+//      case ActionStatus.firstSequenceReduction =>
+
       //TODO add more task type
       case _ => Log error s"findTask on $actionState is not implemented"
         ???

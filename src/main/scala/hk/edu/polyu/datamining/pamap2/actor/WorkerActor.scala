@@ -6,6 +6,7 @@ import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import java.{util => ju}
 
+import SequentialAR.Sequence_.Sequence_
 import SequentialAR.{ItemSets, Sequence}
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.model.MapObject
@@ -322,22 +323,31 @@ class WorkerActor extends CommonActor {
             DatabaseHelper.tableInsertRow(Tables.ActivityItemSetSequence.name, row)
           })
         case FirstSequenceGenerationTask(activityOffset) =>
-          val activity = DatabaseHelper.getTableRowMapObject(Tables.ActivityItemSetSequence, activityOffset)
-        //          activity.get()
-        //          Sequence.createFirstSeq(Array(ac))
+          import Tables.ActivityItemSetSequence
+          val activitySeq = DatabaseHelper.runToBuffer[ju.List[String]](r => r.table(ActivityItemSetSequence.name)
+            .skip(activityOffset)
+            .getField(ActivityItemSetSequence.ItemSetSequence)
+          )
+          val one_seq_sets = Sequence_.createFirstSeq(activitySeq.toIndexedSeq)
+          import Tables.OneSeqTemp
+          val row = RethinkDB.r.hashMap(OneSeqTemp.PartId, activityOffset)
+            .`with`(OneSeqTemp.OneSeqSets, one_seq_sets)
+          DatabaseHelper.tableInsertRow(OneSeqTemp.name, row)
         //TODO working here
         case SequenceGenerationTask(activityOffset, seqOffset, seqCount) =>
           val activitySeq = DatabaseHelper.getTableRowMapObject(Tables.ActivityItemSetSequence, activityOffset)
           val activitySeqArr = ???
           val itemsetsSeq = new ItemSets(activitySeqArr)
-          val sequenceSet:Array[Array[String]] = ???
-          if(itemsetsSeq.isContain(sequenceSet)){
+          val sequenceSet: Array[Array[String]] = ???
+          if (itemsetsSeq.isContain(sequenceSet)) {
             //TODO  add record +1 in database
           }
 
         //TODO add other task type
         case task: Task => showError(s"worker: unsupported task $task")
+          fork(() => ???)
         case msg => showError(s"worker: unsupported message: $msg")
+          fork(() => ???)
       }
       Log.info(s"finish task ${task.id}")
       DatabaseHelper.finishTask(task.id)

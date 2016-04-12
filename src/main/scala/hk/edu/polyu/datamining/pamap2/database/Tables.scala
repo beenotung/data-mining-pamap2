@@ -177,20 +177,20 @@ object Tables {
     override val fields: Iterable[String] = Seq(RawDataId, ActivityTypeId, ItemSetSequence)
   }
 
-  tableList += ItemSetTemp
+  tableList += OneSeqTemp
 
   /*
   * temp place to store the itemset emit from each activity record
   * will be merged to a set of string (no duplication)
   * */
-  object ItemSetTemp extends Table {
-    override val name: String = "itemset_temp"
+  object OneSeqTemp extends Table {
+    override val name: String = "one_seq_temp"
 
-    lazy val ActivityId = "activity_id"
-    /* Array[String] : Set[String] */
-    lazy val ItemSet = "item_set"
+    lazy val PartId = "part_id"
+    /* Array[Array[Array[String]]] */
+    lazy val OneSeqSets = "one_seq_sets"
 
-    override val fields: Iterable[String] = Seq[String](ActivityId, ItemSet)
+    override val fields: Iterable[String] = Seq[String](PartId, OneSeqSets)
   }
 
   tableList += ItemSetCount
