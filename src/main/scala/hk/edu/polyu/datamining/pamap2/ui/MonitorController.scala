@@ -271,7 +271,7 @@ class MonitorController extends MonitorControllerSkeleton {
       val percentage = percentage_training_data.getText.toDouble
       val iterCount = Math.ceil((end - start) / step)
       val totalCount: Long = DatabaseHelper.run(_.table(Tables.RawData.name).hasFields(Tables.RawData.Field.isTrain.toString).count())
-      val count = Math.round(totalCount * percentage)
+      val sampleCount = Math.round(totalCount * percentage)
       Log.info(s"start arm, found $iterCount iteration(s), $totalCount sample(s) will be used")
       if (iterCount <= 0) {
         val alert = new Alert(AlertType.ERROR)
@@ -286,7 +286,7 @@ class MonitorController extends MonitorControllerSkeleton {
         alert.setContentText(s"percentage should be (0..100]")
         alert.showAndWait()
       }
-      else if (totalCount == 0) {
+      else if (sampleCount == 0) {
         val alert = new Alert(AlertType.ERROR)
         alert.setTitle("Error")
         alert.setHeaderText("Too low sampling rate")
