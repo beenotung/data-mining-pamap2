@@ -6,8 +6,8 @@ import akka.actor.ActorSystem
 import com.rethinkdb.RethinkDB.r
 import com.rethinkdb.model.MapObject
 import hk.edu.polyu.datamining.pamap2.actor.ActionStatus.ActionStatusType
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.NodeInfo
-import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.TaskType
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{NodeInfo, Task}
+import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.{Label, TaskType, Offset}
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
 /**
@@ -26,6 +26,8 @@ object MessageProtocol {
   object Task {
     val Param = "param"
     val TaskType = Tables.Task.Field.taskType.toString
+    val Label = "label"
+    val Offset = "offset"
   }
 
   sealed trait Task extends Comparable[Task] {
@@ -37,6 +39,10 @@ object MessageProtocol {
     override def compareTo(o: Task) = id.compareTo(o.id)
 
     def fromMap(map: ju.Map[String, AnyRef]): Task
+
+    protected def baseMap = r.hashMap()
+      .`with`(Task.Param, param)
+      .`with`(Task.TaskType, actionState.toString)
 
     def toMap: MapObject
   }
@@ -79,7 +85,6 @@ object MessageProtocol {
 
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
-  val Label = "label"
 
   abstract class SomTask extends Task {
     override val actionState: ActionStatusType = ActionStatus.somProcess
@@ -184,11 +189,10 @@ object MessageProtocol {
 
   object MapRawDataToItemTask {
     val IMUIds = "imuIds"
-    val Offset = "offset"
 
     def fromMap(map: ju.Map[String, AnyRef]): MapRawDataToItemTask = new MapRawDataToItemTask(
-      map.get(IMUIds).asInstanceOf,
-      map.get(Offset).asInstanceOf
+      map.get(IMUIds).asInstanceOf[String],
+      map.get(Offset).asInstanceOf[Long]
     )
   }
 
@@ -198,9 +202,24 @@ object MessageProtocol {
     override def toMap: MapObject = r.hashMap(Task.Param, param)
       .`with`(TaskType, actionState.toString)
       .`with`(MapRawDataToItemTask.IMUIds, imuIds)
-      .`with`(MapRawDataToItemTask.Offset, offset)
+      .`with`(Offset, offset)
 
     override def fromMap(map: ju.Map[String, AnyRef]): Task = MapRawDataToItemTask.fromMap(map)
+  }
+
+  case object ItemSetGenerationTask {
+    def fromMap(map: ju.Map[String, AnyRef]): Task = new ItemSetGenerationTask(
+      map.get(Offset).asInstanceOf[Long]
+    )
+  }
+
+  case class ItemSetGenerationTask(offset: Long) extends Task {
+    override val actionState: ActionStatusType = ActionStatus.itemSetGeneration
+
+    override def toMap: MapObject = baseMap
+      .`with`(Offset, offset)
+
+    override def fromMap(map: ju.Map[String, AnyRef]): Task = ItemSetGenerationTask.fromMap(map)
   }
 
 }

@@ -227,7 +227,7 @@ class DispatchActor extends CommonActor {
           .+:(new WeightSomTrainingTask)
           .+:(new HeightSomTrainingTask)
           .+:(new AgeSomTrainingTask)
-          .filterNot(somTask => existingSoms.contains(somTask.param.get(MessageProtocol.Label).toString))
+          .filterNot(somTask => existingSoms.contains(somTask.param.get(MessageProtocol.Task.Label).toString))
       case ActionStatus.mapRawDataToItem =>
         val fs = Tables.RawData.Field
         val taskCount: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
@@ -241,6 +241,17 @@ class DispatchActor extends CommonActor {
           new MapRawDataToItemTask(imuIds, offset),
           new MapRawDataToItemTask(imuIds, offset)
         ))
+      case ActionStatus.itemSetGeneration =>
+        val size = DatabaseHelper.getItemSetSize
+        if (size == 1L) {
+          val count: Long = DatabaseHelper.run(r => r.table(Tables.RawData.name)
+            .filter(r.hashMap(Tables.RawData.Field.isTrain.toString, true))
+            .count()
+          )
+          (0L until count).map(offset => new ItemSetGenerationTask(offset))
+        } else {
+          ???
+        }
       //TODO add more task type
       case _ => log warning s"findTask on $actionState is not implemented"
         Seq.empty

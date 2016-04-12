@@ -264,7 +264,8 @@ class WorkerActor extends CommonActor {
               val heartRate = activity.get(fs.heartRate.toString).toString.toDouble
               commonItemSet += somMap.get(fs.heartRate.toString).get.getLabel(Array(heartRate))._1
             } catch {
-              case e: NullPointerException | NumberFormatException =>
+              case e: NullPointerException =>
+              case e: NumberFormatException =>
               // no heart rate for this record
             }
 
@@ -276,7 +277,8 @@ class WorkerActor extends CommonActor {
                 val temperature = row.get(fs.chest.toString).asInstanceOf[ju.Map[String, AnyRef]].get(temperature_f).toString.toDouble
                 itemSet += somMap.get(temperature_f).get.getLabel(Array(temperature))._1
               } catch {
-                case e: NullPointerException | NumberFormatException =>
+                case e: NullPointerException =>
+                case e: NumberFormatException =>
                 // no temperature in this row
               }
               /* map imu parts label */
@@ -295,9 +297,9 @@ class WorkerActor extends CommonActor {
                       )
                       somMap.get(label).get.getLabel(vector)._1
                     } catch {
-                      case e: NullPointerException | NumberFormatException =>
-                        null
                       // missing imu part in this row
+                      case e: NullPointerException => null
+                      case e: NumberFormatException => null
                     }
                   })
                   .filterNot(_ == null)

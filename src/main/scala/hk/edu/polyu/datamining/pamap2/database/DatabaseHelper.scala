@@ -529,7 +529,7 @@ object DatabaseHelper {
   def toTask(map: ju.Map[String, AnyRef]): Task = {
     import Tables.Task.{Field => field}
     import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.Param
-    import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Label
+    import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.Label
     val taskType = map.get(field.taskType.toString)
     if (taskType == null) {
       Log.error(s"unknown task type $map")
