@@ -76,6 +76,11 @@ public class MonitorControllerSkeleton {
   protected Button cluster_status; // Value injected by FXMLLoader
 
   @FXML
+  void show_ip_list(ActionEvent event) {
+
+  }
+
+  @FXML
   void abort_import_datafile(ActionEvent event) {
 
   }

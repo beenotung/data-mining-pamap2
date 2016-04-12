@@ -8,8 +8,9 @@ import javafx.application.Platform
 import javafx.application.Platform.{runLater => runOnUIThread}
 import javafx.event.ActionEvent
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.{Alert, ButtonType, Labeled}
-import javafx.stage.FileChooser
+import javafx.scene.control._
+import javafx.scene.layout.VBox
+import javafx.stage.{FileChooser, Popup}
 import javafx.stage.FileChooser.ExtensionFilter
 
 import com.rethinkdb.RethinkDB
@@ -102,6 +103,26 @@ class MonitorController extends MonitorControllerSkeleton {
     /* get cluster compute info */
     auto_update.setSelected(Main.config.getBoolean("ui.autoupdate.enable"))
     auto_update_onChanged(new ActionEvent())
+  }
+
+  override def show_ip_list(event: ActionEvent) = {
+    fork(() => {
+      val ips = DatabaseHelper.runToBuffer[String](_.table(Tables.ClusterSeed.name).getField(Tables.ClusterSeed.Field.host.toString))
+      runOnUIThread(() => {
+        val popup = new Popup()
+        //        popup.setAutoFix(false)
+        //        popup.setHideOnEscape(true)
+        val vbox = new VBox()
+        val textField = new TextField()
+        textField.setText(ips.reduce((a, b) => s"$a $b"))
+        vbox.getChildren.add(textField)
+        popup.getContent.add(vbox)
+        val close = new Button("Close")
+        close.setOnAction(eventHandler(_ => popup.hide()))
+        popup.getContent.add(close)
+        popup.show(MonitorApplication.getStage)
+      })
+    })
   }
 
   override def auto_update_onChanged(event: ActionEvent) = {
