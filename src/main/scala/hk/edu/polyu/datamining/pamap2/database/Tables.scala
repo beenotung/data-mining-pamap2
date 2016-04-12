@@ -161,6 +161,16 @@ object Tables {
     lazy val Vector_s = "vector"
   }
 
+  tableList += ActivityItemSetSequence
+
+  object ActivityItemSetSequence extends Table {
+    override val name: String = "activity_item_set_sequence"
+    lazy val RawDataId = "raw_data_id"
+    /* Array[Array[String]] : Seq[Set[String]] */
+    lazy val ItemSetSequence = "item_set_sequence"
+    override val fields: Iterable[String] = Seq(RawDataId, ItemSetSequence)
+  }
+
   tableList += ItemSetTemp
 
   /*
@@ -170,16 +180,17 @@ object Tables {
   object ItemSetTemp extends Table {
     override val name: String = "itemset_temp"
 
-    lazy val RawDataId = "raw_data_id"
-    /* array of string, (set of string indeed) */
-    lazy val ItemSet = "itemset"
+    lazy val ActivityItemSetSequenceId = "activity_item_set_sequence_id"
+    /* Array[String] : Set[String] */
+    lazy val ItemSet = "item_set"
 
-    override val fields: Iterable[String] = Seq[String](RawDataId, ItemSet)
+    override val fields: Iterable[String] = Seq[String](ActivityItemSetSequenceId, ItemSet)
   }
 
-  tableList += ItemsetCount
+  tableList += ItemSetCount
 
-  object ItemsetCount extends Table {
+  /* build from ItemSetTemp, self expand according to data statics */
+  object ItemSetCount extends Table {
     override val name: String = "itemset_count"
     override val fields = Field.values.map(_.toString)
 
@@ -194,6 +205,7 @@ object Tables {
 
   tableList += SequenceItemSetCount
 
+  /* build from ItemSetCount, self expand according to data statics */
   object SequenceItemSetCount extends Table {
     override val name: String = "sequence_itemset_count"
     override val fields: Iterable[String] = Field.values.map(_.toString)
@@ -209,6 +221,7 @@ object Tables {
 
   tableList += AssociationRule
 
+  /* build from SequenceItemSetCount, filter self contained rules (remove short rule if included by line rule) */
   object AssociationRule extends Table {
     override val name: String = "association_rule"
     override val fields = Field.values.map(_.toString)

@@ -280,11 +280,11 @@ class WorkerActor extends CommonActor {
             val itemset: ju.List[String] = new ju.ArrayList[String]()
             labels.foreach(itemset.add)
 
-            DatabaseHelper.tableInsertRow(Tables.ItemsetCount.name, RethinkDB.r.hashMap()
+            DatabaseHelper.tableInsertRow(Tables.ItemSetCount.name, RethinkDB.r.hashMap()
               .`with`(fs.activityId.toString, activityId)
               .`with`(DatabaseHelper.id, id)
-              .`with`(Tables.ItemsetCount.Field.count.toString, -1)
-              .`with`(Tables.ItemsetCount.Field.itemset.toString, itemset)
+              .`with`(Tables.ItemSetCount.Field.count.toString, -1)
+              .`with`(Tables.ItemSetCount.Field.itemset.toString, itemset)
             )
           })
         //TODO working here
