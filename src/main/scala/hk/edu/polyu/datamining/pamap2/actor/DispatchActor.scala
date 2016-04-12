@@ -31,6 +31,7 @@ object DispatchActor {
 class DispatchActor extends CommonActor {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
+  var currentTypePendingTaskCount = 0L
 
   override def preStart(): Unit = {
     log info "starting Task-Dispatcher"
@@ -65,7 +66,7 @@ class DispatchActor extends CommonActor {
       log warning "removed worker"
     case UnRegisterComputeNode(clusterSeedId) => unregisterComputeNode(clusterSeedId)
       log warning "removed compute node"
-    case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
+    case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(currentTypePendingTaskCount, mkClusterComputeInfo)
     //      log info s"responsed cluster compute info, sender:$sender"
     case StartARM(percentage, start, end, step) =>
       //TODO working here
@@ -101,13 +102,13 @@ class DispatchActor extends CommonActor {
       }
       val fs = Tables.Task.Field
       val currentActionType = DatabaseHelper.getActionStatus
-      val currentTypePendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
+      currentTypePendingTaskCount = DatabaseHelper.run(r => r.table(Tables.Task.name)
         .filter(r.hashMap(fs.taskType.toString, currentActionType.toString))
         .filter(reqlFunction1(row => r.not(row.hasFields(fs.completeTime.toString))))
         .count()
       )
-      Log info s"finished 1 task of $currentActionType, number of task remaining = $currentTypePendingTask"
-      if (currentTypePendingTask == 0)
+      Log info s"finished 1 task of $currentActionType, number of task remaining = $currentTypePendingTaskCount"
+      if (currentTypePendingTaskCount == 0)
         onTaskTypeCompleted(currentActionType)
       else
         cleanTasks()
@@ -162,7 +163,7 @@ class DispatchActor extends CommonActor {
     handleTask(tasks)
   }
 
-  def mkClusterComputeInfo: ClusterComputeInfo = {
+  def mkClusterComputeInfo: IndexedSeq[ComputeNodeInfo] = {
     //    log info "making cluster compute info"
     val margin = getMargin
     workers.values.filterNot(_.clusterSeedId == null)
