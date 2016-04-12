@@ -537,7 +537,7 @@ object DatabaseHelper {
     }
     val fs = Tables.RawData.Field
     val fs2 = Tables.Subject.Field
-    ActionStatus.withName(taskType.toString) match {
+    val task = ActionStatus.withName(taskType.toString) match {
       case ActionStatus.somProcess => map.get(Param).asInstanceOf[ju.Map[String, AnyRef]].get(Label) match {
         case s: String if s.equals(Tables.IMU.Field.temperature.toString) => TemperatureSomTrainingTask.fromMap(map)
         case s: String if s.equals(fs.heartRate.toString) => HeartRateSomTrainingTask.fromMap(map)
@@ -556,6 +556,9 @@ object DatabaseHelper {
           null
       }
     }
+    if (task != null)
+      task.id = map.get(id).toString
+    task
   }
 
   def getItemSetSize: Long = DatabaseHelper.getValueResult(
