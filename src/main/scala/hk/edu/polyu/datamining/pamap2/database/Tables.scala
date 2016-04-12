@@ -1,13 +1,14 @@
 package hk.edu.polyu.datamining.pamap2.database
 
+import scala.collection.mutable
+
 
 /**
   * Created by beenotung on 1/26/16.
   */
 //TODO to complete these tables
 object Tables {
-
-  val tableList = Seq(Debug, ClusterSeed, Status, Task, Subject, RawDataFile, RawData, TestingResult, SomImage, ItemsetCount, AssociationRule)
+  val tableList = mutable.Set.empty[Table]
   val tableNames = tableList map (_.name)
 
   sealed trait Table {
@@ -15,10 +16,14 @@ object Tables {
     val fields: Iterable[String]
   }
 
+  tableList += Debug
+
   object Debug extends Table {
     override val name = "debug"
     override val fields = Seq.empty
   }
+
+  tableList += ClusterSeed
 
   object ClusterSeed extends Table {
     override val name = "cluster_seed"
@@ -30,6 +35,8 @@ object Tables {
     }
 
   }
+
+  tableList += Status
 
   object Status extends Table {
     override val name: String = "status"
@@ -44,6 +51,8 @@ object Tables {
 
   }
 
+  tableList += Task
+
   object Task extends Table {
     override val name: String = "task"
     override val fields: Iterable[String] = Field.values.map(_.toString)
@@ -54,6 +63,8 @@ object Tables {
     }
 
   }
+
+  tableList += RawDataFile
 
   @deprecated("slow in practise")
   object RawDataFile extends Table {
@@ -66,6 +77,8 @@ object Tables {
     }
 
   }
+
+  tableList += IMU
 
   object IMU extends Table {
     override val name: String = "IMU"
@@ -86,6 +99,8 @@ object Tables {
 
   }
 
+  tableList += RawData
+
   /* mix training and testing data */
   object RawData extends Table {
     override val name: String = "raw_data"
@@ -101,6 +116,8 @@ object Tables {
 
   }
 
+  tableList += Subject
+
   object Subject extends Table {
     override val name = "subject"
     override val fields = Field.values.map(_.toString)
@@ -111,6 +128,8 @@ object Tables {
     }
 
   }
+
+  tableList += TestingResult
 
   object TestingResult extends Table {
     override val name: String = "testing_result"
@@ -124,6 +143,8 @@ object Tables {
     }
 
   }
+
+  tableList += SomImage
 
   object SomImage extends Table {
     override val name: String = "som_image"
@@ -140,6 +161,24 @@ object Tables {
     lazy val Vector_s = "vector"
   }
 
+  tableList += ItemSetTemp
+
+  /*
+  * temp place to store the itemset emit from each activity record
+  * will be merged to a set of string (no duplication)
+  * */
+  object ItemSetTemp extends Table {
+    override val name: String = "itemset_temp"
+
+    lazy val RawDataId = "raw_data_id"
+    /* array of string, (set of string indeed) */
+    lazy val ItemSet = "itemset"
+
+    override val fields: Iterable[String] = Seq[String](RawDataId, ItemSet)
+  }
+
+  tableList += ItemsetCount
+
   object ItemsetCount extends Table {
     override val name: String = "itemset_count"
     override val fields = Field.values.map(_.toString)
@@ -153,6 +192,8 @@ object Tables {
 
   }
 
+  tableList += SequenceItemSetCount
+
   object SequenceItemSetCount extends Table {
     override val name: String = "sequence_itemset_count"
     override val fields: Iterable[String] = Field.values.map(_.toString)
@@ -165,6 +206,8 @@ object Tables {
     }
 
   }
+
+  tableList += AssociationRule
 
   object AssociationRule extends Table {
     override val name: String = "association_rule"
