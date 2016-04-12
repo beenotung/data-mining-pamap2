@@ -9,7 +9,8 @@ import scala.collection.mutable
 //TODO to complete these tables
 object Tables {
   val tableList = mutable.Set.empty[Table]
-  val tableNames = tableList map (_.name)
+
+  def tableNames = tableList map (_.name)
 
   sealed trait Table {
     val name: String
@@ -61,6 +62,7 @@ object Tables {
     object Field extends Enumeration {
       type Field = Value
       val taskType, clusterId, workerId, createTime, completeTime, pending = Value
+      val param = Value
     }
 
   }
@@ -79,10 +81,11 @@ object Tables {
 
   }
 
-  tableList += IMU
+  //  tableList += IMU
 
+  /* this logical table is part of raw_data */
   object IMU extends Table {
-    override val name: String = "IMU"
+    override val name: String = "imu"
     override val fields: Iterable[String] = Field.values.map(_.toString)
     val ExtractedField = Seq(Field.relativeTemperature, Field.polarRadius, Field.polarTheta, Field.polarPhi)
 

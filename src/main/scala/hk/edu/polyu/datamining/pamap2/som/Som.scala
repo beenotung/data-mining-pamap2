@@ -6,6 +6,7 @@ import java.{util => ju}
 import scala.collection.JavaConverters._
 import com.rethinkdb.RethinkDB.r
 import hk.edu.polyu.datamining.pamap2.database.Tables.SomImage._
+import hk.edu.polyu.datamining.pamap2.utils.Log
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -55,20 +56,22 @@ object Som {
   def fromMap(map: ju.Map[String, AnyRef]): Option[Som] = {
     try {
       Some(new Som(
-        weights = map.get(Weights).asInstanceOf[ju.List[Double]].asScala.toArray,
+        weights = map.get(Weights).asInstanceOf[ju.List[Object]].asScala.toArray.map(_.toString.toDouble),
         labelPrefix = map.get(LabelPrefix).asInstanceOf[String],
         initGrids = {
           val gridMaps = map.get(Grids).asInstanceOf[ju.List[ju.Map[String, AnyRef]]]
-          gridMaps.asScala.toSeq.map(gridMap => {
-            val d1 = gridMap.get(D1).asInstanceOf[Int]
-            val d2 = gridMap.get(D2).asInstanceOf[Int]
+          gridMaps.asScala.map(gridMap => {
+            val d1 = gridMap.get(D1).toString.toInt
+            val d2 = gridMap.get(D2).toString.toInt
             val vector_s = gridMap.get(Vector_s).asInstanceOf[ju.List[Double]].asScala.toArray
             (d1, d2, vector_s)
           })
         }
       ))
     } catch {
-      case e: Exception => None
+      case e: Exception =>
+        Log.error(s"failed to parse som from $e\nmap: $map")
+        throw e
     }
   }
 

@@ -382,16 +382,16 @@ object DatabaseHelper {
     def main(): mutable.Buffer[A] = {
       val buffer = fun(r).run[Object](conn) match {
         case cursor: Cursor[A] =>
-          Log.debug(s"buliding buffer from cursor $cursor")
+          //Log.debug(s"buliding buffer from cursor $cursor")
           cursorToBuffer[A](cursor)
         case xs: ju.List[A] =>
-          Log.debug(s"building buffer from list $xs")
+          //Log.debug(s"building buffer from list $xs")
           xs.asInstanceOf[ju.List[Object]].asScala.filter(x => {
-            Log.debug("check type of $x")
+            //Log.debug(s"check type of $x")
             x.isInstanceOf[A]
           }).map(_.asInstanceOf[A])
       }
-      Log.debug(s"built buffer of length ${buffer.length}")
+      //Log.debug(s"built buffer of length ${buffer.length}")
       buffer
     }
     try {
@@ -509,9 +509,9 @@ object DatabaseHelper {
   }
 
   def loadSubject(subjectId: String) =
-    run(r => r.table(Tables.Subject.name)
+    runToBuffer[ju.Map[String, AnyRef]](r => r.table(Tables.Subject.name)
       .filter(r.hashMap(Tables.Subject.Field.subject_id.toString, subjectId))
-    ).asInstanceOf[ju.List[ju.Map[String, AnyRef]]].get(0)
+    ).get(0)
 
   implicit def cursorToBuffer[A](implicit cursor: Cursor[A], skipNull: Boolean = true) = {
     val buffer = mutable.Buffer.empty[A]
@@ -545,7 +545,13 @@ object DatabaseHelper {
         case s: String if s.equals(fs2.height.toString) => HeightSomTrainingTask.fromMap(map)
         case s: String if s.equals(fs2.age.toString) => AgeSomTrainingTask.fromMap(map)
         case s: String => ImuSomTrainingTask.fromMap(map)
-        case _ => Log.error(s"unknown task type $taskType")
+        case label => Log.error(s"unknown task type $taskType, label: $label")
+          fork(() => throw ???)
+          null
+      }
+      case actionStatus: ActionStatusType => TaskResolvers.find(_.actionState.equals(actionStatus)) match {
+        case Some(taskResolver) => taskResolver.fromMap(map)
+        case None => Log.error(s"unknown task type $taskType")
           fork(() => throw ???)
           null
       }

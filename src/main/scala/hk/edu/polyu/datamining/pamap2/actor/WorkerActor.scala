@@ -57,7 +57,7 @@ class WorkerActor extends CommonActor {
   override def receive: Receive = {
     case TaskAssign(taskId, task) =>
       task.id = taskId
-      log.info(s"received task id: ${task.id}, $task")
+      Log.info(s"received task id: ${task.id}, $task")
       val temperature_f: String = Tables.IMU.Field.temperature.toString
       task match {
         case ImuSomTrainingTask(label, trainingDataCount) =>
@@ -296,14 +296,14 @@ class WorkerActor extends CommonActor {
                         imupart.get(y).toString.toDouble,
                         imupart.get(z).toString.toDouble
                       )
-                      somMap.get(label).get.getLabel(vector)._1
+                      Some(somMap.get(label).get.getLabel(vector)._1)
                     } catch {
                       // missing imu part in this row
-                      case e: NullPointerException => null
-                      case e: NumberFormatException => null
+                      case e: NullPointerException => None
+                      case e: NumberFormatException => None
                     }
                   })
-                  .filterNot(_ == null)
+                  .filter(_.isDefined).map(_.get)
                 )
 
               /* 2.3 add common labels into every row */
@@ -323,13 +323,14 @@ class WorkerActor extends CommonActor {
           })
         case FirstSequenceGenerationTask(activityOffset) =>
           val activity = DatabaseHelper.getTableRowMapObject(Tables.ActivityItemSetSequence, activityOffset)
-//          activity.get()
-//          Sequence.createFirstSeq(Array(ac))
+        //          activity.get()
+        //          Sequence.createFirstSeq(Array(ac))
         //TODO working here
         case SequenceGenerationTask(activityOffset, seqOffset, seqCount) =>
           ???
         //TODO add other task type
-        case msg => showError(s"unsupported message: $msg")
+        case task: Task => showError(s"worker: unsupported task $task")
+        case msg => showError(s"worker: unsupported message: $msg")
       }
       Log.info(s"finish task ${task.id}")
       DatabaseHelper.finishTask(task.id)
@@ -347,6 +348,7 @@ class WorkerActor extends CommonActor {
   }
 
   override def preStart = {
+    log info "self register worker"
     SingletonActor.Dispatcher.proxy ! MessageProtocol.RegisterWorker(DatabaseHelper.clusterSeedId, workerId)
   }
 

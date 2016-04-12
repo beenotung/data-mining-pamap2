@@ -10,6 +10,8 @@ import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.{NodeInfo, Task}
 import hk.edu.polyu.datamining.pamap2.actor.MessageProtocol.Task.{Label, Offset, TaskType}
 import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 
+import scala.collection.mutable
+
 /**
   * Created by beenotung on 2/18/16.
   */
@@ -24,7 +26,7 @@ object MessageProtocol {
   sealed trait DispatchActorProtocol
 
   object Task {
-    val Param = "param"
+    val Param = Tables.Task.Field.param.toString
     val TaskType = Tables.Task.Field.taskType.toString
     val Label = "label"
     val Offset = "offset"
@@ -46,6 +48,14 @@ object MessageProtocol {
 
     def toMap: MapObject
   }
+
+  trait TaskResolver {
+    def fromMap(map: ju.Map[String, AnyRef]): Task
+
+    val actionState: ActionStatus.ActionStatusType
+  }
+
+  val TaskResolvers = mutable.Set.empty[TaskResolver]
 
   case class NodeInfo(processor: Int, freeMemory: Long, totalMemory: Long, maxMemory: Long, upTime: Long, startTime: Long, clusterSeedId: String, genTime: Long) extends Comparable[NodeInfo] {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
@@ -85,14 +95,13 @@ object MessageProtocol {
 
   case class StartARM(percentage: Double, start: Double, end: Double, step: Double)
 
-
   abstract class SomTask extends Task {
     override val actionState: ActionStatusType = ActionStatus.somProcess
   }
 
   val TrainingDataCount = "trainingDataCount"
 
-  case object ImuSomTrainingTask extends Enumeration {
+  case object ImuSomTrainingTask extends Enumeration with TaskResolver {
     type LabelType = Value
     val a16, a6, r, m = Value
     //val polar = Value
@@ -101,6 +110,8 @@ object MessageProtocol {
       label = withName(map.get(Label).asInstanceOf[String]),
       trainingDataCount = map.get(TrainingDataCount).asInstanceOf[Long]
     )
+
+    override val actionState: ActionStatusType = ActionStatus.somProcess
   }
 
   case class ImuSomTrainingTask(label: ImuSomTrainingTask.LabelType, trainingDataCount: Long) extends SomTask {
@@ -187,13 +198,17 @@ object MessageProtocol {
       .`with`(Label, Tables.Subject.Field.age.toString)
   }
 
-  object MapRawDataToItemTask {
+  TaskResolvers += MapRawDataToItemTask
+
+  object MapRawDataToItemTask extends TaskResolver {
     val IMUIds = "imuIds"
 
     def fromMap(map: ju.Map[String, AnyRef]): MapRawDataToItemTask = new MapRawDataToItemTask(
       map.get(IMUIds).asInstanceOf[String],
       map.get(Offset).asInstanceOf[Long]
     )
+
+    override val actionState: ActionStatusType = ActionStatus.mapRawDataToItem
   }
 
   case class MapRawDataToItemTask(imuIds: String, offset: Long) extends Task {
@@ -207,12 +222,16 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = MapRawDataToItemTask.fromMap(map)
   }
 
-  case object FirstSequenceGenerationTask {
+  TaskResolvers += FirstSequenceGenerationTask
+
+  case object FirstSequenceGenerationTask extends TaskResolver {
     val ActivityOffset = "activity_offset"
 
     def fromMap(map: ju.Map[String, AnyRef]): Task = new FirstSequenceGenerationTask(
       map.get(ActivityOffset).asInstanceOf[Long]
     )
+
+    override val actionState: ActionStatusType = ActionStatus.firstSequenceGeneration
   }
 
   case class FirstSequenceGenerationTask(activityOffset: Long) extends Task {
@@ -224,7 +243,9 @@ object MessageProtocol {
     override def fromMap(map: ju.Map[String, AnyRef]): Task = FirstSequenceGenerationTask.fromMap(map)
   }
 
-  object SequenceGenerationTask {
+  TaskResolvers += SequenceGenerationTask
+
+  object SequenceGenerationTask extends TaskResolver {
     val ActivityOffset = "activity_offset"
     val SeqOffset = "seq_offset"
     val SeqCount = "seq_count"
@@ -234,6 +255,8 @@ object MessageProtocol {
       map.get(SeqOffset).asInstanceOf[Long],
       map.get(SeqCount).asInstanceOf[Long]
     )
+
+    override val actionState: ActionStatusType = ActionStatus.sequenceGeneration
   }
 
   case class SequenceGenerationTask(activityOffset: Long, seqOffset: Long, seqCount: Long) extends Task {

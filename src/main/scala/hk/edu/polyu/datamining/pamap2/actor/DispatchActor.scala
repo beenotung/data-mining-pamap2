@@ -94,51 +94,59 @@ class DispatchActor extends CommonActor {
     case task: MessageProtocol.Task => handleTask(Seq(task))
     case TaskCompleted(taskId) =>
       workers.get(sender()) match {
-        case Some(worker) => worker.completedTask += 1
+        case Some(worker) =>
+          worker.completedTask += 1
+          worker.pendingTask -= 1
         case None =>
       }
       val fs = Tables.Task.Field
       val currentActionType = DatabaseHelper.getActionStatus
       val currentTypePendingTask: Long = DatabaseHelper.run(r => r.table(Tables.Task.name)
         .filter(r.hashMap(fs.taskType.toString, currentActionType.toString))
-        .without(fs.completeTime.toString)
+        .filter(reqlFunction1(row => r.not(row.hasFields(fs.completeTime.toString))))
         .count()
       )
-      if (currentTypePendingTask == 0) currentActionType match {
-        case ActionStatus.finished => Log.info("all task finished?")
-        case ActionStatus.somProcess =>
-          Log.info("finished som training")
-          findAndDispatchNewTasks(ActionStatus.mapRawDataToItem)
-        case ActionStatus.mapRawDataToItem =>
-          Log.info(s"finished raw data to item mapping")
-          findAndDispatchNewTasks(ActionStatus.firstSequenceGeneration)
-        case ActionStatus.firstSequenceGeneration =>
-          Log info "finished first sequence generation"
-          findAndDispatchNewTasks(ActionStatus.firstSequenceReduction)
-        case ActionStatus.firstSequenceReduction =>
-          Log info "finished first sequence reduction"
-          DatabaseHelper.setArmLNum(2)
-          findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
-        case ActionStatus.sequenceGeneration =>
-          val l = DatabaseHelper.getArmLNum
-          Log.info(s"finished sequence generation on L$l")
-          findAndDispatchNewTasks(ActionStatus.sequenceReduction)
-        case ActionStatus.sequenceReduction =>
-          val l = DatabaseHelper.getArmLNum
-          Log info s"finished sequence reduction on L$l"
-          //TODO detect to stop
-          if (true) {
-            DatabaseHelper.setArmLNum(l + 1)
-            findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
-          } else {
-            findAndDispatchNewTasks(ActionStatus.ruleGeneration)
-          }
-        case status: ActionStatus.ActionStatusType =>
-          Log info s"finished all task of $status"
-          findAndDispatchNewTasks(ActionStatus.next(status))
-      } else
+      Log info s"finished 1 task of $currentActionType, number of task remaining = $currentTypePendingTask"
+      if (currentTypePendingTask == 0)
+        onTaskTypeCompleted(currentActionType)
+      else
         cleanTasks()
   }
+
+  def onTaskTypeCompleted(currentActionType: ActionStatus.ActionStatusType) =
+    currentActionType match {
+      case ActionStatus.finished => Log.info("all task finished?")
+      case ActionStatus.somProcess =>
+        Log.info("finished som training")
+        findAndDispatchNewTasks(ActionStatus.mapRawDataToItem)
+      case ActionStatus.mapRawDataToItem =>
+        Log.info(s"finished raw data to item mapping")
+        findAndDispatchNewTasks(ActionStatus.firstSequenceGeneration)
+      case ActionStatus.firstSequenceGeneration =>
+        Log info "finished first sequence generation"
+        findAndDispatchNewTasks(ActionStatus.firstSequenceReduction)
+      case ActionStatus.firstSequenceReduction =>
+        Log info "finished first sequence reduction"
+        DatabaseHelper.setArmLNum(2)
+        findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
+      case ActionStatus.sequenceGeneration =>
+        val l = DatabaseHelper.getArmLNum
+        Log.info(s"finished sequence generation on L$l")
+        findAndDispatchNewTasks(ActionStatus.sequenceReduction)
+      case ActionStatus.sequenceReduction =>
+        val l = DatabaseHelper.getArmLNum
+        Log info s"finished sequence reduction on L$l"
+        //TODO detect to stop
+        if (true) {
+          DatabaseHelper.setArmLNum(l + 1)
+          findAndDispatchNewTasks(ActionStatus.sequenceGeneration)
+        } else {
+          findAndDispatchNewTasks(ActionStatus.ruleGeneration)
+        }
+      case status: ActionStatus.ActionStatusType =>
+        Log info s"finished all task of $status"
+        findAndDispatchNewTasks(ActionStatus.next(status))
+    }
 
   def unregisterComputeNode(clusterSeedId: String) = {
     DatabaseHelper.removeSeed(clusterSeedId)
@@ -171,8 +179,12 @@ class DispatchActor extends CommonActor {
       .toIndexedSeq
   }
 
-  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty) = {
-    handleTask(findNewTasks(actionState, param))
+  def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty): Unit = {
+    val tasks = findNewTasks(actionState, param)
+    if (tasks.isEmpty)
+      onTaskTypeCompleted(actionState)
+    else
+      handleTask(findNewTasks(actionState, param))
   }
 
   def handleTask(tasks: Seq[Task]) = {
