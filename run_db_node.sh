@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-rm -rf ./rethinkdb_data
+#rm -rf ./rethinkdb_data
 
 # aliyun
 # rethinkdb --join 58.96.176.223:29015 --bind all

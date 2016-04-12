@@ -108,11 +108,11 @@ object DatabaseHelper {
     //initTables(conn)
     val n = numberOfServer(conn) - offset
     if (n >= 1)
-      Some(r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
+      Some(conn.synchronized(r.db(dbname).tableList().forEach(reqlFunction1(table => r.db(dbname).table(table)
         .reconfigure()
         .optArg(shards, 1)
         .optArg(replicas, n)
-      )).run(conn).asInstanceOf[ju.HashMap[String, AnyRef]])
+      )).run(conn).asInstanceOf[ju.HashMap[String, AnyRef]]))
     else
       None
   }
