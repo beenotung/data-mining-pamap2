@@ -115,7 +115,7 @@ class DispatchActor extends CommonActor {
       workers.get(sender()) match {
         case Some(worker) =>
           worker.completedTask += 1
-          worker.pendingTask -= 1
+          worker.removeTask(taskId)
         case None =>
       }
       //      currentTypePendingTaskCount -= 1
@@ -225,7 +225,7 @@ class DispatchActor extends CommonActor {
           } else {
             DatabaseHelper.reassignTask(task.id, record.clusterSeedId, record.workerId)
           }
-          record.pendingTask += 1
+          record.addTask(task.id)
           Log.debug(s"sent task $task to $actorRef")
           assert(task.id != null, "task id should not be null")
           actorRef ! TaskAssign(task.id, task)
@@ -243,7 +243,11 @@ class DispatchActor extends CommonActor {
       Log.info("no worker, skip cleaning task")
     else {
       val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
-      handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
+      if (taskQuota == 0) {
+        Log info s"warming : no taskQuota ${workers.values}"
+      }
+      else
+        handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
     }
   }
 

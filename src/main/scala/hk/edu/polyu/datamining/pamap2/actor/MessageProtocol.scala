@@ -61,7 +61,19 @@ object MessageProtocol {
     override def compareTo(o: NodeInfo): Int = clusterSeedId.compareTo(o.clusterSeedId)
   }
 
-  case class WorkerRecord(clusterSeedId: String, workerId: String, var pendingTask: Long, var completedTask: Long)
+  case class WorkerRecord(clusterSeedId: String, workerId: String, var pendingTask: Long, var completedTask: Long) {
+    val pendingTasks = mutable.Buffer.empty[String]
+
+    def addTask(taskId: String) = {
+      pendingTasks += taskId
+      pendingTask += 1
+    }
+
+    def removeTask(taskId: String) = {
+      pendingTasks -= taskId
+      pendingTask -= 1
+    }
+  }
 
   case class ComputeNodeInfo(nodeInfo: NodeInfo, workerRecords: Seq[WorkerRecord])
 
