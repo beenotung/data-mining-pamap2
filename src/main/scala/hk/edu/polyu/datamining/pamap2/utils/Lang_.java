@@ -26,7 +26,12 @@ public class Lang_ {
 
   public static String[] toStringArray(List<String> list) {
     Log.debug_("converting string list to array, length:" + list.size());
-    String[] array = new String[list.size()];
-    return list.toArray(array);
+    try {
+      String[] array = new String[list.size()];
+      return list.toArray(array);
+    } catch (ArrayStoreException e) {
+      Log.error_("failed to convert string list to array, length:" + list.size());
+      throw e;
+    }
   }
 }

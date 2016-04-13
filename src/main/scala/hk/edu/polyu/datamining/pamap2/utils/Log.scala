@@ -38,6 +38,8 @@ object Log {
     log(x)
   })
 
+  def error_(x: Any) = error(Seq(x))
+
   def error(x: Any*): Unit = if (isError) fork(() => {
     if (x.length == 1)
       System.err.println(x.head)

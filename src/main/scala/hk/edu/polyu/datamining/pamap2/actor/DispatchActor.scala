@@ -175,23 +175,28 @@ class DispatchActor extends CommonActor {
     val tasks: Seq[Task] = workerIds.flatMap(workerId => DatabaseHelper.getActiveTasksByWorkerId(workerId))
     workers.retain((ref, record) => !workerIds.contains(record.workerId))
     handleTask(tasks)
+    cleanTasks()
   }
 
   def mkClusterComputeInfo: IndexedSeq[ComputeNodeInfo] = {
     //    log info "making cluster compute info"
     val margin = getMargin
-    workers.values.filterNot(_.clusterSeedId == null)
+    val deadWorkers = mutable.Buffer.empty[String]
+    val infos = workers.values.filterNot(_.clusterSeedId == null)
       .groupBy(_.clusterSeedId)
       .flatMap(workerGroup => {
         nodeInfos.get(workerGroup._1) match {
           case None =>
             log info s"skip this node : ${workerGroup._1}"
             log info s"all nodes $nodeInfos"
+            deadWorkers ++ workerGroup._1
             None
           case Some(node) => Some(ComputeNodeInfo(node, workerGroup._2.toIndexedSeq))
         }
       })
       .toIndexedSeq
+    unregisterWorkers(deadWorkers.toIndexedSeq)
+    infos
   }
 
   def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty): Unit = {
