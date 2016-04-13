@@ -52,6 +52,8 @@ object MonitorController {
       instance.cluster_status.setText(status.toString)
     })
     NodesDetailController.updateList()
+    val count: Long = DatabaseHelper.getPendingTaskCount(status)
+    runOnUIThread(() => instance.text_number_of_pending_task.setText(count.toString))
     //TODO use UIActor scheduler
     if (instance.auto_update.isSelected)
       fork(() => {
