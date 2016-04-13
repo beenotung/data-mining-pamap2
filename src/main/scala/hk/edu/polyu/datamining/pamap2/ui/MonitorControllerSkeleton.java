@@ -17,15 +17,9 @@ public class MonitorControllerSkeleton {
 
   @FXML // URL location of the FXML file that was given to the FXMLLoader
   protected URL location;
-  @FXML
-  protected Label max_activity_length;
+
   @FXML // fx:id="text_cluster_processor"
   protected Label text_cluster_processor; // Value injected by FXMLLoader
-
-  @FXML // fx:id="text_number_of_pending_task"
-  protected Label text_number_of_processing_task; // Value injected by FXMLLoader
-  @FXML // fx:id="text_number_of_pending_task"
-  protected Label text_number_of_pending_task; // Value injected by FXMLLoader
 
   @FXML // fx:id="text_number_of_completed_task"
   protected Label text_number_of_completed_task; // Value injected by FXMLLoader
@@ -33,11 +27,17 @@ public class MonitorControllerSkeleton {
   @FXML // fx:id="text_cluster_memory"
   protected Label text_cluster_memory; // Value injected by FXMLLoader
 
+  @FXML // fx:id="auto_update"
+  protected CheckBox auto_update; // Value injected by FXMLLoader
+
   @FXML // fx:id="btn_nodes"
   protected Button btn_nodes; // Value injected by FXMLLoader
 
-  @FXML // fx:id="auto_update"
-  protected CheckBox auto_update; // Value injected by FXMLLoader
+  @FXML // fx:id="text_number_of_processing_task"
+  protected Label text_number_of_processing_task; // Value injected by FXMLLoader
+
+  @FXML // fx:id="text_number_of_pending_task"
+  protected Label text_number_of_pending_task; // Value injected by FXMLLoader
 
   @FXML // fx:id="import_file_progress"
   protected ProgressBar import_file_progress; // Value injected by FXMLLoader
@@ -47,6 +47,9 @@ public class MonitorControllerSkeleton {
 
   @FXML // fx:id="import_sample_rate"
   protected TextField import_sample_rate; // Value injected by FXMLLoader
+
+  @FXML // fx:id="max_activity_length"
+  protected TextField max_activity_length; // Value injected by FXMLLoader
 
   @FXML // fx:id="training_data_count"
   protected Label training_data_count; // Value injected by FXMLLoader
@@ -77,11 +80,6 @@ public class MonitorControllerSkeleton {
 
   @FXML // fx:id="cluster_status"
   protected Button cluster_status; // Value injected by FXMLLoader
-
-  @FXML
-  void show_ip_list(ActionEvent event) {
-
-  }
 
   @FXML
   void abort_import_datafile(ActionEvent event) {
@@ -119,6 +117,11 @@ public class MonitorControllerSkeleton {
   }
 
   @FXML
+  void show_ip_list(ActionEvent event) {
+
+  }
+
+  @FXML
   void show_nodes_detail(ActionEvent event) {
 
   }
@@ -141,17 +144,17 @@ public class MonitorControllerSkeleton {
   @FXML
     // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
-    assert max_activity_length != null : "max_activity_length was not injected";
     assert text_cluster_processor != null : "fx:id=\"text_cluster_processor\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert text_number_of_pending_task != null : "fx:id=\"text_number_of_pending_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert text_number_of_processing_task != null : "fx:id=\"text_number_of_processing_task not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_number_of_completed_task != null : "fx:id=\"text_number_of_completed_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_cluster_memory != null : "fx:id=\"text_cluster_memory\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
-    assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert auto_update != null : "fx:id=\"auto_update\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert btn_nodes != null : "fx:id=\"btn_nodes\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_number_of_processing_task != null : "fx:id=\"text_number_of_processing_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert text_number_of_pending_task != null : "fx:id=\"text_number_of_pending_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_file_progress != null : "fx:id=\"import_file_progress\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert file_progress_text != null : "fx:id=\"file_progress_text\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert import_sample_rate != null : "fx:id=\"import_sample_rate\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
+    assert max_activity_length != null : "fx:id=\"max_activity_length\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert training_data_count != null : "fx:id=\"training_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert testing_data_count != null : "fx:id=\"testing_data_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert subject_count != null : "fx:id=\"subject_count\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
@@ -164,7 +167,6 @@ public class MonitorControllerSkeleton {
     assert cluster_status != null : "fx:id=\"cluster_status\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     customInit();
   }
-
 
   protected void customInit() {
     System.out.println("customInit is not implemented");
