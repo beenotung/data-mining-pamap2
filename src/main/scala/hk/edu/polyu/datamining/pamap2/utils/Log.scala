@@ -28,29 +28,29 @@ object Log {
     stream
   }
 
-  def debug(x: Any*) = if (isDebug) {
+  def debug(x: Any*): Unit = if (isDebug) fork(() => {
     if (x.length == 1)
       println(x.head)
     else
       println(x)
     log(x)
-  }
+  })
 
-  def error(x: Any*): Unit = if (isError) {
+  def error(x: Any*): Unit = if (isError) fork(() => {
     if (x.length == 1)
       System.err.println(x.head)
     else
       System.err.println(x)
     log(x)
-  }
+  })
 
-  def info(x: Any*) = if (isInfo) {
+  def info(x: Any*): Unit = if (isInfo) fork(() => {
     if (x.length == 1)
       println(x.head)
     else
       println(x)
     log(x)
-  }
+  })
 
   private def log(x: Any*) = if (isLog)
     if (x.length == 1)

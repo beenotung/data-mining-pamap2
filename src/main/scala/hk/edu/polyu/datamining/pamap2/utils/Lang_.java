@@ -1,5 +1,7 @@
 package hk.edu.polyu.datamining.pamap2.utils;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -22,7 +24,8 @@ public class Lang_ {
     void apply();
   }
 
-  public static <A> A[] toArray(List<A> list) {
-    return (A[]) list.toArray();
+  public static String[] toStringArray(List<String> list) {
+    String[] array = new String[list.size()];
+    return list.toArray(array);
   }
 }

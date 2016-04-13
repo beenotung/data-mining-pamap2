@@ -6,8 +6,7 @@ import hk.edu.polyu.datamining.pamap2.database.{DatabaseHelper, Tables}
 import hk.edu.polyu.datamining.pamap2.utils.Lang._
 import java.{util => ju}
 
-import SequentialAR.Sequence_.Sequence_
-import SequentialAR.{ItemSets, Sequence}
+import SequentialAR.{ItemSets, ItemSets_, Sequence, Sequence_}
 import com.rethinkdb.RethinkDB
 import com.rethinkdb.model.MapObject
 
@@ -327,8 +326,8 @@ class WorkerActor extends CommonActor {
           val activitySeq = DatabaseHelper.runToBuffer[ju.List[String]](r => r.table(ActivityItemSetSequence.name)
             .skip(activityOffset)
             .getField(ActivityItemSetSequence.ItemSetSequence)
-          )
-          val one_seq_sets = Sequence_.createFirstSeq(activitySeq.toIndexedSeq)
+          ).map(list => new ItemSets_(IndexedSeq(list.asScala.toIndexedSeq)))
+          val one_seq_sets = Sequence_.createFirstSeq(activitySeq)
           import Tables.OneSeqTemp
           val row = RethinkDB.r.hashMap(OneSeqTemp.PartId, activityOffset)
             .`with`(OneSeqTemp.OneSeqSets, one_seq_sets)

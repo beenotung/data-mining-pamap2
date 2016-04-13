@@ -31,7 +31,15 @@ object DispatchActor {
 class DispatchActor extends CommonActor {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
-  var currentTypePendingTaskCount = 0L
+  var currentActionType = DatabaseHelper.getActionStatus
+  var currentTypePendingTaskCount: Long = {
+    import Tables.Task.Field
+    DatabaseHelper.run(r => r.table(Tables.Task.name)
+      .filter(r.hashMap(Field.taskType.toString, currentActionType.toString))
+      .filter(reqlFunction1(row => r.not(row.hasFields(Field.completeTime.toString))))
+      .count()
+    )
+  }
   var isDoingRestart = false
 
   override def preStart(): Unit = {
@@ -110,13 +118,7 @@ class DispatchActor extends CommonActor {
           worker.pendingTask -= 1
         case None =>
       }
-      val fs = Tables.Task.Field
-      val currentActionType = DatabaseHelper.getActionStatus
-      currentTypePendingTaskCount = DatabaseHelper.run(r => r.table(Tables.Task.name)
-        .filter(r.hashMap(fs.taskType.toString, currentActionType.toString))
-        .filter(reqlFunction1(row => r.not(row.hasFields(fs.completeTime.toString))))
-        .count()
-      )
+      currentTypePendingTaskCount -= 1
       Log info s"finished 1 task of $currentActionType, number of task remaining = $currentTypePendingTaskCount"
       if (currentTypePendingTaskCount == 0)
         onTaskTypeCompleted(currentActionType)
@@ -193,10 +195,12 @@ class DispatchActor extends CommonActor {
   def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty): Unit = {
     val tasks = findNewTasks(actionState, param)
     DatabaseHelper.setActionStatus(actionState)
+    currentActionType = actionState
+    currentTypePendingTaskCount = tasks.length
     if (tasks.isEmpty)
       onTaskTypeCompleted(actionState)
     else
-      handleTask(findNewTasks(actionState, param))
+      handleTask(tasks)
   }
 
   def handleTask(tasks: Seq[Task]) = {
@@ -261,7 +265,7 @@ class DispatchActor extends CommonActor {
       case ActionStatus.firstSequenceGeneration =>
         val activityCount = DatabaseHelper.countTableItem(Tables.ActivityItemSetSequence, RethinkDB.r.hashMap())
         (0L until activityCount).map(activityOffset => new FirstSequenceGenerationTask(activityOffset))
-//      case ActionStatus.firstSequenceReduction =>
+      //      case ActionStatus.firstSequenceReduction =>
 
       //TODO add more task type
       case _ => Log error s"findTask on $actionState is not implemented"
