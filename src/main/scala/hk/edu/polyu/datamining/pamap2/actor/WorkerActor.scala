@@ -329,11 +329,11 @@ class WorkerActor extends CommonActor {
             .skip(activityOffset)
             .getField(ActivityItemSetSequence.ItemSetSequence)
           )
-            //            .map(list => new ItemSets_(IndexedSeq(list.asScala.toIndexedSeq)))
-            .map(list => new ItemSets(Array(Lang_.toStringArray(list))))
+            .map(list => new ItemSets_(IndexedSeq(list.asScala.toIndexedSeq)))
+          //            .map(list => new ItemSets(Array(Lang_.toStringArray(list))))
           Log debug s"generating first sequence"
-          //          val one_seq_sets = Sequence_.createFirstSeq(activitySeq)
-          val one_seq_sets = Sequence.createFirstSeq(activitySeq.toArray)
+          val one_seq_sets = Sequence_.createFirstSeq(activitySeq)
+          //          val one_seq_sets = Sequence.createFirstSeq(activitySeq.toArray)
           import Tables.OneSeqTemp
           val row = RethinkDB.r.hashMap(OneSeqTemp.PartId, activityOffset)
             .`with`(OneSeqTemp.OneSeqSets, one_seq_sets)
