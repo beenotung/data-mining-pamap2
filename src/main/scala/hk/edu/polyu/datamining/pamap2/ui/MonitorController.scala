@@ -40,7 +40,7 @@ object MonitorController {
   val aborted = new AtomicBoolean(false)
   //  val autoUpdate = Main.config.getBoolean("ui.autoupdate.enable")
   val interval = Main.config.getInt("ui.autoupdate.interval")
-  var clusterComputeInfo: ClusterComputeInfo = (0L, IndexedSeq.empty)
+  var clusterComputeInfo: ClusterComputeInfo = IndexedSeq.empty
   private[ui] var instance: MonitorController = null
 
   def receivedNodeInfos(newVal: ClusterComputeInfo) = {
@@ -142,6 +142,7 @@ class MonitorController extends MonitorControllerSkeleton {
     btn_nodes setText loading
     text_cluster_processor setText loading
     text_cluster_memory setText loading
+    text_number_of_processing_task setText loading
     text_number_of_pending_task setText loading
     text_number_of_completed_task setText loading
     fork(() => {
@@ -150,6 +151,8 @@ class MonitorController extends MonitorControllerSkeleton {
       /* get staus from database */
       val status = DatabaseHelper.getActionStatus
       runOnUIThread(() => cluster_status setText status.toString)
+      val count: Long = DatabaseHelper.getPendingTaskCount(status)
+      runOnUIThread(() => text_number_of_pending_task.setText(count.toString))
     })
   }
 
@@ -421,19 +424,19 @@ class MonitorController extends MonitorControllerSkeleton {
   })
 
   def updated_computeNodeInfos() = {
-    if (clusterComputeInfo._2.isEmpty) {
+    if (clusterComputeInfo.isEmpty) {
       def setText(x: Labeled) = {
         x setText "none"
       }
       setText(btn_nodes)
       setText(text_cluster_processor)
       setText(text_cluster_memory)
-      setText(text_number_of_pending_task)
+      setText(text_number_of_processing_task)
       setText(text_number_of_completed_task)
     } else {
-      btn_nodes setText clusterComputeInfo._2.size.toString
-      val nodeInfos = clusterComputeInfo._2.map(_.nodeInfo)
-      text_cluster_processor setText clusterComputeInfo._2.map(_.workerRecords.length).sum.toString
+      btn_nodes setText clusterComputeInfo.size.toString
+      val nodeInfos = clusterComputeInfo.map(_.nodeInfo)
+      text_cluster_processor setText clusterComputeInfo.map(_.workerRecords.length).sum.toString
       text_cluster_memory setText {
         val total = nodeInfos.map(_.totalMemory).sum
         val free = nodeInfos.map(_.freeMemory).sum
@@ -442,8 +445,8 @@ class MonitorController extends MonitorControllerSkeleton {
         val usage = 100 * used / max
         s"${formatSize(used)} / ${formatSize(max)} ($usage%)"
       }
-      val workerRecords = clusterComputeInfo._2.flatMap(_.workerRecords).toIndexedSeq
-      text_number_of_pending_task setText workerRecords.map(_.pendingTask).sum.toString + "/" + clusterComputeInfo._1
+      val workerRecords = clusterComputeInfo.flatMap(_.workerRecords).toIndexedSeq
+      text_number_of_processing_task setText workerRecords.map(_.pendingTask).sum.toString
       text_number_of_completed_task setText workerRecords.map(_.completedTask).sum.toString
     }
   }

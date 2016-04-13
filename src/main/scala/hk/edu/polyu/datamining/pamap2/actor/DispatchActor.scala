@@ -31,15 +31,15 @@ object DispatchActor {
 class DispatchActor extends CommonActor {
   val workers = mutable.Map.empty[ActorRef, WorkerRecord]
   val nodeInfos = mutable.Map.empty[String, NodeInfo]
-  var currentActionType = DatabaseHelper.getActionStatus
-  var currentTypePendingTaskCount: Long = {
-    import Tables.Task.Field
-    DatabaseHelper.run(r => r.table(Tables.Task.name)
-      .filter(r.hashMap(Field.taskType.toString, currentActionType.toString))
-      .filter(reqlFunction1(row => r.not(row.hasFields(Field.completeTime.toString))))
-      .count()
-    )
-  }
+  //  var currentTypePendingTaskCount: Long = {
+  //    import Tables.Task.Field
+  //    var currentActionType = DatabaseHelper.getActionStatus
+  //    DatabaseHelper.run(r => r.table(Tables.Task.name)
+  //      .filter(r.hashMap(Field.taskType.toString, currentActionType.toString))
+  //      .filter(reqlFunction1(row => r.not(row.hasFields(Field.completeTime.toString))))
+  //      .count()
+  //    )
+  //  }
   var isDoingRestart = false
 
   override def preStart(): Unit = {
@@ -81,7 +81,7 @@ class DispatchActor extends CommonActor {
       log warning "removed worker"
     case UnRegisterComputeNode(clusterSeedId) => unregisterComputeNode(clusterSeedId)
       log warning "removed compute node"
-    case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(currentTypePendingTaskCount, mkClusterComputeInfo)
+    case RequestClusterComputeInfo => sender() ! ResponseClusterComputeInfo(mkClusterComputeInfo)
     //      log info s"responsed cluster compute info, sender:$sender"
     case StartARM(percentage, start, end, step) =>
       //TODO working here
@@ -118,7 +118,9 @@ class DispatchActor extends CommonActor {
           worker.pendingTask -= 1
         case None =>
       }
-      currentTypePendingTaskCount -= 1
+      //      currentTypePendingTaskCount -= 1
+      val currentActionType = DatabaseHelper.getActionStatus
+      val currentTypePendingTaskCount = DatabaseHelper.getPendingTaskCount(currentActionType)
       Log info s"finished 1 task of $currentActionType, number of task remaining = $currentTypePendingTaskCount"
       if (currentTypePendingTaskCount == 0)
         onTaskTypeCompleted(currentActionType)
@@ -195,8 +197,8 @@ class DispatchActor extends CommonActor {
   def findAndDispatchNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, AnyVal] = Map.empty): Unit = {
     val tasks = findNewTasks(actionState, param)
     DatabaseHelper.setActionStatus(actionState)
-    currentActionType = actionState
-    currentTypePendingTaskCount = tasks.length
+    //    currentActionType = actionState
+    //    currentTypePendingTaskCount = tasks.length
     if (tasks.isEmpty)
       onTaskTypeCompleted(actionState)
     else
@@ -232,8 +234,12 @@ class DispatchActor extends CommonActor {
 
   def cleanTasks() = {
     Log.info("clean tasks")
-    val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
-    handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
+    if (workers.isEmpty)
+      Log.info("no worker, skip cleaning task")
+    else {
+      val taskQuota: Long = workers.map(x => MaxTask - x._2.pendingTask).sum
+      handleTask(getPendingTasks(Math.min(numberOfPendingTask, taskQuota)))
+    }
   }
 
   def findNewTasks(actionState: ActionStatus.ActionStatusType = DatabaseHelper.getActionStatus, param: Map[String, Any]): Seq[Task] = {

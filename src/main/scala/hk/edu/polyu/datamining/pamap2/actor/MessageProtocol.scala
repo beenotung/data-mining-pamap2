@@ -17,7 +17,7 @@ import scala.collection.mutable
   */
 object MessageProtocol {
 
-  type ClusterComputeInfo = (Long, IndexedSeq[ComputeNodeInfo])
+  type ClusterComputeInfo = (IndexedSeq[ComputeNodeInfo])
 
   sealed trait Request
 

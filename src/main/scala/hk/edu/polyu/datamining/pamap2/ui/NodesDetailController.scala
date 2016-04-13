@@ -64,7 +64,7 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
   }
 
   def updateList() = {
-    val nodes = MonitorController.clusterComputeInfo._2.map { node => {
+    val nodes = MonitorController.clusterComputeInfo.map { node => {
       val nodeInfo = node.nodeInfo
       val name = {
         val (host, port, roles) = DatabaseHelper.getHostInfo(nodeInfo.clusterSeedId)
@@ -108,7 +108,7 @@ class NodesDetailController extends NodesDetailControllerSkeleton {
       vbox
     }
     }
-    messageLabel setText s"${MonitorController.clusterComputeInfo._2.size} host(s)"
+    messageLabel setText s"${MonitorController.clusterComputeInfo.size} host(s)"
     detailsLabel setText " "
     main_vbox.getChildren.clear()
     main_vbox.getChildren.addAll(nodes.asJavaCollection)

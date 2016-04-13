@@ -600,4 +600,13 @@ object DatabaseHelper {
 
   def getTableRowMapObject(table: Table, offset: Long): ju.Map[String, AnyRef] =
     runToBuffer(_.table(table.name).skip(offset).limit(1)).get(0)
+
+  def getPendingTaskCount(actionStatusType: ActionStatusType): Long = {
+    import Tables.Task.Field
+    DatabaseHelper.run(r => r.table(Tables.Task.name)
+      .filter(r.hashMap(Field.taskType.toString, actionStatusType.toString))
+      .filter(reqlFunction1(row => r.not(row.hasFields(Field.completeTime.toString))))
+      .count()
+    )
+  }
 }

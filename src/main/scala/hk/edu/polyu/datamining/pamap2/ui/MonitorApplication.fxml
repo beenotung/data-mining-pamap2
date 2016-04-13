@@ -22,91 +22,116 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.76-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.76-ea"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="hk.edu.polyu.datamining.pamap2.ui.MonitorController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="New" />
-                        <MenuItem mnemonicParsing="false" text="Open…" />
-                        <Menu mnemonicParsing="false" text="Open Recent" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Close" />
-                        <MenuItem mnemonicParsing="false" text="Save" />
-                        <MenuItem mnemonicParsing="false" text="Save As…" />
-                        <MenuItem mnemonicParsing="false" text="Revert" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Preferences…" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Quit" />
+                        <MenuItem mnemonicParsing="false" text="New"/>
+                        <MenuItem mnemonicParsing="false" text="Open…"/>
+                        <Menu mnemonicParsing="false" text="Open Recent"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" text="Close"/>
+                        <MenuItem mnemonicParsing="false" text="Save"/>
+                        <MenuItem mnemonicParsing="false" text="Save As…"/>
+                        <MenuItem mnemonicParsing="false" text="Revert"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" text="Preferences…"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" text="Quit"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Undo" />
-                        <MenuItem mnemonicParsing="false" text="Redo" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Cut" />
-                        <MenuItem mnemonicParsing="false" text="Copy" />
-                        <MenuItem mnemonicParsing="false" text="Paste" />
-                        <MenuItem mnemonicParsing="false" text="Delete" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Select All" />
-                        <MenuItem mnemonicParsing="false" text="Unselect All" />
+                        <MenuItem mnemonicParsing="false" text="Undo"/>
+                        <MenuItem mnemonicParsing="false" text="Redo"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" text="Cut"/>
+                        <MenuItem mnemonicParsing="false" text="Copy"/>
+                        <MenuItem mnemonicParsing="false" text="Paste"/>
+                        <MenuItem mnemonicParsing="false" text="Delete"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" text="Select All"/>
+                        <MenuItem mnemonicParsing="false" text="Unselect All"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
+                        <MenuItem mnemonicParsing="false" text="About MyHelloApp"/>
                     </items>
                 </Menu>
             </menus>
         </MenuBar>
         <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
             <children>
-                <Label alignment="CENTER" layoutX="155.0" layoutY="177.0" style="&#10;" text="Drag components from Library here…" textAlignment="CENTER" textFill="#9f9f9f" wrapText="false">
+                <Label alignment="CENTER" layoutX="155.0" layoutY="177.0" style="&#10;"
+                       text="Drag components from Library here…" textAlignment="CENTER" textFill="#9f9f9f"
+                       wrapText="false">
                     <font>
-                        <Font size="18.0" />
+                        <Font size="18.0"/>
                     </font>
                 </Label>
-                <Accordion layoutX="14.0" layoutY="14.0" prefHeight="344.0" prefWidth="609.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <Accordion layoutX="14.0" layoutY="14.0" prefHeight="344.0" prefWidth="609.0"
+                           AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                           AnchorPane.topAnchor="0.0">
                     <panes>
                         <TitledPane animated="false" text="Cluster Info">
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <GridPane layoutX="313.0" layoutY="42.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <GridPane layoutX="313.0" layoutY="42.0" AnchorPane.bottomAnchor="0.0"
+                                                  AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                                                  AnchorPane.topAnchor="0.0">
                                             <columnConstraints>
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
                                             </columnConstraints>
                                             <rowConstraints>
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <Label text="Nodes" />
-                                                <Label text="Cluster Processor" GridPane.rowIndex="1" />
-                                                <Label text="Number of pending task" GridPane.rowIndex="3" />
-                                                <Label text="Number of completed task" GridPane.rowIndex="4" />
-                                                <Label fx:id="text_cluster_processor" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                <Label fx:id="text_number_of_pending_task" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                                <Label fx:id="text_number_of_completed_task" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                                <Label text="Cluster Memory" GridPane.rowIndex="2" />
-                                                <Label fx:id="text_cluster_memory" text="loading" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                <CheckBox fx:id="auto_update" mnemonicParsing="false" onAction="#auto_update_onChanged" text="auto update" GridPane.rowIndex="5" />
-                                                <Button mnemonicParsing="false" onAction="#reset_cluster_db" text="RESET (preserve data set)" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                                    <HBox prefHeight="100.0" prefWidth="200.0" spacing="7.0" GridPane.columnIndex="1">
-                                       <children>
-                                                      <Button fx:id="btn_nodes" mnemonicParsing="false" onAction="#show_nodes_detail" text="loading" />
-                                          <Button mnemonicParsing="false" onAction="#show_ip_list" text="show IP list" />
-                                       </children>
-                                    </HBox>
+                                                <Label text="Nodes"/>
+                                                <Label text="Cluster Processor" GridPane.rowIndex="1"/>
+                                                <Label text="Number of processing / pending task"
+                                                       GridPane.rowIndex="3"/>
+                                                <Label text="Number of completed task" GridPane.rowIndex="4"/>
+                                                <Label fx:id="text_cluster_processor" text="loading"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                <Label fx:id="text_number_of_completed_task" text="loading"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                                <Label text="Cluster Memory" GridPane.rowIndex="2"/>
+                                                <Label fx:id="text_cluster_memory" text="loading"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                <CheckBox fx:id="auto_update" mnemonicParsing="false"
+                                                          onAction="#auto_update_onChanged" text="auto update"
+                                                          GridPane.rowIndex="5"/>
+                                                <Button mnemonicParsing="false" onAction="#reset_cluster_db"
+                                                        text="RESET (preserve data set)" GridPane.columnIndex="1"
+                                                        GridPane.rowIndex="5"/>
+                                                <HBox prefHeight="100.0" prefWidth="200.0" spacing="7.0"
+                                                      GridPane.columnIndex="1">
+                                                    <children>
+                                                        <Button fx:id="btn_nodes" mnemonicParsing="false"
+                                                                onAction="#show_nodes_detail" text="loading"/>
+                                                        <Button mnemonicParsing="false" onAction="#show_ip_list"
+                                                                text="show IP list"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                                    <children>
+                                                        <Label fx:id="text_number_of_processing_task" text="loading"/>
+                                                        <Label text="/"/>
+                                                        <Label fx:id="text_number_of_pending_task" text="loading"/>
+                                                    </children>
+                                                </HBox>
                                             </children>
                                         </GridPane>
                                     </children>
@@ -117,32 +142,46 @@
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <GridPane hgap="7.0" layoutX="176.0" layoutY="54.0" vgap="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <GridPane hgap="7.0" layoutX="176.0" layoutY="54.0" vgap="7.0"
+                                                  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                                  AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                             <columnConstraints>
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
                                             </columnConstraints>
                                             <rowConstraints>
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <ProgressBar fx:id="import_file_progress" prefWidth="600.0" progress="0.0" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.valignment="CENTER" />
-                                                <Label fx:id="file_progress_text" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-                                                <Button mnemonicParsing="false" onAction="#abort_import_datafile" text="Abort" GridPane.halignment="CENTER" GridPane.rowIndex="4" />
+                                                <ProgressBar fx:id="import_file_progress" prefWidth="600.0"
+                                                             progress="0.0" GridPane.halignment="CENTER"
+                                                             GridPane.rowIndex="3" GridPane.valignment="CENTER"/>
+                                                <Label fx:id="file_progress_text" GridPane.halignment="CENTER"
+                                                       GridPane.rowIndex="2"/>
+                                                <Button mnemonicParsing="false" onAction="#abort_import_datafile"
+                                                        text="Abort" GridPane.halignment="CENTER"
+                                                        GridPane.rowIndex="4"/>
                                                 <HBox alignment="CENTER" spacing="7.0">
                                                     <children>
-                                                        <Button mnemonicParsing="false" onAction="#select_subject_datafile" text="Subject Data" />
-                                                        <Button mnemonicParsing="false" onAction="#select_training_datafile" text="Training Data" />
-                                                        <Button mnemonicParsing="false" onAction="#select_testing_datafile" text="Testing Data" />
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_subject_datafile"
+                                                                text="Subject Data"/>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_training_datafile"
+                                                                text="Training Data"/>
+                                                        <Button mnemonicParsing="false"
+                                                                onAction="#select_testing_datafile"
+                                                                text="Testing Data"/>
                                                     </children>
                                                 </HBox>
-                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="7.0" GridPane.rowIndex="1">
+                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.rowIndex="1">
                                                     <children>
-                                                        <Label text="Sample Rate (only for Training Data and Testing Data)" />
-                                                        <TextField fx:id="import_sample_rate" text="80" />
+                                                        <Label text="Sample Rate (only for Training Data and Testing Data)"/>
+                                                        <TextField fx:id="import_sample_rate" text="80"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -155,34 +194,43 @@
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                                  AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                             <columnConstraints>
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
                                             </columnConstraints>
                                             <rowConstraints>
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <Label text="Training Data" GridPane.rowIndex="1" />
-                                                <Label fx:id="training_data_count" text="click refresh to load" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                <Label text="Testing Data" GridPane.rowIndex="2" />
-                                                <Label fx:id="testing_data_count" text="click refresh to load" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                <Label text="Subject Profile" />
-                                                <Label fx:id="subject_count" text="click refresh to load" GridPane.columnIndex="1" />
-                                                <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="7.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                                <Label text="Training Data" GridPane.rowIndex="1"/>
+                                                <Label fx:id="training_data_count" text="click refresh to load"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                <Label text="Testing Data" GridPane.rowIndex="2"/>
+                                                <Label fx:id="testing_data_count" text="click refresh to load"
+                                                       GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                <Label text="Subject Profile"/>
+                                                <Label fx:id="subject_count" text="click refresh to load"
+                                                       GridPane.columnIndex="1"/>
+                                                <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                                                     <children>
-                                                        <ProgressIndicator fx:id="refresh_dataset_count_progress" progress="1.0" />
-                                                        <Button mnemonicParsing="false" onAction="#update_dataset_count" text="Refresh" />
+                                                        <ProgressIndicator fx:id="refresh_dataset_count_progress"
+                                                                           progress="1.0"/>
+                                                        <Button mnemonicParsing="false" onAction="#update_dataset_count"
+                                                                text="Refresh"/>
                                                     </children>
                                                     <padding>
-                                                        <Insets top="7.0" />
+                                                        <Insets top="7.0"/>
                                                     </padding>
                                                 </HBox>
-                                                <Button mnemonicParsing="false" onAction="#reset_subject_train_test_data" text="Reset" GridPane.rowIndex="3" />
+                                                <Button mnemonicParsing="false"
+                                                        onAction="#reset_subject_train_test_data" text="Reset"
+                                                        GridPane.rowIndex="3"/>
                                             </children>
                                         </GridPane>
                                     </children>
@@ -193,32 +241,44 @@
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <GridPane hgap="7.0" layoutX="344.0" layoutY="47.0" vgap="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <GridPane hgap="7.0" layoutX="344.0" layoutY="47.0" vgap="7.0"
+                                                  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                                  AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                             <columnConstraints>
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
                                             </columnConstraints>
                                             <rowConstraints>
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                             </rowConstraints>
                                             <children>
-                                                <Label text="Min. Support" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" />
-                                                <Label text="Start" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-                                                <Label text="End" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-                                                <Label text="Step" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
-                                                <TextField fx:id="min_support_start" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                <TextField fx:id="min_support_end" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                <TextField fx:id="min_support_step" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                                <Label text="Sampling" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="4" />
-                                                <Label text="\% of training data (in imported data set)" GridPane.halignment="CENTER" GridPane.rowIndex="5" />
-                                                <TextField fx:id="percentage_training_data" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                                                <Button mnemonicParsing="false" onAction="#start_association_rule_mining" text="Start" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="6" />
+                                                <Label text="Min. Support" GridPane.columnSpan="2147483647"
+                                                       GridPane.halignment="CENTER"/>
+                                                <Label text="Start" GridPane.halignment="CENTER" GridPane.rowIndex="1"/>
+                                                <Label text="End" GridPane.halignment="CENTER" GridPane.rowIndex="2"/>
+                                                <Label text="Step" GridPane.halignment="CENTER" GridPane.rowIndex="3"/>
+                                                <TextField fx:id="min_support_start" GridPane.columnIndex="1"
+                                                           GridPane.rowIndex="1"/>
+                                                <TextField fx:id="min_support_end" GridPane.columnIndex="1"
+                                                           GridPane.rowIndex="2"/>
+                                                <TextField fx:id="min_support_step" GridPane.columnIndex="1"
+                                                           GridPane.rowIndex="3"/>
+                                                <Label text="Sampling" GridPane.columnSpan="2147483647"
+                                                       GridPane.halignment="CENTER" GridPane.rowIndex="4"/>
+                                                <Label text="\% of training data (in imported data set)"
+                                                       GridPane.halignment="CENTER" GridPane.rowIndex="5"/>
+                                                <TextField fx:id="percentage_training_data" GridPane.columnIndex="1"
+                                                           GridPane.rowIndex="5"/>
+                                                <Button mnemonicParsing="false"
+                                                        onAction="#start_association_rule_mining" text="Start"
+                                                        GridPane.columnSpan="2147483647" GridPane.halignment="CENTER"
+                                                        GridPane.rowIndex="6"/>
                                             </children>
                                         </GridPane>
                                     </children>
@@ -227,7 +287,7 @@
                         </TitledPane>
                         <TitledPane animated="false" text="untitled 3">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"/>
                             </content>
                         </TitledPane>
                     </panes>
@@ -238,14 +298,15 @@
             <left>
                 <Label fx:id="left_status" text="ready" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
-                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
+                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
                     </BorderPane.margin>
                 </Label>
             </left>
             <right>
-                <Button fx:id="cluster_status" mnemonicParsing="false" onAction="#update_cluster_status" text="Cluster Status" BorderPane.alignment="CENTER">
+                <Button fx:id="cluster_status" mnemonicParsing="false" onAction="#update_cluster_status"
+                        text="Cluster Status" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
-                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0" />
+                        <Insets bottom="7.0" left="7.0" right="7.0" top="7.0"/>
                     </BorderPane.margin>
                 </Button>
             </right>
