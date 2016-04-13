@@ -28,6 +28,8 @@ object Log {
     stream
   }
 
+  def debug_(x: Any): Unit = debug(Seq(x))
+
   def debug(x: Any*): Unit = if (isDebug) fork(() => {
     if (x.length == 1)
       println(x.head)

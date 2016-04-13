@@ -95,7 +95,7 @@ object MonitorController {
 class MonitorController extends MonitorControllerSkeleton {
   instance = this
   val cursorRef = new AtomicReference[Cursor[ju.Map[String, ju.Map[String, AnyRef]]]](null)
-  var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType, Double)]
+  var pendingFileItems = new ConcurrentLinkedQueue[(File, FileType, Double, Int)]
 
   def setUIStatus(msg: String) = {
     Log.info(msg)
@@ -312,6 +312,7 @@ class MonitorController extends MonitorControllerSkeleton {
 
   def select_datafile(fileType: FileType, extension: String = "dat", title: String = "Import File") = {
     val sampleRate = import_sample_rate.getText.toDouble / 100
+    val maxActivityLength = max_activity_length.getText.toInt
     if (sampleRate <= 0 || sampleRate > 1) {
       val alert = new Alert(AlertType.ERROR)
       alert.setTitle("Error")
@@ -327,7 +328,7 @@ class MonitorController extends MonitorControllerSkeleton {
       case list: ju.List[File] if list != null =>
         val files = list.asScala
         setUIStatus(s"selected ${files.length} file(s)")
-        pendingFileItems.addAll(files.map(file => (file, fileType, sampleRate)).asJava)
+        pendingFileItems.addAll(files.map(file => (file, fileType, sampleRate, maxActivityLength)).asJava)
         handleNextFile()
       case _ =>
         setUIStatus("selected no files")
@@ -347,7 +348,7 @@ class MonitorController extends MonitorControllerSkeleton {
         val fileItem = pendingFileItems.poll()
         if (fileItem == null)
           return
-        val (file, filetype, sampleRate) = fileItem
+        val (file, filetype, sampleRate, maxActivityLength) = fileItem
         val filename = file.getName
         val (table, fileTypeField) = filetype match {
           case FileType.subject => (Tables.Subject.name, "")
@@ -385,7 +386,7 @@ class MonitorController extends MonitorControllerSkeleton {
               i += 1
               val (activityId, activitySlice) = ImportActor.processActivitySlice(line)
               if (activityId != 0)
-                if (lastActivityId == activityId && activityBuffer.length < DatabaseHelper.Max_Row) {
+                if (lastActivityId == activityId && activityBuffer.length < maxActivityLength) {
                   activityBuffer += activitySlice
                 } else {
                   setImportProgress(i / N)

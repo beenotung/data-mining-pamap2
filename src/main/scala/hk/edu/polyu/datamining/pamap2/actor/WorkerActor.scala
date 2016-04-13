@@ -13,7 +13,7 @@ import com.rethinkdb.model.MapObject
 import scala.collection.JavaConverters._
 import hk.edu.polyu.datamining.pamap2.Main
 import hk.edu.polyu.datamining.pamap2.som.{Som, Vector}
-import hk.edu.polyu.datamining.pamap2.utils.Log
+import hk.edu.polyu.datamining.pamap2.utils.{Lang_, Log}
 
 import scala.collection.mutable
 
@@ -322,15 +322,22 @@ class WorkerActor extends CommonActor {
             DatabaseHelper.tableInsertRow(Tables.ActivityItemSetSequence.name, row)
           })
         case FirstSequenceGenerationTask(activityOffset) =>
+          Log info s"generate first sequence item set, offset:$activityOffset"
           import Tables.ActivityItemSetSequence
+          Log debug s"loading activity from server"
           val activitySeq = DatabaseHelper.runToBuffer[ju.List[String]](r => r.table(ActivityItemSetSequence.name)
             .skip(activityOffset)
             .getField(ActivityItemSetSequence.ItemSetSequence)
-          ).map(list => new ItemSets_(IndexedSeq(list.asScala.toIndexedSeq)))
-          val one_seq_sets = Sequence_.createFirstSeq(activitySeq)
+          )
+            //            .map(list => new ItemSets_(IndexedSeq(list.asScala.toIndexedSeq)))
+            .map(list => new ItemSets(Array(Lang_.toStringArray(list))))
+          Log debug s"generating first sequence"
+          //          val one_seq_sets = Sequence_.createFirstSeq(activitySeq)
+          val one_seq_sets = Sequence.createFirstSeq(activitySeq.toArray)
           import Tables.OneSeqTemp
           val row = RethinkDB.r.hashMap(OneSeqTemp.PartId, activityOffset)
             .`with`(OneSeqTemp.OneSeqSets, one_seq_sets)
+          Log debug s"saving the first sequence to database"
           DatabaseHelper.tableInsertRow(OneSeqTemp.name, row)
         //TODO working here
         case SequenceGenerationTask(activityOffset, seqOffset, seqCount) =>

@@ -9,6 +9,8 @@ import scala.collection.JavaConverters._
 import scala.util.control.Breaks._
 import java.util
 
+import hk.edu.polyu.datamining.pamap2.utils.Log
+
 import scala.collection.mutable
 
 object Sequence_ {
@@ -19,8 +21,12 @@ object Sequence_ {
       activity_itemset.foreach(time_items => {
         val input = IndexedSeq(time_items)
         val input_itemset = new ItemSets_(input)
-        if (!one_seq_sets.toString().contains(input_itemset.toString))
+        if (!one_seq_sets.toString().contains(input_itemset.toString)) {
+          Log debug "add input itemset"
           one_seq_sets += input_itemset
+        } else {
+          Log debug "skip input itemset"
+        }
       })
     })
     one_seq_sets.foreach(i => {

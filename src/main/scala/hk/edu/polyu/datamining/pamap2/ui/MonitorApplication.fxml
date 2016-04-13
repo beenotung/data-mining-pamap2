@@ -160,7 +160,7 @@
                                                              progress="0.0" GridPane.halignment="CENTER"
                                                              GridPane.rowIndex="3" GridPane.valignment="CENTER"/>
                                                 <Label fx:id="file_progress_text" GridPane.halignment="CENTER"
-                                                       GridPane.rowIndex="2"/>
+                                                       GridPane.rowIndex="1"/>
                                                 <Button mnemonicParsing="false" onAction="#abort_import_datafile"
                                                         text="Abort" GridPane.halignment="CENTER"
                                                         GridPane.rowIndex="4"/>
@@ -178,10 +178,17 @@
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0"
-                                                      spacing="7.0" GridPane.rowIndex="1">
+                                                      spacing="7.0" GridPane.rowIndex="2">
                                                     <children>
                                                         <Label text="Sample Rate (only for Training Data and Testing Data)"/>
                                                         <TextField fx:id="import_sample_rate" text="80"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0"
+                                                      spacing="7.0" GridPane.rowIndex="1">
+                                                    <children>
+                                                        <Label text="max activity length"/>
+                                                        <TextField fx:id="max_activity_length" text="400"/>
                                                     </children>
                                                 </HBox>
                                             </children>

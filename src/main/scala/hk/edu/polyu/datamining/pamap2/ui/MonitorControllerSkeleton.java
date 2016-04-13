@@ -17,7 +17,8 @@ public class MonitorControllerSkeleton {
 
   @FXML // URL location of the FXML file that was given to the FXMLLoader
   protected URL location;
-
+  @FXML
+  protected Label max_activity_length;
   @FXML // fx:id="text_cluster_processor"
   protected Label text_cluster_processor; // Value injected by FXMLLoader
 
@@ -140,6 +141,7 @@ public class MonitorControllerSkeleton {
   @FXML
     // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
+    assert max_activity_length != null : "max_activity_length was not injected";
     assert text_cluster_processor != null : "fx:id=\"text_cluster_processor\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_number_of_pending_task != null : "fx:id=\"text_number_of_pending_task\" was not injected: check your FXML file 'MonitorApplication.fxml'.";
     assert text_number_of_processing_task != null : "fx:id=\"text_number_of_processing_task not injected: check your FXML file 'MonitorApplication.fxml'.";
